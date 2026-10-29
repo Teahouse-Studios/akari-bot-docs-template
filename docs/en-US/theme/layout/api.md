@@ -45,7 +45,7 @@ To turn off the table of contents on a single page, write `toc: false` in its fr
 | --- | --- | --- | --- |
 | `message` | `string` | Per language | Text below the logo and site name in the footer |
 | `copyright` | `string` | `""` | Copyright notice at the bottom of the footer; not shown when empty |
-| `showPrevNext` | `boolean` | `true` | Whether to show the previous and next page cards at the end of the content |
+| `showPrevNext` | `boolean` | `true` | Whether to show the previous and next page cards of the group at the end of parallel pages |
 | `links` | `AkariFooterLinkGroup[] \| false` | From the navigation | Link columns of the footer; by default the first four categories of the navigation, with at most six items per column; `false` hides them |
 
 ```ts

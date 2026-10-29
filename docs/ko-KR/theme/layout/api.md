@@ -45,7 +45,7 @@ tab: API
 | --- | --- | --- | --- |
 | `message` | `string` | 언어에 따라 다름 | 푸터에서 로고와 사이트 이름 아래에 표시되는 텍스트 |
 | `copyright` | `string` | `""` | 푸터 하단의 저작권 표시. 비어 있으면 표시되지 않습니다 |
-| `showPrevNext` | `boolean` | `true` | 콘텐츠 끝에 이전 페이지와 다음 페이지 카드를 표시할지 여부 |
+| `showPrevNext` | `boolean` | `true` | 병렬 페이지의 콘텐츠 끝에 그룹의 이전 페이지와 다음 페이지 카드를 표시할지 여부 |
 | `links` | `AkariFooterLinkGroup[] \| false` | 내비게이션에서 가져옴 | 푸터의 링크 열. 기본값은 내비게이션의 처음 네 카테고리이며, 열마다 최대 6개 항목입니다. `false`이면 숨깁니다 |
 
 ```ts

@@ -182,10 +182,22 @@ watch(
   flex: none;
 }
 
+/*
+ * Content taller than the panel (a short window, a phone) scrolls here,
+ * under the header. The inline padding keeps focus rings at the edges
+ * inside the scroller; the margin gives the room back.
+ */
 .akari-dialog__body {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
+  margin-inline: -4px;
+  padding-inline: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--m3e-scrollbar-thumb-color, var(--md-sys-color-outline))
+    transparent;
 }
 </style>

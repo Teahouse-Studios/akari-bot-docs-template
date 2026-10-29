@@ -33,9 +33,15 @@ const panel = computed(() => config.value.components.Settings ?? SettingsPanel);
 </template>
 
 <style scoped>
+/*
+ * A column, so the panel shrinks to the dialog's height and scrolls itself
+ * (in a row its 100% height would not resolve, and it would grow to its
+ * content, past the dialog's edge).
+ */
 .akari-settings-dialog__body {
   display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-height: 0;
 }
 </style>

@@ -73,7 +73,7 @@ An article can be split into several pages, the way Icons on [m3.material.io](ht
 - When you scroll down, the tab bar shrinks and flies into the empty space to the right of the app bar title. When you scroll back, it returns to the page.
 - When the app bar has no room for it, the tab bar is held below the app bar instead, with a light shadow.
 - When you switch pages within the group, the content slides left or right. If the tab bar is docked in the app bar, it stays put, and the new page starts right at the body text.
-- Previous and next page step through every page in the group.
+- The previous and next page cards at the end of the content stay within the group: its first page has no previous one, its last no next one.
 
 The [Icons](/styles/icons) pages and every theme document on this site are organized this way. See [Writing pages](/getting-started/writing#parallel-pages).
 

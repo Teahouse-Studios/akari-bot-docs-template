@@ -32,7 +32,7 @@ tab: API
 | --- | --- | --- |
 | `text` | `string` | カテゴリの名前。デフォルトはフォルダー名 |
 | `icon` | `string` | レールでのアイコン。デフォルトは `category` |
-| `collapsed` | `boolean` | `false` のとき、モバイルのドロワーでこのカテゴリがデフォルトで展開されます。現在のページを含むカテゴリは常に展開されます |
+| `collapsed` | `boolean` | `false` のとき、モバイルのドロワーでこのカテゴリがデフォルトで展開されます。このカテゴリ内のページに移動すると開きます。読者が開いたり閉じたりした後は、その状態のまま保たれます |
 
 デスクトップのナビゲーションドロワーの幅は `max(240px, width - 96px)` です。デフォルトでは 240px、`width` が最大値の 400 のときは 304px になります。モバイルのドロワーは `width` をそのまま使います。
 
@@ -46,7 +46,7 @@ tab: API
 | `link` | `string` | リンク先のアドレス。サイト内のアドレスは `/` で始めます |
 | `icon` | `string` | 登録済みのアイコン名。最上位の項目では、レールとモバイルのドロワーの最上位のメニューに表示されます。デフォルトは `category` |
 | `badge` | `string` | バッジ。最上位の項目ではレールのアイコンの右上に、子項目ではドロワーに表示されます |
-| `collapsed` | `boolean` | `false` のとき、グループがデフォルトで展開されます。現在のページを含むグループは常に展開されます |
+| `collapsed` | `boolean` | `false` のとき、グループがデフォルトで展開されます。グループ内のページに移動すると開きます。ドロワーが別のカテゴリに切り替わって戻っても、読者が開閉したグループはその状態のままです |
 | `items` | `AkariSidebarItem[]` | 子項目。何階層でも入れ子にできます |
 | `tabs` | `AkariSidebarItem[]` | 並列ページ。グループのページはサイドバーで最初のページにリンクする 1 つの項目になり、ページの上部にタブバーが表示されます |
 
@@ -116,7 +116,7 @@ const { items, prevNext, tabGroup, isActive, hasActive } = useSidebar();
 | 戻り値 | 型 | 説明 |
 | --- | --- | --- |
 | `items` | `ComputedRef<AkariSidebarItem[]>` | 現在のページのナビゲーションツリー |
-| `prevNext` | `ComputedRef<{ prev?, next? }>` | ナビゲーションの順序での前のページと次のページ |
+| `prevNext` | `ComputedRef<{ prev?, next? }>` | 現在のページの並列グループ内での前のページと次のページ。グループの両端と、グループに属さないページでは存在しません |
 | `tabGroup` | `ComputedRef<AkariSidebarItem \| undefined>` | 現在のページが属する並列ページのグループ |
 | `isActive(link)` | `(link?: string) => boolean` | このアドレスが現在のページかどうか |
 | `hasActive(item)` | `(item: AkariSidebarItem) => boolean` | この項目、またはその子項目かタブのいずれかが現在のページかどうか |

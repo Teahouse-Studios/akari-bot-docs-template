@@ -32,7 +32,7 @@ Champs de `AkariSidebarCategory` :
 | --- | --- | --- |
 | `text` | `string` | Nom de la catégorie ; par défaut le nom du dossier |
 | `icon` | `string` | Icône dans le rail ; par défaut `category` |
-| `collapsed` | `boolean` | Avec `false`, la catégorie est dépliée par défaut dans le tiroir mobile ; la catégorie qui contient la page courante est toujours dépliée |
+| `collapsed` | `boolean` | Avec `false`, la catégorie est dépliée par défaut dans le tiroir mobile ; elle s'ouvre quand vous allez sur une page qu'elle contient, et reste dans l'état où le lecteur l'a laissée après l'avoir ouverte ou fermée |
 
 Le tiroir de navigation sur ordinateur fait `max(240px, width - 96px)` de large : 240px par défaut, et 304px quand `width` atteint son maximum de 400. Le tiroir mobile utilise directement `width`.
 
@@ -46,7 +46,7 @@ Le tiroir de navigation sur ordinateur fait `max(240px, width - 96px)` de large�
 | `link` | `string` | Adresse cible ; les adresses du site commencent par `/` |
 | `icon` | `string` | Un nom d'icône enregistrée. Les éléments de premier niveau l'affichent dans le rail et dans le menu de premier niveau du tiroir mobile ; par défaut `category` |
 | `badge` | `string` | Badge. Sur un élément de premier niveau, il s'affiche en haut à droite de l'icône du rail ; sur un élément enfant, il s'affiche dans le tiroir |
-| `collapsed` | `boolean` | Avec `false`, le groupe est déplié par défaut ; le groupe qui contient la page courante est toujours déplié |
+| `collapsed` | `boolean` | Avec `false`, le groupe est déplié par défaut ; il s'ouvre quand vous allez sur une page qu'il contient ; un groupe que le lecteur a ouvert ou fermé garde cet état quand le tiroir passe à une autre catégorie puis revient |
 | `items` | `AkariSidebarItem[]` | Éléments enfants, imbriqués à n'importe quelle profondeur |
 | `tabs` | `AkariSidebarItem[]` | Pages parallèles : les pages du groupe deviennent un seul élément de la navigation latérale, qui pointe vers la première page, et une barre d'onglets s'affiche en haut de la page |
 
@@ -116,7 +116,7 @@ const { items, prevNext, tabGroup, isActive, hasActive } = useSidebar();
 | Valeur renvoyée | Type | Description |
 | --- | --- | --- |
 | `items` | `ComputedRef<AkariSidebarItem[]>` | Arbre de navigation de la page courante |
-| `prevNext` | `ComputedRef<{ prev?, next? }>` | Page précédente et page suivante dans l'ordre de la navigation |
+| `prevNext` | `ComputedRef<{ prev?, next? }>` | Page précédente et page suivante dans le groupe parallèle de la page courante ; absentes aux deux extrémités du groupe et hors de tout groupe |
 | `tabGroup` | `ComputedRef<AkariSidebarItem \| undefined>` | Groupe de pages parallèles auquel appartient la page courante |
 | `isActive(link)` | `(link?: string) => boolean` | Indique si cette adresse est la page courante |
 | `hasActive(item)` | `(item: AkariSidebarItem) => boolean` | Indique si cet élément, ou l'un de ses éléments enfants ou de ses onglets, est la page courante |

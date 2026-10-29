@@ -45,7 +45,7 @@ tab: 接口
 | --- | --- | --- | --- |
 | `message` | `string` | 随语言 | 页尾 logo 与站点名称下方的说明 |
 | `copyright` | `string` | `""` | 页尾底部的版权信息；为空时不显示 |
-| `showPrevNext` | `boolean` | `true` | 是否显示正文末尾的上一页、下一页卡片 |
+| `showPrevNext` | `boolean` | `true` | 是否在平行页面的正文末尾显示组内的上一页、下一页卡片 |
 | `links` | `AkariFooterLinkGroup[] \| false` | 取自导航 | 页尾的链接分栏；默认取导航的前四个分类，每栏最多六项；`false` 时不显示 |
 
 ```ts

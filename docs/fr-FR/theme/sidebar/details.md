@@ -12,6 +12,7 @@ tab: Détails
 - **960–1599px** : quand le pointeur s'arrête sur une catégorie pendant environ 100ms, le tiroir glisse de sous le rail. Il occupe toute la hauteur de la page et recouvre la barre d'application et le contenu (ombre de niveau 3, niveau 5 tant que le pointeur est dans le tiroir ; coins arrondis de 16px du côté de fin). Passer d'une catégorie à l'autre fait disparaître puis réapparaître la liste en fondu. Environ 200ms après que le pointeur a quitté le rail et le tiroir, le tiroir se rétracte.
 - **Moins de 960px** : le rail et le tiroir sont masqués, et le bouton de menu de la barre d'application ouvre le tiroir de navigation complet. Son menu de premier niveau correspond au rail et affiche les mêmes icônes ; les éléments enfants n'affichent que du texte. Le haut du tiroir est collé à la barre d'application, sans coins arrondis, et le bas de son côté de fin a un coin arrondi de 16px.
 - **Clic** : un clic de souris sur une catégorie mène à sa première page. Un clic avec une touche de modification est laissé au navigateur, qui ouvre un nouvel onglet. Les écrans tactiles n'ont pas de survol : toucher une catégorie ouvre ou ferme donc plutôt le tiroir, et toucher à l'extérieur le ferme. Les liens du tiroir utilisent la navigation SPA de VitePress, et le tiroir se ferme après un clic.
+- **Groupes** : un groupe que le lecteur a ouvert ou fermé garde cet état quand le tiroir passe à une autre catégorie puis revient, jusqu'au rechargement de la page ; aller sur une page d'un groupe l'ouvre.
 
 Toutes les transitions utilisent les jetons d'animation M3 Expressive de `m3e-theme` (`--md-sys-motion-spring-*`), et passent de standard à expressif selon le paramètre « Animations ». Quand l'option « réduire les animations » est activée dans le système, tout change instantanément.
 
@@ -23,7 +24,7 @@ Toutes les transitions utilisent les jetons d'animation M3 Expressive de `m3e-th
 
 ## Page précédente et page suivante
 
-Les cartes de pagination à la fin du texte utilisent le même arbre de navigation : chaque élément qui a un lien est parcouru en profondeur d'abord, un groupe de pages parallèles se développe en chacune de ses pages, et les éléments situés juste avant et juste après la page courante sont retenus. Les colonnes de liens du pied de page viennent aussi de cet arbre, où un groupe de pages parallèles compte pour un seul élément.
+Les cartes de pagination à la fin du texte n'apparaissent que sur les pages parallèles et ne passent que d'une page à l'autre du même groupe : elles prennent la page située avant et celle située après la page courante dans le groupe, avec leurs libellés d'onglet comme titres. La première page du groupe n'a pas de page précédente et la dernière n'a pas de page suivante ; les pages hors de tout groupe n'affichent pas de pagination, qui n'emmène donc jamais le lecteur dans un autre document. Les colonnes de liens du pied de page viennent de tout l'arbre de navigation, où un groupe de pages parallèles compte pour un seul élément.
 
 ## La barre d'onglets des pages parallèles
 

@@ -180,16 +180,14 @@ describe("reading order", () => {
     );
   });
 
-  it("finds the neighbours of a page, skipping groups without links", () => {
-    const around = (path: string, base?: string) => {
-      const { prev, next } = findPrevNext(nestedItems, path, base);
+  it("gives pages outside a parallel group no neighbours", () => {
+    const around = (path: string) => {
+      const { prev, next } = findPrevNext(nestedItems, path);
       return [prev?.text, next?.text];
     };
 
-    expect(around("/a")).toEqual([undefined, "B1"]);
-    expect(around("/b2a")).toEqual(["B1", "C"]);
-    expect(around("/c")).toEqual(["B2a", undefined]);
-    expect(around("/docs/b1/?x=1#section", "/docs/")).toEqual(["A", "B2a"]);
+    expect(around("/a")).toEqual([undefined, undefined]);
+    expect(around("/b2a")).toEqual([undefined, undefined]);
     expect(around("/missing")).toEqual([undefined, undefined]);
   });
 });
@@ -260,9 +258,18 @@ describe("tab groups", () => {
     expect(
       flattenSidebar(items, { tabs: "group" }).map((item) => item.text),
     ).toEqual(["概览", "色彩", "图标", "排版"]);
-    expect(findPrevNext(items, "/styles/icons/using").next?.link).toBe(
-      "/styles/typography",
-    );
+    // The pager stays within the group: no way out at either end.
+    const around = (path: string, base?: string) => {
+      const { prev, next } = findPrevNext(items, path, base);
+      return [prev?.link, next?.link];
+    };
+    expect(around("/styles/icons")).toEqual([undefined, "/styles/icons/choosing"]);
+    expect(around("/docs/styles/icons/choosing.html", "/docs/")).toEqual([
+      "/styles/icons",
+      "/styles/icons/using",
+    ]);
+    expect(around("/styles/icons/using")).toEqual(["/styles/icons/choosing", undefined]);
+    expect(around("/styles/color")).toEqual([undefined, undefined]);
   });
 
   it("needs a tab with a link", () => {

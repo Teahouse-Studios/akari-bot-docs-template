@@ -32,7 +32,7 @@ tab: 接口
 | --- | --- | --- |
 | `text` | `string` | 分类的名称，缺省为文件夹名 |
 | `icon` | `string` | rail 中的图标，缺省为 `category` |
-| `collapsed` | `boolean` | `false` 时这个分类在移动端抽屉中默认展开；包含当前页面的分类总是展开 |
+| `collapsed` | `boolean` | `false` 时这个分类在移动端抽屉中默认展开。进入其中的页面时它会展开；读者手动展开或收起后保持原样 |
 
 桌面导航抽屉的宽度是 `max(240px, width - 96px)`：默认 240px，`width` 设到上限 400 时为 304px。移动端抽屉直接使用 `width`。
 
@@ -46,7 +46,7 @@ tab: 接口
 | `link` | `string` | 目标地址；站内地址以 `/` 开头 |
 | `icon` | `string` | 已注册的图标名；顶层项显示在 rail 与移动端抽屉的一级菜单中，缺省为 `category` |
 | `badge` | `string` | 徽标；顶层项的显示在 rail 图标右上角，子项的显示在抽屉中 |
-| `collapsed` | `boolean` | `false` 时分组默认展开；包含当前页面的分组总是展开 |
+| `collapsed` | `boolean` | `false` 时分组默认展开。进入分组中的页面时它会展开；读者手动展开或收起的分组，在抽屉切换分类后保持原样 |
 | `items` | `AkariSidebarItem[]` | 子项，可以任意嵌套 |
 | `tabs` | `AkariSidebarItem[]` | 平行页面：组内各页在侧栏中合为一项，链接到第一页，页面顶部显示标签栏 |
 
@@ -116,7 +116,7 @@ const { items, prevNext, tabGroup, isActive, hasActive } = useSidebar();
 | 返回值 | 类型 | 说明 |
 | --- | --- | --- |
 | `items` | `ComputedRef<AkariSidebarItem[]>` | 当前页面的导航树 |
-| `prevNext` | `ComputedRef<{ prev?, next? }>` | 按导航顺序的上一页与下一页 |
+| `prevNext` | `ComputedRef<{ prev?, next? }>` | 当前页面在平行页面组内的上一页与下一页；在组的两端或不在组中时没有对应的一项 |
 | `tabGroup` | `ComputedRef<AkariSidebarItem \| undefined>` | 当前页面所在的平行页面组 |
 | `isActive(link)` | `(link?: string) => boolean` | 这个地址是否是当前页面 |
 | `hasActive(item)` | `(item: AkariSidebarItem) => boolean` | 这一项或它的子项、标签中是否有当前页面 |

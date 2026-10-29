@@ -145,9 +145,21 @@ function onOptionClick(event: MouseEvent): void {
  */
 .akari-locale-dialog__option {
   min-height: 72px;
-  --m3e-list-item-container-shape: 16px;
-  --m3e-list-item-hover-container-shape: 16px;
-  --m3e-list-item-focus-container-shape: 16px;
+  /*
+   * One block: only the list's outer corners are rounded, in every state.
+   * m3e reads these for the top and bottom corners of its items, as it
+   * does for its segmented lists.
+   */
+  --_list-item-top-container-shape: 0px;
+  --_list-item-bottom-container-shape: 0px;
+}
+
+.akari-locale-dialog__option:first-child {
+  --_list-item-top-container-shape: 16px;
+}
+
+.akari-locale-dialog__option:last-child {
+  --_list-item-bottom-container-shape: 16px;
 }
 
 /* The language being read, like the active search result. */

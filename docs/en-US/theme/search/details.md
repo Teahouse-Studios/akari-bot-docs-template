@@ -62,7 +62,7 @@ Each language has its own index, so results only ever come from the current lang
 | --- | --- |
 | Empty input | Search hint and shortcut help |
 | Loading | M3 loading indicator |
-| Results | Page title, section heading, excerpt and highlighted matches; the current item has a `secondary-container` background |
+| Results | Page title, section heading, excerpt and highlighted matches; the current item has a `secondary-container` background. The list reads as one block: only the first item's top and the last item's bottom corners are rounded, the items between are square |
 | No results | A suggestion to try another keyword |
 | Failed | The cause of the error and a retry button |
 

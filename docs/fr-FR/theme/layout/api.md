@@ -45,7 +45,7 @@ Pour désactiver la table des matières sur une seule page, écrivez `toc: false
 | --- | --- | --- | --- |
 | `message` | `string` | Selon la langue | Texte sous le logo et le nom du site dans le pied de page |
 | `copyright` | `string` | `""` | Mention de copyright en bas du pied de page ; non affichée si elle est vide |
-| `showPrevNext` | `boolean` | `true` | Afficher ou non les cartes de page précédente et de page suivante à la fin du contenu |
+| `showPrevNext` | `boolean` | `true` | Afficher ou non les cartes de page précédente et de page suivante du groupe à la fin du contenu des pages parallèles |
 | `links` | `AkariFooterLinkGroup[] \| false` | Tirées de la navigation | Colonnes de liens du pied de page ; par défaut, les quatre premières catégories de la navigation, avec six éléments au plus par colonne ; `false` les masque |
 
 ```ts

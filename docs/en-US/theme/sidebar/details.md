@@ -12,6 +12,7 @@ tab: Details
 - **960–1599px**: after the pointer rests on a category for about 100ms, the drawer slides out from under the rail. It takes the full page height and covers the app bar and the content (level 3 shadow, level 5 while the pointer is in the drawer; 16px rounded corners at the trailing end). Moving between categories fades the list out and back in. About 200ms after the pointer leaves the rail and the drawer, the drawer slides back.
 - **Below 960px**: the rail and drawer are hidden, and the menu button in the app bar opens the full navigation drawer. Its top-level menu matches the rail and shows the same icons; child items show text only. The top of the drawer sits flush against the app bar with no rounded corners, and the bottom of its trailing end has a 16px rounded corner.
 - **Clicking**: a mouse click on a category goes to its first page. A click with a modifier key is left to the browser, which opens a new tab. Touch screens have no hover, so tapping a category opens or closes the drawer instead, and tapping outside closes it. Links in the drawer use VitePress's SPA navigation, and the drawer closes after a click.
+- **Groups**: a group the reader opened or closed stays that way when the drawer switches to another category and back, until the page is reloaded; going to a page in a group opens it.
 
 All transitions use the M3 Expressive motion tokens from `m3e-theme` (`--md-sys-motion-spring-*`), and switch between standard and expressive with the "Motion" setting. When the system has "reduce motion" turned on, everything switches instantly.
 
@@ -23,7 +24,7 @@ All transitions use the M3 Expressive motion tokens from `m3e-theme` (`--md-sys-
 
 ## Previous and next page
 
-The pager cards at the end of the body use the same navigation tree: every item with a link is expanded depth-first, a parallel page group expands into each of its pages, and the items just before and after the current page are taken. The link columns in the footer also come from this tree, where a parallel page group counts as one item.
+The pager cards at the end of the content appear only on parallel pages and move between the pages of the same group: they take the page before and after the current one in the group, titled with their tab labels. The group's first page has no previous page and its last no next page; pages outside any group show no pager, so it never takes the reader into another document. The footer's link columns come from the whole navigation tree, where a parallel group counts as one entry.
 
 ## The parallel pages tab bar
 

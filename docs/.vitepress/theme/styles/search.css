@@ -107,13 +107,25 @@
   margin-inline: -4px;
 }
 
+/*
+ * The results read as one block: only the list's outer corners are
+ * rounded, in every state. m3e reads these for the top and bottom corners
+ * of its items, as it does for its segmented lists.
+ */
 .akari-search-result {
-  --m3e-list-item-container-shape: 16px;
-  --m3e-list-item-hover-container-shape: 16px;
-  --m3e-list-item-focus-container-shape: 16px;
+  --_list-item-top-container-shape: 0px;
+  --_list-item-bottom-container-shape: 0px;
   transition:
     background-color 160ms cubic-bezier(0.2, 0, 0, 1),
     color 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.akari-search-result:first-child {
+  --_list-item-top-container-shape: 16px;
+}
+
+.akari-search-result:last-child {
+  --_list-item-bottom-container-shape: 16px;
 }
 
 .akari-search-result.is-active {

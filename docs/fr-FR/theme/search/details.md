@@ -62,7 +62,7 @@ Chaque langue a son propre index : les résultats viennent donc toujours de la l
 | --- | --- |
 | Saisie vide | Indication de recherche et aide sur le raccourci |
 | Chargement | Indicateur de chargement M3 |
-| Résultats | Titre de la page, titre de section, extrait et correspondances mises en évidence ; l'élément courant a un fond `secondary-container` |
+| Résultats | Titre de la page, titre de section, extrait et correspondances mises en évidence ; l'élément courant a un fond `secondary-container` ; la liste se lit comme un seul bloc : seuls les coins supérieurs du premier élément et les coins inférieurs du dernier sont arrondis, les éléments intermédiaires sont carrés |
 | Aucun résultat | Une suggestion d'essayer un autre mot-clé |
 | Échec | La cause de l'erreur et un bouton pour réessayer |
 

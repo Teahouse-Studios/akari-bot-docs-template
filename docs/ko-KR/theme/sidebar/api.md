@@ -32,7 +32,7 @@ tab: API
 | --- | --- | --- |
 | `text` | `string` | 카테고리 이름. 기본값은 폴더 이름입니다 |
 | `icon` | `string` | 레일의 아이콘. 기본값은 `category`입니다 |
-| `collapsed` | `boolean` | `false`이면 모바일 드로어에서 카테고리가 기본으로 펼쳐집니다. 현재 페이지가 속한 카테고리는 항상 펼쳐집니다 |
+| `collapsed` | `boolean` | `false`이면 모바일 드로어에서 카테고리가 기본으로 펼쳐집니다. 이 카테고리 안의 페이지로 이동하면 열리며, 독자가 열거나 닫은 뒤에는 그 상태로 유지됩니다 |
 
 데스크톱 내비게이션 드로어의 너비는 `max(240px, width - 96px)`입니다. 기본값은 240px이고, `width`가 최댓값 400일 때 304px입니다. 모바일 드로어는 `width`를 그대로 씁니다.
 
@@ -46,7 +46,7 @@ tab: API
 | `link` | `string` | 대상 주소. 사이트 내 주소는 `/`로 시작합니다 |
 | `icon` | `string` | 등록된 아이콘 이름. 최상위 항목은 레일과 모바일 드로어의 최상위 메뉴에 아이콘을 표시합니다. 기본값은 `category`입니다 |
 | `badge` | `string` | 배지. 최상위 항목에서는 레일 아이콘의 오른쪽 위에, 하위 항목에서는 드로어에 표시됩니다 |
-| `collapsed` | `boolean` | `false`이면 그룹이 기본으로 펼쳐집니다. 현재 페이지가 속한 그룹은 항상 펼쳐집니다 |
+| `collapsed` | `boolean` | `false`이면 그룹이 기본으로 펼쳐집니다. 그룹 안의 페이지로 이동하면 열립니다. 드로어가 다른 카테고리로 바뀌었다가 돌아와도, 독자가 열거나 닫은 그룹은 그 상태로 유지됩니다 |
 | `items` | `AkariSidebarItem[]` | 하위 항목. 깊이 제한 없이 중첩할 수 있습니다 |
 | `tabs` | `AkariSidebarItem[]` | 병렬 페이지. 그룹의 페이지들은 사이드바에서 첫 페이지로 연결되는 항목 하나가 되고, 페이지 상단에 탭 바가 표시됩니다 |
 
@@ -116,7 +116,7 @@ const { items, prevNext, tabGroup, isActive, hasActive } = useSidebar();
 | 반환값 | 타입 | 설명 |
 | --- | --- | --- |
 | `items` | `ComputedRef<AkariSidebarItem[]>` | 현재 페이지의 내비게이션 트리 |
-| `prevNext` | `ComputedRef<{ prev?, next? }>` | 내비게이션 순서상 이전 페이지와 다음 페이지 |
+| `prevNext` | `ComputedRef<{ prev?, next? }>` | 현재 페이지의 병렬 그룹 안에서의 이전 페이지와 다음 페이지. 그룹의 양 끝과 그룹에 속하지 않은 페이지에서는 없음 |
 | `tabGroup` | `ComputedRef<AkariSidebarItem \| undefined>` | 현재 페이지가 속한 병렬 페이지 그룹 |
 | `isActive(link)` | `(link?: string) => boolean` | 이 주소가 현재 페이지인지 여부 |
 | `hasActive(item)` | `(item: AkariSidebarItem) => boolean` | 이 항목이나 그 하위 항목·탭 중 하나가 현재 페이지인지 여부 |

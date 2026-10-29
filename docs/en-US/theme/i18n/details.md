@@ -39,7 +39,7 @@ Only the target language's navigation counts, so a page that is not in the navig
 
 - The language button is a round outlined icon button (`m3e-icon-button variant="outlined"`). It is not rendered when there is only one language.
 - The dialog uses the same container transform as the search panel: the button expands into a centered panel, the icon before the panel title is the button itself, and closing returns the panel the way it came.
-- Each language takes two lines in the list: its `label` on the first, and below it its name in the current interface language, from `Intl.DisplayNames` (in an English interface, `zh-CN` shows as "Chinese (China)"). The current language is highlighted with a check icon.
+- Each language takes two lines in the list: its `label` on the first, and below it its name in the current interface language, from `Intl.DisplayNames` (in an English interface, `zh-CN` shows as "Chinese (China)"). The current language is highlighted with a check icon. As with search results, only the list's first item has rounded top corners and its last rounded bottom corners.
 - Clicking a language switches to it and closes the dialog, with SPA navigation. Clicking with `⌘`, `Ctrl` or another modifier key held opens it in a new tab.
 - On open, focus is on the current language, and `Tab` moves between languages. `Esc`, clicking the scrim or the close button closes the dialog, and focus returns to the language button.
 - On narrow screens, the button is at the bottom of the navigation drawer, and the dialog covers the drawer.

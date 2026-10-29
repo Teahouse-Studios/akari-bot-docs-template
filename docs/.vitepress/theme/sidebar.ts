@@ -238,20 +238,24 @@ export function findTabGroup(
   return undefined;
 }
 
+/**
+ * The pages before and after the current one within its parallel page
+ * group, for the pager: it moves between the parts of one document only.
+ * The group's first page has no previous one, its last no next one, and a
+ * page outside any group has neither.
+ */
 export function findPrevNext(
   items: AkariSidebarItem[],
   currentPath: string,
   base = "/",
 ): { prev?: AkariSidebarItem; next?: AkariSidebarItem } {
-  const flat = flattenSidebar(items);
-  const index = flat.findIndex(
-    (item) => item.link && isActiveLink(currentPath, item.link, base),
+  const group = findTabGroup(items, currentPath, base);
+  const tabs = group?.tabs?.filter((tab) => !!tab.link) ?? [];
+  const index = tabs.findIndex((tab) =>
+    isActiveLink(currentPath, tab.link!, base),
   );
 
   if (index < 0) return {};
 
-  return {
-    prev: index > 0 ? flat[index - 1] : undefined,
-    next: index < flat.length - 1 ? flat[index + 1] : undefined,
-  };
+  return { prev: tabs[index - 1], next: tabs[index + 1] };
 }

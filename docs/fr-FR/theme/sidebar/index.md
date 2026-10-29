@@ -73,7 +73,7 @@ Un article peut être découpé en plusieurs pages, à la manière de la page Ic
 - Quand vous faites défiler vers le bas, la barre d'onglets rétrécit et vient se loger dans l'espace libre à droite du titre de la barre d'application. Quand vous remontez, elle revient dans la page.
 - Quand la barre d'application n'a pas la place de l'accueillir, la barre d'onglets reste sous la barre d'application, avec une légère ombre.
 - Quand vous changez de page au sein du groupe, le contenu glisse vers la gauche ou vers la droite. Si la barre d'onglets s'est ancrée dans la barre d'application, elle ne bouge pas, et la nouvelle page commence directement au début du texte.
-- Page précédente et page suivante parcourent toutes les pages du groupe.
+- Les cartes de page précédente et de page suivante à la fin du contenu restent dans le groupe : sa première page n'a pas de page précédente, sa dernière n'a pas de page suivante.
 
 Les pages [Icônes](/fr-FR/styles/icons) et tous les documents sur le thème de ce site sont organisés ainsi. Voir [Rédiger des pages](/fr-FR/getting-started/writing#parallel-pages).
 

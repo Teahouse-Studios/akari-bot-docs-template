@@ -32,7 +32,7 @@ Fields of `AkariSidebarCategory`:
 | --- | --- | --- |
 | `text` | `string` | Name of the category; defaults to the folder name |
 | `icon` | `string` | Icon in the rail; defaults to `category` |
-| `collapsed` | `boolean` | When `false`, the category is expanded by default in the mobile drawer; the category that contains the current page is always expanded |
+| `collapsed` | `boolean` | When `false`, the category is expanded by default in the mobile drawer. It opens when you go to a page in it, and stays as the reader left it after they open or close it |
 
 The desktop navigation drawer is `max(240px, width - 96px)` wide: 240px by default, and 304px when `width` is at its maximum of 400. The mobile drawer uses `width` directly.
 
@@ -46,7 +46,7 @@ The desktop navigation drawer is `max(240px, width - 96px)` wide: 240px by defau
 | `link` | `string` | Target address; addresses on the site start with `/` |
 | `icon` | `string` | A registered icon name. Top-level items show it in the rail and in the top-level menu of the mobile drawer; defaults to `category` |
 | `badge` | `string` | Badge. On a top-level item it shows at the top right of the rail icon; on a child item it shows in the drawer |
-| `collapsed` | `boolean` | When `false`, the group is expanded by default; the group that contains the current page is always expanded |
+| `collapsed` | `boolean` | When `false`, the group is expanded by default. It opens when you go to a page in it; a group the reader opened or closed stays that way when the drawer switches category and back |
 | `items` | `AkariSidebarItem[]` | Child items, nested to any depth |
 | `tabs` | `AkariSidebarItem[]` | Parallel pages: the pages of the group become one item in the sidebar that links to the first page, and a tab bar shows at the top of the page |
 
@@ -116,7 +116,7 @@ const { items, prevNext, tabGroup, isActive, hasActive } = useSidebar();
 | Return value | Type | Description |
 | --- | --- | --- |
 | `items` | `ComputedRef<AkariSidebarItem[]>` | Navigation tree of the current page |
-| `prevNext` | `ComputedRef<{ prev?, next? }>` | Previous and next page in navigation order |
+| `prevNext` | `ComputedRef<{ prev?, next? }>` | Previous and next page within the current page's parallel group; missing at either end of the group and outside any group |
 | `tabGroup` | `ComputedRef<AkariSidebarItem \| undefined>` | Parallel page group that the current page belongs to |
 | `isActive(link)` | `(link?: string) => boolean` | Whether this address is the current page |
 | `hasActive(item)` | `(item: AkariSidebarItem) => boolean` | Whether this item, or one of its child items or tabs, is the current page |
