@@ -58,3 +58,24 @@ Just as I said above, it is optimized for technical documentation, not suitable 
 ### What else you want to say?
 
 I dunno at this point, so that's all.
+## Using with the AkariBot docs engine
+
+The theme is consumed as a source checkout. `docs-theme.json` at the repository root is the contract:
+it names the theme directory, the VitePress and Node versions, the npm dependencies, and the generated
+config options. The engine copies `theme_dir` into the generated site and never imports the theme code.
+
+Set the theme in the instance's `docs.toml`:
+
+```toml
+[theme]
+source = "file:/path/to/akari-bot-docs-template"
+```
+
+The following components are registered globally and are available to every Markdown page:
+
+- `ModuleMeta` — module name, aliases, capabilities, permission and platform badges.
+- `NoticeBox` — tinted notice with `info`, `tip`, `warning`, `danger`, `example` or `help`.
+- `CommandUsage` — command usage, permission badge and options table.
+
+They are styled with the M3E color tokens, so their surfaces follow the reader's seed color, light/dark
+scheme and contrast setting.

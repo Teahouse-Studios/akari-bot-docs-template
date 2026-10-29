@@ -1,0 +1,193 @@
+/*
+ * AkariBot documentation components.
+ *
+ * These components are rendered inside the prose surface. Colors come from
+ * the M3E palette so they follow the reader's seed, scheme and contrast.
+ */
+
+.module-meta {
+  margin: 16px 0;
+  padding: 10px 16px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--akari-doc-radius, 28px);
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.module-meta__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.module-meta__item + .module-meta__item {
+  border-top: 1px dashed var(--md-sys-color-outline-variant);
+}
+
+.module-meta__name {
+  min-width: 8em;
+  color: var(--md-sys-color-on-surface);
+  font-size: 14px;
+}
+
+.module-meta__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.module-meta__note {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 12px;
+}
+
+.meta-badge {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 1px 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.meta-badge code {
+  padding: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+.meta-badge--alias {
+  white-space: normal;
+}
+
+.meta-badge--command {
+  border-color: color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.meta-badge--rss {
+  border-color: color-mix(in srgb, var(--md-sys-color-secondary) 35%, transparent);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.meta-badge--regex {
+  border-color: color-mix(in srgb, var(--md-sys-color-tertiary) 35%, transparent);
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.meta-badge--event {
+  border-color: color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.meta-badge--permission-public {
+  border-color: color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-primary);
+}
+
+.meta-badge--permission-admin,
+.meta-badge--permission-superuser,
+.meta-badge--permission-base_superuser,
+.meta-badge--forced {
+  border-color: color-mix(in srgb, var(--md-sys-color-error) 35%, transparent);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.meta-badge--hidden {
+  color: var(--md-sys-color-on-surface-variant);
+  text-decoration: line-through;
+}
+
+.meta-badge--platform {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.notice-box {
+  margin: 16px 0;
+  padding: 10px 16px;
+  border-left: 4px solid var(--notice-color);
+  border-radius: 0 var(--akari-doc-radius, 28px) var(--akari-doc-radius, 28px) 0;
+  background: color-mix(in srgb, var(--notice-color) 10%, transparent);
+}
+
+.notice-box--info,
+.notice-box--help {
+  --notice-color: var(--md-sys-color-primary);
+}
+
+.notice-box--tip {
+  --notice-color: var(--md-sys-color-tertiary);
+}
+
+.notice-box--warning {
+  --notice-color: var(--md-sys-color-error);
+}
+
+.notice-box--danger {
+  --notice-color: var(--md-sys-color-error);
+}
+
+.notice-box--example {
+  --notice-color: var(--md-sys-color-tertiary);
+}
+
+.notice-box--deprecated {
+  --notice-color: var(--md-sys-color-on-surface-variant);
+}
+
+.notice-box__title {
+  margin-bottom: 4px;
+  color: var(--notice-color);
+  font-weight: 600;
+}
+
+.notice-box__body > :first-child {
+  margin-top: 0;
+}
+
+.notice-box__body > :last-child {
+  margin-bottom: 0;
+}
+
+.command-usage {
+  margin: 16px 0;
+  padding: 10px 16px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--akari-doc-radius, 28px);
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.command-usage__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.command-usage__line {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.command-usage__options {
+  margin-top: 10px;
+}
+
+.command-usage__note {
+  margin: 8px 0 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+}

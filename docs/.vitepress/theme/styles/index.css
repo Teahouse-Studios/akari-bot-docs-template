@@ -2,6 +2,7 @@
 @import "./base.css";
 @import "./shell.css";
 @import "./prose.css";
+@import "./components.css";
 @import "./pattern.css";
 @import "./settings.css";
 @import "./dialog.css";

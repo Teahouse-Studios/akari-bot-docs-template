@@ -2,6 +2,9 @@ import type { Theme } from "vitepress";
 import DefaultTheme from "vitepress/theme-without-fonts";
 
 import { provideAkariSiteData } from "./composables/useLocales";
+import CommandUsage from "./components/content/CommandUsage.vue";
+import ModuleMeta from "./components/content/ModuleMeta.vue";
+import NoticeBox from "./components/content/NoticeBox.vue";
 import Layout from "./layouts/AkariLayout.vue";
 import "./styles/index.css";
 
@@ -17,9 +20,13 @@ export default {
   Layout,
   enhanceApp({ app, siteData }) {
     provideAkariSiteData(app, siteData);
+    app.component("ModuleMeta", ModuleMeta);
+    app.component("NoticeBox", NoticeBox);
+    app.component("CommandUsage", CommandUsage);
   },
 } satisfies Theme;
 
+export { CommandUsage, ModuleMeta, NoticeBox };
 export * from "./types";
 export { defineAkariConfig, defineAkariThemeConfig } from "./config";
 export { defineAkariLanguage } from "./define";

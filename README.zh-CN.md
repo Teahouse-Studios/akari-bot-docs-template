@@ -38,3 +38,22 @@ npm run preview
 ## 配置文档
 
 有关本主题的更多配置文档，请见[这里](https://vitepress-theme-akari-docs.vercel.app/zh-CN/)。
+## 与 AkariBot 文档引擎配合
+
+主题以源码目录方式接入。仓库根目录的 `docs-theme.json` 是接入契约，声明主题目录、VitePress 与
+Node 版本、npm 依赖与生成配置选项；引擎只复制主题目录，不导入主题代码。
+
+在实例的 `docs.toml` 中指定主题：
+
+```toml
+[theme]
+source = "file:/path/to/akari-bot-docs-template"
+```
+
+以下组件已全局注册，所有 Markdown 页面均可直接使用：
+
+- `ModuleMeta`：模块名、别名、能力、权限与平台标记。
+- `NoticeBox`：提示框，类型取 `info`、`tip`、`warning`、`danger`、`example`、`help`。
+- `CommandUsage`：命令用法、权限标记与选项表。
+
+组件使用 M3E 颜色令牌，界面会跟随读者的种子色、明暗模式与对比度设置。

@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "name": "vitepress-akari-theme-docs",
+  "version": "1.0.0",
+  "theme_dir": "docs/.vitepress/theme",
+  "vitepress": "2.0.0-alpha.21",
+  "node": ">=22.12.0",
+  "install_mode": "install",
+  "dependencies": {
+    "vitepress": "2.0.0-alpha.21",
+    "vue": "^3.5.43",
+    "@m3e/web": "2.10.2",
+    "@m3e/icons": "1.0.21",
+    "@material/material-color-utilities": "^0.4.0",
+    "minisearch": "^7.2.0",
+    "markdown-it-image-size": "^16.0.2"
+  },
+  "config": {
+    "appearance": false,
+    "clean_urls": true,
+    "custom_element_prefixes": ["m3e-"],
+    "head_module": "head.ts",
+    "head_export": "akariHead",
+    "markdown_module": "markdown.ts",
+    "markdown_export": "akariMarkdown",
+    "theme_config_key": "akari",
+    "search": {
+      "provider": "local",
+      "options": {
+        "miniSearch": {
+          "options": {
+            "storeFields": ["title", "titles", "text"]
+          }
+        }
+      }
+    }
+  }
+}
