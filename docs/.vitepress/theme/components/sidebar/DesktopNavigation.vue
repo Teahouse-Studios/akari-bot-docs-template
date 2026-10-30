@@ -487,14 +487,18 @@ onUnmounted(() => {
 }
 
 /*
- * Standard drawer. Its footprint grows from zero with a spatial spring, so
- * the content yields space smoothly while the drawer is revealed from under
- * the rail. The surface stays end-aligned: spring overshoot only widens the
- * transparent gap behind it.
+ * Standard drawer. Its footprint grows from zero, so the content yields
+ * space smoothly while the drawer is revealed from under the rail (the
+ * surface stays end-aligned), and shrinks back the same way.
  *
  * Open state comes from the route (data-category) and a media query kept in
  * sync with AKARI_NAV_DRAWER_PINNED_QUERY, so the server render paints the final
  * layout and only later changes (resizing, navigation) animate.
+ *
+ * Both ways the width eases on a spring without overshoot. It pushes the
+ * content, so a spatial spring's overshoot moved the whole page past its
+ * place and drifted it back; closing, it carried the width past zero, where
+ * it is clamped, so the drawer slammed shut and flicked a sliver back open.
  */
 .akari-nav-drawer--pinned {
   position: sticky;
@@ -512,9 +516,9 @@ onUnmounted(() => {
   overflow: hidden;
   visibility: hidden;
   transition:
-    width var(--md-sys-motion-spring-fast-spatial, 350ms cubic-bezier(0.27, 1.06, 0.18, 1)),
-    margin-inline-end var(--md-sys-motion-spring-fast-spatial, 350ms cubic-bezier(0.27, 1.06, 0.18, 1)),
-    visibility var(--md-sys-motion-spring-fast-spatial, 350ms cubic-bezier(0.27, 1.06, 0.18, 1));
+    width var(--md-sys-motion-spring-slow-effects, 300ms cubic-bezier(0.34, 0.88, 0.34, 1)),
+    margin-inline-end var(--md-sys-motion-spring-slow-effects, 300ms cubic-bezier(0.34, 0.88, 0.34, 1)),
+    visibility var(--md-sys-motion-spring-slow-effects, 300ms cubic-bezier(0.34, 0.88, 0.34, 1));
 }
 
 /* Visibility is left out of the opening transition so it applies at once. */
@@ -524,8 +528,8 @@ onUnmounted(() => {
     margin-inline-end: var(--akari-doc-nav-gap);
     visibility: inherit;
     transition:
-      width var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
-      margin-inline-end var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1));
+      width var(--md-sys-motion-spring-slow-effects, 300ms cubic-bezier(0.34, 0.88, 0.34, 1)),
+      margin-inline-end var(--md-sys-motion-spring-slow-effects, 300ms cubic-bezier(0.34, 0.88, 0.34, 1));
   }
 }
 
