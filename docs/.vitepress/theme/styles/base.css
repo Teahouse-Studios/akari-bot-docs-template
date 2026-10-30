@@ -485,6 +485,15 @@ html:has(.akari-drawers[start]) {
 }
 
 /*
+ * A navigation group that starts open — on page load, or when a drawer
+ * rebuilds its list on a category switch — opens at once, toggle arrow
+ * included (see SidebarNavItem).
+ */
+[data-akari-instant] {
+  --m3e-collapsible-animation-duration: 0s;
+}
+
+/*
  * m3e-badge pads only labels longer than two characters, so two CJK glyphs
  * overflow its circle. Padding shorter numeric labels is harmless: they stay
  * within the badge's min-width.

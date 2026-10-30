@@ -61,6 +61,10 @@ watch(
 
 // The theme opening or closing a group itself is not the reader's choice.
 let applying = false;
+// A group takes its first state — on page load, or when a drawer rebuilds
+// its list on a category switch — at once; later changes, such as going to
+// a page in it, animate.
+let shown = false;
 
 /** The reader opened or closed the group. */
 function remember(isOpen: boolean): void {
@@ -77,6 +81,28 @@ async function setGroupOpen(
     await element.updateComplete;
     await nextLayoutFrame();
   } finally {
+    applying = false;
+  }
+}
+
+/** Opens a group before the next paint, without animating. */
+async function openGroupAtOnce(element: NavMenuItemElement): Promise<void> {
+  applying = true;
+  // Zero durations for the collapsible and the toggle arrow (base.css).
+  element.setAttribute("data-akari-instant", "");
+  try {
+    element.open = true;
+    await element.updateComplete;
+    const collapsible = element.shadowRoot?.querySelector<
+      HTMLElement & { updateComplete?: Promise<unknown> }
+    >("m3e-collapsible");
+    await collapsible?.updateComplete;
+    // The collapsible sizes itself to its content on the `transitionend`
+    // that ends its opening, which a zero duration never fires. (Not m3e's
+    // `noAnimate`: turning it back off replays the opening animation.)
+    collapsible?.dispatchEvent(new Event("transitionend"));
+  } finally {
+    element.removeAttribute("data-akari-instant");
     applying = false;
   }
 }
@@ -116,13 +142,21 @@ async function applyGroupState(): Promise<void> {
   await customElements.whenDefined("m3e-collapsible");
   await whenAkariReady();
   await nextTick();
-  await nextLayoutFrame();
+  await element.updateComplete;
+
+  const animate = shown;
+  shown = true;
+  // A change waits for the list's layout, so it animates from the real size;
+  // the first state is in place before the list is painted.
+  if (animate) await nextLayoutFrame();
 
   const shouldOpen = !!open.value;
 
   if (shouldOpen) {
     if (!element.open) {
-      await setGroupOpen(element, true);
+      await (animate
+        ? setGroupOpen(element, true)
+        : openGroupAtOnce(element));
     } else {
       const collapsible =
         element.shadowRoot?.querySelector("m3e-collapsible");
