@@ -163,8 +163,8 @@ function onPointerLeave(index: number, event: PointerEvent): void {
 
 .akari-rail__logo {
   display: block;
-  width: 32px;
-  height: 32px;
+  width: 72px;
+  height: 44px;
   object-fit: contain;
 }
 

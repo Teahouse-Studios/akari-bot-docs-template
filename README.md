@@ -74,8 +74,11 @@ source = "file:/path/to/akari-bot-docs-template"
 The following components are registered globally and are available to every Markdown page:
 
 - `ModuleMeta` — module name, aliases, capabilities, permission and platform badges.
+- `ModuleConfig` — config table and file path, or "the module has no config".
+- `ModuleData` — the tables the package owns and where their models live, or that it stores nothing.
+- `ModuleAlias` — module-level aliases; placed under a section heading, they apply to every command in it.
 - `NoticeBox` — tinted notice with `info`, `tip`, `warning`, `danger`, `example` or `help`.
-- `CommandUsage` — command usage, permission badge and options table.
+- `CommandUsage` — permission and alias badges, the usage line with the site's command prefix, an optional parameter list, and options as a list; `params` explains each `<placeholder>` (angle brackets are required, square brackets optional, derived from the usage text), the prefix comes from `commandPrefix` in the theme config, `prefix` overrides it, and `type` is only set for non-prefix triggers such as `regex`.
 
 They are styled with the M3E color tokens, so their surfaces follow the reader's seed color, light/dark
 scheme and contrast setting.

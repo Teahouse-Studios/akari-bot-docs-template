@@ -57,6 +57,11 @@
   white-space: nowrap;
 }
 
+.meta-badge__icon {
+  --m3e-icon-size: 14px;
+  opacity: 0.9;
+}
+
 .meta-badge code {
   padding: 0;
   background: transparent;
@@ -99,7 +104,12 @@
 
 .meta-badge--permission-admin,
 .meta-badge--permission-superuser,
-.meta-badge--permission-base_superuser,
+.meta-badge--permission-base_superuser {
+  border-color: color-mix(in srgb, var(--md-sys-color-error) 32%, transparent);
+  background: color-mix(in srgb, var(--md-sys-color-error) 10%, var(--md-sys-color-surface-container));
+  color: var(--md-sys-color-error);
+}
+
 .meta-badge--forced {
   border-color: color-mix(in srgb, var(--md-sys-color-error) 35%, transparent);
   background: var(--md-sys-color-error-container);
@@ -117,10 +127,13 @@
 
 .notice-box {
   margin: 16px 0;
-  padding: 10px 16px;
-  border-left: 4px solid var(--notice-color);
-  border-radius: 0 var(--akari-doc-radius, 28px) var(--akari-doc-radius, 28px) 0;
-  background: color-mix(in srgb, var(--notice-color) 10%, transparent);
+  padding: 14px 18px 16px;
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  background: color-mix(
+    in srgb,
+    var(--notice-color) 10%,
+    var(--md-sys-color-surface-container-high)
+  );
 }
 
 .notice-box--info,
@@ -149,9 +162,31 @@
 }
 
 .notice-box__title {
-  margin-bottom: 4px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 6px;
   color: var(--notice-color);
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.notice-box__icon {
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notice-box__body {
+  color: var(--md-sys-color-on-surface);
+  font-size: 14px;
+  line-height: 22px;
 }
 
 .notice-box__body > :first-child {
@@ -163,31 +198,253 @@
 }
 
 .command-usage {
-  margin: 16px 0;
-  padding: 10px 16px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--akari-doc-radius, 28px);
-  background: var(--md-sys-color-surface-container-low);
+  margin: 8px 0 16px;
 }
 
-.command-usage__head {
+.command-usage__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  margin: 0 0 8px;
+}
+
+.command-usage__usage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 8px;
+}
+
+.command-usage__lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.command-usage__usage--stacked {
+  align-items: flex-start;
+}
+
+.command-usage__usage--stacked .command-usage__lines {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.command-usage__label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+  line-height: 20px;
+  padding-block: 2px;
+}
+
+.command-usage__icon {
+  --m3e-icon-size: 14px;
+  opacity: 0.85;
 }
 
 .command-usage__line {
-  font-size: 14px;
-  font-weight: 600;
+  padding: 2px 6px;
+  line-height: 20px;
+  border-radius: 6px;
+  background: var(--md-sys-color-surface-container-highest);
+  font-size: 13px;
 }
 
 .command-usage__options {
-  margin-top: 10px;
+  margin: 0 0 8px;
+  padding-inline-start: 20px;
+  color: var(--md-sys-color-on-surface);
+  font-size: 14px;
+}
+
+.command-usage__options li {
+  margin-block: 2px;
 }
 
 .command-usage__note {
   margin: 8px 0 0;
   color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+}
+
+.command-usage__param {
+  position: relative;
+  border-radius: 4px;
+  cursor: help;
+  text-decoration: underline dotted color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+  transition: background-color var(--md-sys-motion-duration-short-3, 150ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.command-usage__param:hover,
+.command-usage__param:focus-visible,
+.command-usage__param.is-active {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
+  outline: none;
+}
+
+.command-usage__tip {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-start: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 120px;
+  inline-size: max-content;
+  max-inline-size: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-highest);
+  box-shadow:
+    0 2px 8px rgb(0 0 0 / 0.18),
+    0 8px 24px rgb(0 0 0 / 0.12);
+  color: var(--md-sys-color-on-surface);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: start;
+  text-decoration: none;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--md-sys-motion-duration-short-4, 200ms)
+      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    transform var(--md-sys-motion-duration-short-4, 200ms)
+      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    visibility 0s linear var(--md-sys-motion-duration-short-4, 200ms);
+}
+
+.command-usage__param:hover .command-usage__tip,
+.command-usage__param:focus-visible .command-usage__tip,
+.command-usage__param.is-active .command-usage__tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-usage__param,
+  .command-usage__tip {
+    transition: none;
+  }
+}
+
+.command-usage__tip-desc {
+  color: var(--md-sys-color-on-surface);
+}
+
+.command-usage__tip-meta {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+}
+
+.command-usage__params {
+  margin: 0 0 8px;
+  padding-inline-start: 20px;
+  color: var(--md-sys-color-on-surface);
+  font-size: 14px;
+}
+
+.command-usage__params li {
+  margin-block: 2px;
+}
+
+.command-usage__param-desc {
+  margin-inline: 6px;
+}
+
+.command-usage__param-flag {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.command-usage__syntax {
+  margin: 0 0 8px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/*
+ * Module fact lines.
+ *
+ * Module pages state the same facts in every package: whether the manifest
+ * declares a config table and which tables the package owns. The components
+ * render one fixed sentence, so the accent colour stays the only difference
+ * between them.
+ */
+
+.module-fact {
+  display: flex;
+  align-items: center;
+  margin-block: 16px 24px;
+  padding: 16px 20px;
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+/*
+ * 阅读行宽规则给正文段落限宽并左缩进，卡片内的段落要占满卡片。
+ */
+.module-fact .module-fact__text {
+  margin: 0;
+  max-inline-size: none;
+  color: var(--md-sys-color-on-surface);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.module-fact__text code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+  font-size: 13px;
+}
+
+/* 模块级别名：对整节命令生效，写在章节标题下，不在每条命令上重复 */
+.module-alias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 16px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.module-alias__label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-inline-end: 2px;
+}
+
+.module-alias__icon {
+  --m3e-icon-size: 15px;
+  opacity: 0.85;
+}
+
+.akari-prose .module-alias code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
   font-size: 13px;
 }

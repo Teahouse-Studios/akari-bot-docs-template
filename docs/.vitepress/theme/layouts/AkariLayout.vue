@@ -21,6 +21,7 @@ import { provideAkariLocaleDialog } from "../composables/useLocaleDialog";
 import { useAkariLocales } from "../composables/useLocales";
 import { useHero } from "../composables/useHero";
 import { useHeroColor } from "../composables/useHeroColor";
+import { useLogoColor } from "../composables/useLogoColor";
 import {
   providePagePattern,
   useContentLight,
@@ -54,11 +55,19 @@ watchEffect(() => applyFonts(config.value.fonts));
 const { homeHref, locales } = useAkariLocales();
 const hero = useHero();
 const heroColor = useHeroColor(hero, resolvedScheme);
+const logoColor = useLogoColor(computed(() => config.value.appBar.logo ?? ""));
 // The hidden pattern on the page's surfaces, and the light the pointer moves.
 const pattern = providePagePattern(hero);
 
-// A hero page wears its image's colors; elsewhere the reader's choice holds.
-const themeColor = computed(() => heroColor.value ?? settings.color);
+// A hero page wears its image's colors. Elsewhere the reader's own color
+// wins, and the logo's dominant color seeds the theme until they pick one.
+const themeColor = computed(
+  () =>
+    heroColor.value ??
+    (settings.color === config.value.settings.defaults.color
+      ? logoColor.value ?? settings.color
+      : settings.color),
+);
 // m3e follows the system until the page knows the reader's mode.
 const themeScheme = computed(() => resolvedScheme.value ?? "auto");
 const themeElement = ref<HTMLElement | null>(null);

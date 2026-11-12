@@ -41,8 +41,8 @@ const logo = computed(() => {
 
 .akari-title__logo {
   flex: none;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 36px;
   object-fit: contain;
   transition:
     width var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
@@ -68,8 +68,8 @@ const logo = computed(() => {
   }
 
   .akari-title__logo {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
   }
 }
 

@@ -6,7 +6,7 @@ import { useNavGroupState } from "../../composables/useNavGroupState";
 import { usePageHref } from "../../composables/usePageHref";
 import { useSidebar } from "../../composables/useSidebar";
 import { nextLayoutFrame, whenAkariReady } from "../../ready";
-import { findFirstLink, isExternalLink } from "../../sidebar";
+import { findFirstLink, isExternalLink, sidebarIcon } from "../../sidebar";
 import type { AkariSidebarItem } from "../../types";
 
 interface NavMenuItemElement extends HTMLElement {
@@ -17,9 +17,10 @@ interface NavMenuItemElement extends HTMLElement {
 
 const props = defineProps<{
   item: AkariSidebarItem;
-  // Only the first level of a menu carries icons, mirroring the rail.
-  // Vue casts an absent boolean prop to `false`, so nested items stay
-  // text-only without passing anything down.
+  // A nested item shows the icon it declares; only the top level falls
+  // back to the category icon, mirroring the rail. Vue casts an absent
+  // boolean prop to `false`, so nested items stay text-only without
+  // passing anything down.
   showIcon?: boolean;
 }>();
 
@@ -31,7 +32,7 @@ const leafElement = ref<NavMenuItemElement | null>(null);
 
 const hasChildren = computed(() => (props.item.items?.length ?? 0) > 0);
 const icon = computed(() =>
-  props.showIcon ? (props.item.icon ?? "category") : undefined,
+  sidebarIcon(props.item, props.showIcon ? "category" : undefined),
 );
 // A group's identity across the drawers' rebuilds: its name and first page.
 const groupKey = computed(

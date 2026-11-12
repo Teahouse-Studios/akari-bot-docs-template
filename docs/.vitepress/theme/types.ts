@@ -417,6 +417,12 @@ export interface ResolvedAkariLanguage {
 }
 
 export interface AkariThemeConfig {
+  /**
+   * Prefix of the documented commands, e.g. `~`. The docs engine fills it from
+   * the instance configuration; content components that print a command line
+   * read it from here.
+   */
+  commandPrefix?: string;
   appBar?: AkariAppBarConfig;
   sidebar?: AkariSidebarConfig;
   settings?: AkariSettingsConfig;
@@ -527,6 +533,8 @@ export interface ResolvedSidebarConfig {
 export interface ResolvedAkariThemeConfig {
   /** Language the interface strings resolved for, e.g. `zh-CN`. */
   lang: string;
+  /** Prefix of the documented commands; empty when the site has none. */
+  commandPrefix: string;
   messages: AkariMessages;
   appBar: {
     title: string;

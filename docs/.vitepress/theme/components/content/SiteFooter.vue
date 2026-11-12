@@ -156,8 +156,8 @@ function hrefFor(link: string): string {
 
 .akari-site-footer__logo {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 48px;
   object-fit: contain;
 }
 

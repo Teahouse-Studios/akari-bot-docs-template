@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "vitepress-akari-theme-docs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "theme_dir": "docs/.vitepress/theme",
   "vitepress": "2.0.0-alpha.21",
   "node": ">=22.12.0",

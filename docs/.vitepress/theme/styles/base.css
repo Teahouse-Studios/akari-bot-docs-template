@@ -70,6 +70,14 @@ m3e-app-bar {
   --m3e-app-bar-container-color: var(--md-sys-color-surface-container-low);
 }
 
+/* From medium windows up the rail carries the mark, so the title sits closer. */
+@media (min-width: 960px) {
+  m3e-app-bar {
+    --m3e-app-bar-padding-left: 0px;
+    --m3e-app-bar-small-heading-padding-left: 0px;
+  }
+}
+
 /*
  * Edge of the document and footer surfaces. At rest they have none; once the
  * content slides under the app bar a faint outline fades in. The strength is

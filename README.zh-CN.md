@@ -53,7 +53,10 @@ source = "file:/path/to/akari-bot-docs-template"
 以下组件已全局注册，所有 Markdown 页面均可直接使用：
 
 - `ModuleMeta`：模块名、别名、能力、权限与平台标记。
+- `ModuleConfig`：配置表与配置文件路径；未声明配置表时说明模块没有配置项。
+- `ModuleData`：模块拥有的数据表与表结构位置；没有表时说明不保存数据。
+- `ModuleAlias`：模块级别名；写在章节标题下，对该节所有命令生效。
 - `NoticeBox`：提示框，类型取 `info`、`tip`、`warning`、`danger`、`example`、`help`。
-- `CommandUsage`：命令用法、权限标记与选项表。
+- `CommandUsage`：权限与别名标记、带站点命令前缀的用法行、参数清单，以及以列表呈现的选项；`params` 逐项说明用法里的 `<占位符>`（尖括号必填、方括号可选，由用法行自动判定），前缀取自主题配置的 `commandPrefix`，`prefix` 可覆盖，`type` 只在正则等非前缀触发方式上设置。
 
 组件使用 M3E 颜色令牌，界面会跟随读者的种子色、明暗模式与对比度设置。

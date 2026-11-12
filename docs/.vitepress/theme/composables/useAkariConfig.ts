@@ -45,6 +45,14 @@ export function provideAkariConfig(): ComputedRef<ResolvedAkariThemeConfig> {
   return config;
 }
 
+/**
+ * Same as `useAkariConfig`, for components that may render outside the layout,
+ * such as a page rendered on its own in a test.
+ */
+export function useOptionalAkariConfig(): ComputedRef<ResolvedAkariThemeConfig> | null {
+  return inject(akariConfigKey, null);
+}
+
 export function useAkariConfig(): ComputedRef<ResolvedAkariThemeConfig> {
   const config = inject(akariConfigKey);
 

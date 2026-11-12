@@ -160,6 +160,7 @@ export function resolveAkariConfig(
 
   return {
     lang: site.lang?.trim() || DEFAULT_LANGUAGE,
+    commandPrefix: typeof akari.commandPrefix === "string" ? akari.commandPrefix : "",
     messages,
     appBar: {
       title: appBar.title ?? site.title ?? "Documentation",

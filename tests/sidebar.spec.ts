@@ -12,6 +12,7 @@ import {
   normalizePath,
   pageLink,
   resolveSidebarItems,
+  sidebarIcon,
 } from "../docs/.vitepress/theme/sidebar";
 import type {
   AkariSidebarItem,
@@ -315,5 +316,21 @@ describe("pageLink", () => {
 
   it("changes nothing with clean URLs on", () => {
     expect(pageLink("/theme/layout", true)).toBe("/theme/layout");
+  });
+});
+
+describe("sidebarIcon", () => {
+  it("prefers an item's own icon at any depth", () => {
+    expect(sidebarIcon({ text: "Gaming", icon: "music_note" })).toBe(
+      "music_note",
+    );
+    expect(
+      sidebarIcon({ text: "Gaming", icon: "music_note" }, "category"),
+    ).toBe("music_note");
+  });
+
+  it("falls back only where the caller passes one", () => {
+    expect(sidebarIcon({ text: "模块" }, "category")).toBe("category");
+    expect(sidebarIcon({ text: "alpha" })).toBeUndefined();
   });
 });

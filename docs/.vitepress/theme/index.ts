@@ -3,6 +3,9 @@ import DefaultTheme from "vitepress/theme-without-fonts";
 
 import { provideAkariSiteData } from "./composables/useLocales";
 import CommandUsage from "./components/content/CommandUsage.vue";
+import ModuleAlias from "./components/content/ModuleAlias.vue";
+import ModuleConfig from "./components/content/ModuleConfig.vue";
+import ModuleData from "./components/content/ModuleData.vue";
 import ModuleMeta from "./components/content/ModuleMeta.vue";
 import NoticeBox from "./components/content/NoticeBox.vue";
 import Layout from "./layouts/AkariLayout.vue";
@@ -23,10 +26,13 @@ export default {
     app.component("ModuleMeta", ModuleMeta);
     app.component("NoticeBox", NoticeBox);
     app.component("CommandUsage", CommandUsage);
+    app.component("ModuleConfig", ModuleConfig);
+    app.component("ModuleData", ModuleData);
+    app.component("ModuleAlias", ModuleAlias);
   },
 } satisfies Theme;
 
-export { CommandUsage, ModuleMeta, NoticeBox };
+export { CommandUsage, ModuleAlias, ModuleConfig, ModuleData, ModuleMeta, NoticeBox };
 export * from "./types";
 export { defineAkariConfig, defineAkariThemeConfig } from "./config";
 export { defineAkariLanguage } from "./define";

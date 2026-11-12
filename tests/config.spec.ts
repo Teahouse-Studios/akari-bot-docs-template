@@ -18,6 +18,20 @@ function resolve(akari: Record<string, unknown>) {
   } as Parameters<typeof resolveAkariConfig>[0]);
 }
 
+describe("resolveAkariConfig command prefix", () => {
+  it("站点未配置时为空串", () => {
+    expect(resolveAkariConfig().commandPrefix).toBe("");
+  });
+
+  it("沿用站点配置的前缀", () => {
+    expect(resolve({ commandPrefix: "!" }).commandPrefix).toBe("!");
+  });
+
+  it("忽略非字符串取值", () => {
+    expect(resolve({ commandPrefix: 3 }).commandPrefix).toBe("");
+  });
+});
+
 describe("resolveAkariConfig defaults", () => {
   it("fills every group with its defaults", () => {
     const config = resolveAkariConfig();

@@ -155,6 +155,17 @@ export function isTabGroup(item: AkariSidebarItem): boolean {
   return item.tabs?.some((tab) => !!tab.link) ?? false;
 }
 
+/**
+ * The icon an item shows: its own wherever it defines one, otherwise the
+ * caller's fallback for that depth.
+ */
+export function sidebarIcon(
+  item: AkariSidebarItem,
+  fallback?: string,
+): string | undefined {
+  return item.icon ?? fallback;
+}
+
 export function hasActiveItem(
   item: AkariSidebarItem,
   currentPath: string,
