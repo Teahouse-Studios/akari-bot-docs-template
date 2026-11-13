@@ -343,6 +343,47 @@ export interface AkariMessages {
   searchBackendMissing: string;
   /** The loading bar's name for assistive technology. */
   loadingLabel: string;
+  /** Name of a command conversation example. */
+  chatExample: string;
+  /** Resets a conversation example to its initial transcript. */
+  chatExampleReset: string;
+  /** Placeholder bubble while a button reply loads. */
+  chatExampleLoading: string;
+  /** Status after a dismiss button removes its reply group. */
+  chatExampleDeleted: string;
+  /** Appended when a button reply contains images that fail to load. */
+  chatExampleImageError: string;
+  /** Status after a button reply has been appended. */
+  chatExampleResultsLoaded: string;
+  /** Status after resetting a conversation example. */
+  chatExampleResetDone: string;
+  /** Separator between parts of a conversation. */
+  chatExampleDivider: string;
+  /** Image button label. Placeholders: `{alt}`. */
+  chatExampleViewImage: string;
+  /** Image button label when the image has no description. */
+  chatExampleViewImageNoAlt: string;
+  /** Tooltip of an image thumbnail. */
+  chatExampleViewLarge: string;
+  /** Name of the button row below a message. */
+  chatExampleActions: string;
+  /** Dismiss button label. */
+  chatExampleDismiss: string;
+  /** Fallback label for a button without one. */
+  chatExampleButton: string;
+  /** Image viewer dialog label. Placeholders: `{alt}`. */
+  chatExamplePreview: string;
+  /** Image viewer dialog label when the image has no description. */
+  chatExamplePreviewNoAlt: string;
+  chatExampleZoomOut: string;
+  chatExampleZoomIn: string;
+  chatExampleResetView: string;
+  /** Placeholders: `{percentage}`. */
+  chatExampleZoomStatus: string;
+  chatExampleRotateLeft: string;
+  chatExampleRotateRight: string;
+  chatExampleClosePreview: string;
+  chatExampleClose: string;
 }
 
 /**
@@ -423,6 +464,10 @@ export interface AkariThemeConfig {
    * read it from here.
    */
   commandPrefix?: string;
+  /**
+   * 机器人头像，用于命令对话示例；留空时组件显示机器人图标。
+   */
+  chatAvatar?: string;
   appBar?: AkariAppBarConfig;
   sidebar?: AkariSidebarConfig;
   settings?: AkariSettingsConfig;
@@ -535,6 +580,8 @@ export interface ResolvedAkariThemeConfig {
   lang: string;
   /** Prefix of the documented commands; empty when the site has none. */
   commandPrefix: string;
+  /** 机器人头像；空串表示未配置。 */
+  chatAvatar: string;
   messages: AkariMessages;
   appBar: {
     title: string;

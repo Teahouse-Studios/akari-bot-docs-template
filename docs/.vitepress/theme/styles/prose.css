@@ -36,7 +36,7 @@
 }
 
 /* Components render their own flow content at the full container width. */
-.akari-prose .command-usage {
+.akari-prose :is(.command-usage, .chat-example) {
   max-inline-size: var(--akari-doc-text-measure, 760px);
   margin-inline-start: var(--akari-doc-text-offset, 22px);
 }
@@ -47,7 +47,7 @@
 }
 
 /* Nested flow content fills its container instead of the article measure. */
-.akari-prose :is(li, blockquote, .custom-block, .notice-box, td, th) :is(
+.akari-prose :is(li, blockquote, .custom-block, .notice-box, .chat-example, td, th) :is(
   p,
   ul,
   ol,

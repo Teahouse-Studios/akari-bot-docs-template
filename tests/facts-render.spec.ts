@@ -72,6 +72,16 @@ describe("module fact components", () => {
     expect(html).toContain("尖括号表示必填参数");
   });
 
+  it("CommandUsage 渲染平台限制徽章", async () => {
+    const html = await render(CommandUsage, { usage: "about permissions", platforms: "QQBot" });
+    expect(html).toContain("meta-badge--platform");
+    expect(html).toContain("仅 QQBot");
+
+    const excluded = await render(CommandUsage, { usage: "restart", excluded: "Web" });
+    expect(excluded).toContain("meta-badge--platform-excluded");
+    expect(excluded).toContain("Web 不可用");
+  });
+
   it("CommandUsage 在含无参数用法时逐行排列", async () => {
     const stacked = await render(CommandUsage, { usage: ["wiki", "wiki <pagename>"], prefix: "~" });
     expect(stacked).toContain("command-usage__usage--stacked");

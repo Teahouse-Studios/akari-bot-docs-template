@@ -18,8 +18,19 @@ const props = withDefaults(
     options?: CommandOption[]
     params?: ParamSpec
     prefix?: string
+    platforms?: string | string[]
+    excluded?: string | string[]
   }>(),
-  { permission: "", type: "", aliases: () => [], options: () => [], params: () => [], prefix: "" },
+  {
+    permission: "",
+    type: "",
+    aliases: () => [],
+    options: () => [],
+    params: () => [],
+    prefix: "",
+    platforms: "",
+    excluded: "",
+  },
 )
 
 const akari = useOptionalAkariConfig()
@@ -84,7 +95,7 @@ function segmentClass(segment: UsageSegment): Record<string, boolean> {
 const permissionLabels: Record<string, string> = {
   public: "公开",
   admin: "仅管理员",
-  superuser: "仅超级用户",
+  superuser: "仅超级用户授权使用",
   base_superuser: "仅基础超级用户",
 }
 
@@ -110,11 +121,51 @@ const typeIcons: Record<string, string> = {
   regex: "asterisk",
   event: "bolt",
 }
+
+const platformLabels: Record<string, string> = {
+  QQ: "QQ",
+  QQBot: "QQBot",
+  "QQ|Group": "QQ 群聊",
+  "QQ|Private": "QQ 私聊",
+  "QQBot|Group": "QQBot 群",
+  "QQBot|Guild": "QQBot 频道",
+  "Discord|Channel": "Discord 频道",
+  Discord: "Discord",
+  Telegram: "Telegram",
+  KOOK: "KOOK",
+  Matrix: "Matrix",
+  Web: "Web",
+  Console: "控制台",
+}
+
+function toList(value?: string | string[]): string[] {
+  if (!value) return []
+  return (Array.isArray(value) ? value : [value]).map((item) => item.trim()).filter(Boolean)
+}
+
+function platformText(values: string[]): string {
+  return values.map((value) => platformLabels[value] || value).join(" / ")
+}
+
+const platformList = computed(() => toList(props.platforms))
+
+const excludedList = computed(() => toList(props.excluded))
+
+const platformTextValue = computed(() => platformText(platformList.value))
+
+const excludedTextValue = computed(() => platformText(excludedList.value))
+
+const hasMeta = computed(
+  () =>
+    Boolean(props.type || props.permission || props.aliases.length) ||
+    platformList.value.length > 0 ||
+    excludedList.value.length > 0,
+)
 </script>
 
 <template>
   <section class="command-usage">
-    <p v-if="props.type || props.permission || props.aliases.length" class="command-usage__meta">
+    <p v-if="hasMeta" class="command-usage__meta">
       <span v-if="props.type" class="meta-badge" :class="`meta-badge--${props.type}`">
         <m3e-icon class="meta-badge__icon" :name="typeIcons[props.type] || 'terminal'"></m3e-icon>
         {{ typeLabels[props.type] || props.type }}
@@ -129,6 +180,17 @@ const typeIcons: Record<string, string> = {
           :name="permissionIcons[props.permission] || 'shield'"
         ></m3e-icon>
         {{ permissionLabels[props.permission] || props.permission }}
+      </span>
+      <span v-if="platformList.length" class="meta-badge meta-badge--platform">
+        <m3e-icon class="meta-badge__icon" name="devices"></m3e-icon>
+        仅 {{ platformTextValue }}
+      </span>
+      <span
+        v-if="excludedList.length"
+        class="meta-badge meta-badge--platform meta-badge--platform-excluded"
+      >
+        <m3e-icon class="meta-badge__icon" name="block"></m3e-icon>
+        {{ excludedTextValue }} 不可用
       </span>
       <span v-if="props.aliases.length" class="meta-badge meta-badge--alias">
         <m3e-icon class="meta-badge__icon" name="sell"></m3e-icon>

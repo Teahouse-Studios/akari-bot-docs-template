@@ -161,6 +161,7 @@ export function resolveAkariConfig(
   return {
     lang: site.lang?.trim() || DEFAULT_LANGUAGE,
     commandPrefix: typeof akari.commandPrefix === "string" ? akari.commandPrefix : "",
+    chatAvatar: typeof akari.chatAvatar === "string" ? akari.chatAvatar : "",
     messages,
     appBar: {
       title: appBar.title ?? site.title ?? "Documentation",

@@ -32,6 +32,20 @@ describe("resolveAkariConfig command prefix", () => {
   });
 });
 
+describe("resolveAkariConfig chat avatar", () => {
+  it("站点未配置时为空串", () => {
+    expect(resolveAkariConfig().chatAvatar).toBe("");
+  });
+
+  it("沿用站点配置的头像路径", () => {
+    expect(resolve({ chatAvatar: "/site-avatar.jpg" }).chatAvatar).toBe("/site-avatar.jpg");
+  });
+
+  it("忽略非字符串取值", () => {
+    expect(resolve({ chatAvatar: 3 }).chatAvatar).toBe("");
+  });
+});
+
 describe("resolveAkariConfig defaults", () => {
   it("fills every group with its defaults", () => {
     const config = resolveAkariConfig();
