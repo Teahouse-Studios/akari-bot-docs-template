@@ -60,6 +60,15 @@ describe("chatBubbles", () => {
     ).toEqual([{ role: "bot", text: "显式消息" }]);
   });
 
+  it("只有显式 markdown 消息保留 markdown 标记", () => {
+    expect(
+      chatBubbles([], [{ role: "bot", text: "**成功**", markdown: true }]),
+    ).toEqual([{ role: "bot", text: "**成功**", markdown: true }]);
+    expect(chatBubbles(["机器人：**成功**"])).toEqual([
+      { role: "bot", text: "**成功**" },
+    ]);
+  });
+
   it("尾部图片另起气泡，文本留在原气泡", () => {
     expect(
       chatBubbles(["机器人：搜索结果", "![苔藓块](moss.png)"]),
@@ -225,6 +234,57 @@ describe("ChatExample", () => {
     expect(html).toContain('data-name="person"');
   });
 
+  it("只把显式 markdown 消息按 Markdown 渲染", async () => {
+    const html = await renderChat({
+      messages: [
+        {
+          role: "bot",
+          markdown: true,
+          text: "**成功**，见 [文档](https://example.com)。\n- 第一项\n- 第二项\n\n```js\nconst answer = 42;\n```",
+        },
+      ],
+    });
+    expect(html).toContain("<strong>成功</strong>");
+    expect(html).toContain('href="https://example.com"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noreferrer noopener"');
+    expect(html).toContain("<ul>");
+    expect(html).toContain("<pre><code class=\"language-js\">");
+  });
+
+  it("log 简写与未标记消息按纯文本渲染", async () => {
+    const logHtml = await renderChat({
+      log: ["机器人：**成功**，见 [文档](https://example.com)。"],
+    });
+    expect(logHtml).toContain("**成功**");
+    expect(logHtml).toContain("[文档](https://example.com)");
+    expect(logHtml).not.toContain("<strong>");
+
+    const messageHtml = await renderChat({
+      messages: [{ role: "bot", text: "**成功**" }],
+    });
+    expect(messageHtml).toContain("**成功**");
+    expect(messageHtml).not.toContain("<strong>");
+  });
+
+  it("显式 markdown 消息中的图片保留 natural 与查看入口", async () => {
+    const html = await renderChat({
+      messages: [{ role: "bot", markdown: true, text: "![泥土](/images/dirt.jpg){natural}" }],
+    });
+    expect(html).toContain("chat-example__image--natural");
+    expect(html).toContain('data-chat-image');
+    expect(html).toContain('data-natural="1"');
+    expect(html).toContain('src="/images/dirt.jpg"');
+  });
+
+  it("不执行显式 markdown 消息中的原始 HTML", async () => {
+    const html = await renderChat({
+      messages: [{ role: "bot", markdown: true, text: "<script>alert(1)</script>" }],
+    });
+    expect(html).not.toContain("<script>alert(1)</script>");
+    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+  });
+
   it("没有头像时退回机器人图标", async () => {
     const html = await renderChat({ log: ["机器人：你好"] });
     expect(html).toContain('data-name="smart_toy"');
@@ -269,6 +329,25 @@ describe("ChatExample", () => {
     });
     expect(html).toContain("chat-example__row--user");
     expect(html).not.toContain("chat-example__buttons");
+  });
+
+  it("渲染机器人卡片消息", async () => {
+    const html = await renderChat({
+      log: ["用户：~wiki 石头"],
+      card: {
+        title: "石头",
+        description: "石头（Stone）是在主世界中大量存在的方块。",
+        url: "https://zh.minecraft.wiki/w/石头",
+        image: "wiki-card-stone.png",
+        domain: "zh.minecraft.wiki",
+      },
+    });
+    expect(html).toContain("chat-example__row--card");
+    expect(html).toContain("wiki-card__title");
+    expect(html).toContain("石头（Stone）是在主世界中大量存在的方块。");
+    expect(html).toContain("zh.minecraft.wiki");
+    expect(html).toContain('data-name="link"');
+    expect(html).toContain("wiki-card-stone.png");
   });
 
   it("在气泡对应位置渲染图片缩略图", async () => {

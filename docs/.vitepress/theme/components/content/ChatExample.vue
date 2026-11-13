@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import * as vitepress from "vitepress";
+import MarkdownIt from "markdown-it";
 
 import { formatMessage } from "../../i18n";
 import { AKARI_ENGLISH } from "../../i18n/languages";
@@ -12,9 +13,11 @@ import {
   chatSegments,
   type ChatBubble,
   type ChatButton,
+  type ChatCard,
   type ChatImage,
   type ChatMessage,
 } from "./chat";
+import WikiCard from "./WikiCard.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -30,8 +33,21 @@ const props = withDefaults(
     buttons?: ChatButton[];
     /** 固定示例内所有图片的宽度（像素），用于同一气泡内多张图需要对齐的场景。 */
     imageWidth?: number;
+    /** 机器人回复的卡片消息，渲染在对话末尾。 */
+    card?: ChatCard | null;
+    /** 点击任一按钮后禁用同组其余按钮，适用于一次性的验证选择。 */
+    oneShot?: boolean;
   }>(),
-  { log: () => [], messages: () => [], caption: "", botAvatar: "", buttons: () => [], imageWidth: 0 },
+  {
+    log: () => [],
+    messages: () => [],
+    caption: "",
+    botAvatar: "",
+    buttons: () => [],
+    imageWidth: 0,
+    card: null,
+    oneShot: false,
+  },
 );
 
 const akari = useOptionalAkariConfig();
@@ -44,6 +60,88 @@ function t(
   return formatMessage(i18nMessages.value[key], params);
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[character] ?? character,
+  );
+}
+
+/**
+ * 气泡内的 Markdown 渲染器：禁用原始 HTML，链接只补全外链的安全属性；
+ * 图片改写成带查看叠层标记的按钮，沿用缩略图与 natural 的现有行为。
+ */
+function createMarkdownRenderer(): MarkdownIt {
+  const md = new MarkdownIt({
+    html: false,
+    linkify: true,
+    breaks: true,
+    typographer: false,
+  });
+  md.core.ruler.after("inline", "chat-natural-image", (state) => {
+    for (const token of state.tokens) {
+      const children = token.children;
+      if (!children) {
+        continue;
+      }
+      for (let index = 0; index < children.length; index += 1) {
+        const child = children[index];
+        const next = children[index + 1];
+        if (
+          child.type !== "image" ||
+          next?.type !== "text" ||
+          !next.content.startsWith("{natural}")
+        ) {
+          continue;
+        }
+        child.meta = { ...(child.meta ?? {}), natural: true };
+        next.content = next.content.slice("{natural}".length);
+        if (!next.content) {
+          children.splice(index + 1, 1);
+        }
+      }
+    }
+  });
+  md.renderer.rules.link_open = (tokens, index, options, env, self) => {
+    const token = tokens[index];
+    if (isExternalLink(token.attrGet("href") ?? "")) {
+      token.attrSet("target", "_blank");
+      token.attrSet("rel", "noreferrer noopener");
+    }
+    return self.renderToken(tokens, index, options);
+  };
+  md.renderer.rules.image = (tokens, index) => {
+    const token = tokens[index];
+    const src = token.attrGet("src") ?? "";
+    const alt = token.content;
+    const natural = token.meta?.natural === true;
+    const label = alt
+      ? t("chatExampleViewImage", { alt })
+      : t("chatExampleViewImageNoAlt");
+    return (
+      `<button type="button" class="chat-example__image${
+        natural ? " chat-example__image--natural" : ""
+      }" data-chat-image data-src="${escapeHtml(src)}" data-alt="${escapeHtml(alt)}"${
+        natural ? ' data-natural="1"' : ""
+      } aria-label="${escapeHtml(label)}" title="${escapeHtml(
+        t("chatExampleViewLarge"),
+      )}"><img src="${escapeHtml(
+        imageSrc(src),
+      )}" alt="${escapeHtml(alt)}" loading="lazy" draggable="false" />` +
+      '<span class="chat-example__image-hint" aria-hidden="true"><m3e-icon name="zoom_in"></m3e-icon></span></button>'
+    );
+  };
+  return md;
+}
+
+const markdown = createMarkdownRenderer();
 const bubbles = computed(() => chatBubbles(props.log, props.messages));
 
 const imageWidthStyle = computed<Record<string, string> | undefined>(() =>
@@ -51,6 +149,16 @@ const imageWidthStyle = computed<Record<string, string> | undefined>(() =>
     ? { "--chat-example-image-width": `${props.imageWidth}px` }
     : undefined,
 );
+
+const cardView = computed<ChatCard | null>(() => {
+  if (!props.card) {
+    return null;
+  }
+  return {
+    ...props.card,
+    ...(props.card.image ? { image: imageSrc(props.card.image) } : {}),
+  };
+});
 
 interface ActionGroup {
   id: number;
@@ -165,6 +273,10 @@ const rotationTransform = computed(
 
 function segments(text: string) {
   return chatSegments(text);
+}
+
+function renderMarkdown(text: string): string {
+  return markdown.render(text).trim();
 }
 
 function isImageOnly(text: string): boolean {
@@ -309,11 +421,38 @@ async function animateOpen(trigger: HTMLElement | null): Promise<void> {
   await morph.finished.catch(() => undefined);
 }
 
-function openViewer(image: ChatImage, event: MouseEvent): void {
-  lastTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+function openViewer(image: ChatImage, trigger: EventTarget | null): void {
+  lastTrigger = trigger instanceof HTMLElement ? trigger : null;
   resetView();
   viewer.value = image;
   void animateOpen(lastTrigger);
+}
+
+function onImageClick(image: ChatImage, event: Event): void {
+  openViewer(image, event.currentTarget);
+}
+
+function onBubbleClick(event: MouseEvent): void {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const trigger = target.closest<HTMLButtonElement>("[data-chat-image]");
+  if (
+    !trigger ||
+    !(event.currentTarget instanceof HTMLElement) ||
+    !event.currentTarget.contains(trigger)
+  ) {
+    return;
+  }
+  const src = trigger.dataset.src;
+  if (!src) {
+    return;
+  }
+  event.preventDefault();
+  const alt = trigger.dataset.alt ?? "";
+  const natural = trigger.dataset.natural === "1";
+  openViewer({ src, alt, ...(natural ? { natural: true } : {}) }, trigger);
 }
 
 async function closeViewer(): Promise<void> {
@@ -420,6 +559,13 @@ async function runAction(
   }
   const token = ++actionRun;
   const started = Date.now();
+  if (props.oneShot) {
+    const group = groupId === 0 ? null : groups.value.find((item) => item.id === groupId);
+    const siblings = groupId === 0 ? props.buttons : (group?.buttons ?? []);
+    const next = new Set(completed.value);
+    siblings.forEach((_, sibling) => next.add(actionKey(groupId, sibling)));
+    completed.value = next;
+  }
   busy.value = true;
   pending.value = true;
   pendingLabel.value = button.loading || t("chatExampleLoading");
@@ -576,7 +722,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section
-    v-if="bubbles.length"
+    v-if="bubbles.length || cardView"
     class="chat-example"
     :class="{ 'chat-example--fixed-image-width': props.imageWidth > 0 }"
     :style="imageWidthStyle"
@@ -630,33 +776,41 @@ onBeforeUnmount(() => {
         <div
           class="chat-example__bubble"
           :class="{ 'chat-example__bubble--image': isImageOnly(bubble.text) }"
+          @click="onBubbleClick"
         >
-          <template v-for="(segment, segmentIndex) in segments(bubble.text)" :key="segmentIndex">
-            <code v-if="'code' in segment">{{ segment.code }}</code>
-            <button
-              v-else-if="'image' in segment"
-              type="button"
-              class="chat-example__image"
-              :class="{ 'chat-example__image--natural': segment.image.natural }"
-              :aria-label="
-                segment.image.alt
-                  ? t('chatExampleViewImage', { alt: segment.image.alt })
-                  : t('chatExampleViewImageNoAlt')
-              "
-              :title="t('chatExampleViewLarge')"
-              @click="openViewer(segment.image, $event)"
-            >
-              <img
-                :src="imageSrc(segment.image.src)"
-                :alt="segment.image.alt"
-                loading="lazy"
-                draggable="false"
-              />
-              <span class="chat-example__image-hint" aria-hidden="true">
-                <m3e-icon name="zoom_in"></m3e-icon>
-              </span>
-            </button>
-            <template v-else>{{ segment.text }}</template>
+          <div
+            v-if="bubble.markdown"
+            class="chat-example__markdown"
+            v-html="renderMarkdown(bubble.text)"
+          ></div>
+          <template v-else>
+            <template v-for="(segment, segmentIndex) in segments(bubble.text)" :key="segmentIndex">
+              <code v-if="'code' in segment">{{ segment.code }}</code>
+              <button
+                v-else-if="'image' in segment"
+                type="button"
+                class="chat-example__image"
+                :class="{ 'chat-example__image--natural': segment.image.natural }"
+                :aria-label="
+                  segment.image.alt
+                    ? t('chatExampleViewImage', { alt: segment.image.alt })
+                    : t('chatExampleViewImageNoAlt')
+                "
+                :title="t('chatExampleViewLarge')"
+                @click="onImageClick(segment.image, $event)"
+              >
+                <img
+                  :src="imageSrc(segment.image.src)"
+                  :alt="segment.image.alt"
+                  loading="lazy"
+                  draggable="false"
+                />
+                <span class="chat-example__image-hint" aria-hidden="true">
+                  <m3e-icon name="zoom_in"></m3e-icon>
+                </span>
+              </button>
+              <template v-else>{{ segment.text }}</template>
+            </template>
           </template>
         </div>
         <span
@@ -691,6 +845,17 @@ onBeforeUnmount(() => {
         </button>
       </div>
     </template>
+
+    <div
+      v-if="cardView"
+      class="chat-example__row chat-example__row--bot chat-example__row--card"
+    >
+      <span class="chat-example__avatar chat-example__avatar--bot" aria-hidden="true">
+        <img v-if="avatar" :src="avatar" alt="" loading="lazy" />
+        <m3e-icon v-else name="smart_toy"></m3e-icon>
+      </span>
+      <WikiCard v-bind="cardView" />
+    </div>
 
     <div
       v-if="pending"

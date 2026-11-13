@@ -785,6 +785,99 @@
   font-size: 13px;
 }
 
+/* 气泡内的 Markdown：保持消息的紧凑排版，代码块与宽表在气泡内滚动。 */
+.chat-example__markdown {
+  white-space: normal;
+}
+
+.chat-example__markdown > :first-child {
+  margin-block-start: 0;
+}
+
+.chat-example__markdown > :last-child {
+  margin-block-end: 0;
+}
+
+.chat-example__markdown p {
+  margin: 0 0 6px;
+}
+
+.chat-example__markdown p:last-child {
+  margin-block-end: 0;
+}
+
+.chat-example__markdown a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-example__markdown ul,
+.chat-example__markdown ol {
+  margin: 4px 0 6px;
+  padding-inline-start: 20px;
+}
+
+.chat-example__markdown li + li {
+  margin-block-start: 2px;
+}
+
+.chat-example__markdown blockquote {
+  margin: 6px 0;
+  padding-inline-start: 10px;
+  border-inline-start: 3px solid color-mix(in srgb, currentColor 28%, transparent);
+  color: color-mix(in srgb, currentColor 78%, transparent);
+}
+
+.chat-example__markdown pre {
+  max-inline-size: 100%;
+  margin: 6px 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.chat-example__markdown pre code {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+}
+
+.chat-example__markdown table {
+  display: block;
+  max-inline-size: 100%;
+  margin: 6px 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.chat-example__markdown th,
+.chat-example__markdown td {
+  padding: 4px 7px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  text-align: start;
+}
+
+.chat-example__markdown h1,
+.chat-example__markdown h2,
+.chat-example__markdown h3,
+.chat-example__markdown h4 {
+  margin: 8px 0 4px;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.chat-example__markdown hr {
+  margin: 8px 0;
+  border: 0;
+  border-block-start: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
 @media (max-width: 640px) {
   .chat-example__avatar {
     inline-size: 30px;
@@ -857,7 +950,7 @@
 }
 
 .akari-prose .chat-example__image--natural img {
-  max-block-size: none;
+  max-block-size: min(600px, 70vh);
   margin: 0;
 }
 
@@ -881,6 +974,106 @@
 @media (max-width: 640px) {
   .chat-example.chat-example--fixed-image-width .chat-example__bubble--image {
     max-inline-size: calc(100% - 40px);
+  }
+}
+
+
+/* 卡片消息：模仿 QQ 的图文卡片，用于 Wiki 的 card 样式。 */
+.chat-example__row--card {
+  align-items: flex-start;
+}
+
+.chat-example__row--card .wiki-card {
+  flex: 0 1 360px;
+  min-inline-size: 0;
+}
+
+.wiki-card {
+  display: block;
+  padding: 14px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container-lowest, var(--md-sys-color-surface-container-high));
+  color: var(--md-sys-color-on-surface);
+  text-decoration: none;
+}
+
+/* 正文链接的默认圆角与颜色会覆盖卡片，按卡片语义提升优先级。 */
+.akari-prose .wiki-card {
+  border-radius: 16px;
+  color: var(--md-sys-color-on-surface);
+}
+
+.wiki-card__main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.wiki-card__copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-inline-size: 0;
+}
+
+.wiki-card__title {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.wiki-card__description {
+  display: block;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.akari-prose .wiki-card__image,
+.wiki-card__image {
+  flex: none;
+  inline-size: 76px;
+  block-size: 76px;
+  margin: 0;
+  border-radius: 4px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.wiki-card__footer {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-block-start: 12px;
+  padding-block-start: 8px;
+  border-block-start: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.wiki-card__footer m3e-icon {
+  --m3e-icon-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .chat-example__row--card .wiki-card {
+    flex-basis: calc(100% - 40px);
+  }
+
+  .wiki-card {
+    padding: 12px;
+  }
+
+  .akari-prose .wiki-card__image,
+  .wiki-card__image {
+    inline-size: 64px;
+    block-size: 64px;
   }
 }
 
@@ -1050,7 +1243,7 @@
   }
 
   .akari-prose .chat-example__image--natural img {
-    max-block-size: none;
+    max-block-size: min(480px, 60vh);
   }
 
   .chat-example__divider {

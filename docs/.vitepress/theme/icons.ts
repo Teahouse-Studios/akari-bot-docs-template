@@ -22,6 +22,7 @@ import "@m3e/icons/outlined/image";
 import "@m3e/icons/outlined/integration_instructions";
 import "@m3e/icons/outlined/keyboard_arrow_up";
 import "@m3e/icons/outlined/language";
+import "@m3e/icons/outlined/link";
 import "@m3e/icons/outlined/layers";
 import "@m3e/icons/outlined/light_mode";
 import "@m3e/icons/outlined/menu";

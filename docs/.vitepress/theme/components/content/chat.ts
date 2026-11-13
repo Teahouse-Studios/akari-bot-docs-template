@@ -10,6 +10,8 @@ export type ChatRole = "user" | "bot" | "divider";
 export interface ChatBubble {
   role: ChatRole;
   text: string;
+  /** 对应 Markdown 消息元素；省略时按纯文本渲染。 */
+  markdown?: boolean;
 }
 
 export interface ChatImage {
@@ -17,6 +19,14 @@ export interface ChatImage {
   alt: string;
   /** 按原始尺寸展示，不缩到 320×200 的缩略框内。 */
   natural?: boolean;
+}
+
+export interface ChatCard {
+  title: string;
+  description?: string;
+  url?: string;
+  image?: string;
+  domain?: string;
 }
 
 export type ChatSegment =
@@ -27,6 +37,8 @@ export type ChatSegment =
 export interface ChatMessage {
   role: string;
   text: string;
+  /** 对应 Markdown 消息元素；省略时按纯文本渲染。 */
+  markdown?: boolean;
 }
 
 /** 消息下方附带的按钮；点击后把 `reply` 或 `messages` 追加到对话末尾。 */
@@ -81,6 +93,7 @@ export function chatBubbles(
                 ? ("user" as const)
                 : ("bot" as const),
           text: message.text,
+          ...(message.markdown === true ? { markdown: true } : {}),
         })),
     );
   }
@@ -209,12 +222,13 @@ function splitTrailingImages(bubbles: ChatBubble[]): ChatBubble[] {
       continue;
     }
     split.push(
-      { role: bubble.role, text },
+      { role: bubble.role, text, ...(bubble.markdown ? { markdown: true } : {}) },
       {
         role: bubble.role,
         text: images
           .map((image) => `![${image.alt}](${image.src})${image.natural ? "{natural}" : ""}`)
           .join("\n"),
+        ...(bubble.markdown ? { markdown: true } : {}),
       },
     );
   }

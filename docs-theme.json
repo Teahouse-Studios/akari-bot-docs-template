@@ -13,7 +13,8 @@
     "@m3e/icons": "1.0.21",
     "@material/material-color-utilities": "^0.4.0",
     "minisearch": "^7.2.0",
-    "markdown-it-image-size": "^16.0.2"
+    "markdown-it-image-size": "^16.0.2",
+    "markdown-it": "^14.1.0"
   },
   "config": {
     "appearance": false,
