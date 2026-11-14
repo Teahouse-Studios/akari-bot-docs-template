@@ -50,8 +50,13 @@ export interface FluidPalette {
   readonly sparkle: number;
   /** Peak strength of the pointer light; the pale wall takes much less. */
   readonly glow: number;
+  /** Additive lift under a blossom, for dark walls. */
+  readonly petalLight: number;
+  /** Depth pulled into a blossom, for pale walls. */
+  readonly petalInk: number;
 }
 
+const BLACK: FluidRgb = [0, 0, 0];
 const WHITE: FluidRgb = [1, 1, 1];
 
 /** Blends between two colours; `amount` is clamped, as `mix` does in GLSL. */
@@ -123,7 +128,9 @@ export function fluidPalette(tokens: FluidTokens, scheme: FluidScheme, tone = 0)
 
   const paper =
     scheme === "dark"
-      ? tokens.surfaceContainer
+      // Tone lifts toward the page surface in either scheme; on a dark page the
+      // paper is darker than the wall's own base, so lift must not brighten it.
+      ? mixFluid(BLACK, tokens.surfaceContainer, 0.6)
       : mixFluid(tokens.surface, tokens.surfaceContainer, 0.6);
   const [c1, c2, c3, c4, c5] = palette.stops;
   const stops: FluidPalette["stops"] = [
@@ -144,27 +151,32 @@ export function fluidPalette(tokens: FluidTokens, scheme: FluidScheme, tone = 0)
 
 function basePalette(tokens: FluidTokens, scheme: FluidScheme): FluidPalette {
   if (scheme === "dark") {
+    // Every stop is pulled toward black: on a dark page the wall has to sit
+    // below the text, not glow behind it.
+    const shade = (color: FluidRgb, amount: number): FluidRgb => mixFluid(BLACK, color, amount);
     const base = mixFluid(tokens.surfaceContainer, tokens.surface, 0.8);
     return {
       stops: [
         base,
-        mixFluid(base, tokens.primaryContainer, 0.78),
-        mixFluid(tokens.primaryContainer, tokens.primary, 0.22),
-        mixFluid(tokens.surface, tokens.tertiary, 0.66),
-        mixFluid(base, tokens.secondaryContainer, 1),
+        shade(mixFluid(base, tokens.primaryContainer, 0.78), 0.64),
+        shade(mixFluid(tokens.primaryContainer, tokens.primary, 0.22), 0.57),
+        shade(mixFluid(tokens.surface, tokens.tertiary, 0.66), 0.49),
+        shade(mixFluid(base, tokens.secondaryContainer, 1), 0.7),
       ],
       core: mixFluid(WHITE, tokens.tertiary, 0.4),
       halo: mixFluid(tokens.primary, WHITE, 0.2),
       spark: mixFluid(WHITE, tokens.onSurface, 0.4),
-      lightCore: 0.18,
-      lightHalo: 0.06,
+      lightCore: 0.105,
+      lightHalo: 0.035,
       bloomThreshold: 0.55,
       bloomRange: 0.12,
-      bloomStrength: 0.3,
-      vignette: 0.42,
+      bloomStrength: 0.19,
+      vignette: 0.51,
       grain: 0.0042,
       sparkle: 0.45,
-      glow: 0.2,
+      glow: 0.12,
+      petalLight: 0.085,
+      petalInk: 0,
     };
   }
 
@@ -188,6 +200,8 @@ function basePalette(tokens: FluidTokens, scheme: FluidScheme): FluidPalette {
     grain: 0.003,
     sparkle: 0,
     glow: 0.1,
+    petalLight: 0,
+    petalInk: 0.12,
   };
 }
 

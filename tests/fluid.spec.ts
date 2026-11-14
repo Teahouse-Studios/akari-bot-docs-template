@@ -37,7 +37,9 @@ describe("fluidPalette", () => {
     // one anchored on a pure black surface loses every shadow detail.
     const lumas = stopLumas("dark");
     expect(Math.min(...lumas)).toBeLessThan(0.14);
-    expect(Math.max(...lumas)).toBeLessThan(0.62);
+    // The wall sits under the page text: a stop brighter than this reads as a
+    // lit panel instead of a background.
+    expect(Math.max(...lumas)).toBeLessThan(0.3);
   });
 
   it("keeps the light wall a tint rather than a darkened panel", () => {
@@ -56,6 +58,17 @@ describe("fluidPalette", () => {
     expect(light.lightCore).toBe(0);
     expect(light.lightHalo).toBe(0);
     expect(light.bloomStrength).toBe(0);
+  });
+
+  it("lights the blossoms on a dark wall and shades them on a pale one", () => {
+    const dark = fluidPalette(FLUID_FALLBACK_TOKENS.dark, "dark");
+    const light = fluidPalette(FLUID_FALLBACK_TOKENS.light, "light");
+    // Additive light only works over a dark ground; over a pale one it blows the
+    // petal out, so the same shape is read as depth there instead.
+    expect(dark.petalLight).toBeGreaterThan(0);
+    expect(dark.petalInk).toBe(0);
+    expect(light.petalLight).toBe(0);
+    expect(light.petalInk).toBeGreaterThan(0);
   });
 
   it("takes the neutral from the surface container, not from the bare surface", () => {

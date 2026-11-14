@@ -33,6 +33,13 @@ const props = withDefaults(
     grid?: number | string;
     /** Strength of the soft light that follows the pointer; 0 turns it off. */
     glow?: number | string;
+    /**
+     * How far the folds curl into petal arms; 0 keeps the plain flow, 1 is the
+     * strongest the blossoms get before they read as a drawn flower.
+     */
+    petal?: number | string;
+    /** Where the slotted content sits across the wall. */
+    placement?: "start" | "center" | "end";
   }>(),
   {
     height: "clamp(220px, 34vh, 380px)",
@@ -44,16 +51,19 @@ const props = withDefaults(
     warp: 0.7,
     grid: 72,
     glow: 1,
+    petal: 0.6,
+    placement: "start",
   },
 );
 
 const slots = useSlots();
-const hasContent = computed(() => Boolean(slots.default));
+const hasContent = computed(() => Boolean(slots.default || slots.top || slots.bottom));
 /** The grid keeps whole pixels, so its lines stay one device pixel sharp. */
 const gridSize = computed(() => fluidNumber(props.grid, 0, 400, 72));
 
 const wall = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
+const litGrid = ref<HTMLElement | null>(null);
 /** Set once a frame has been drawn, so the card is never shown empty. */
 const painted = ref(false);
 
@@ -81,7 +91,7 @@ uniform vec2 u_light_pos, u_cursor;
 uniform float u_light_core, u_light_halo;
 uniform float u_vignette, u_grain;
 uniform float u_bloom_threshold, u_bloom_range, u_bloom_strength;
-uniform float u_glow;
+uniform float u_glow, u_petal, u_petal_light, u_petal_ink;
 uniform float u_sparkle, u_time, u_scale, u_curl, u_warp;
 uniform vec2 u_offset;
 
@@ -173,6 +183,24 @@ vec2 curlish(vec2 uv) {
   return vec2(-(ny - n) / eps, (nx - n) / eps) * 0.003;
 }
 
+/*
+ * Three loose five-armed swirls. They bend the sampling domain itself, so the
+ * creases of the silk curl into petal-like arms instead of having a flower
+ * painted over them.
+ */
+vec2 petalSwirl(vec2 screen, float strength) {
+  vec2 total = vec2(0.0);
+  for (int i = 0; i < 3; i++) {
+    vec2 centre = vec2(0.15 + 0.38 * float(i), 0.54 + 0.13 * sin(float(i) * 2.1));
+    vec2 d = screen - centre;
+    float r = length(d) + 0.08;
+    float a = atan(d.y, d.x);
+    float arm = 0.5 + 0.5 * cos(a * 5.0 + r * 2.2 + float(i));
+    total += vec2(-d.y, d.x) / r * arm;
+  }
+  return total * strength;
+}
+
 void main() {
   float aspect = u_resolution.x / u_resolution.y;
   vec2 uv = gl_FragCoord.xy / u_resolution;
@@ -180,9 +208,32 @@ void main() {
 
   vec2 curl = curlish(suv);
   vec2 uvD = suv + curl * u_curl;
+  if (u_petal > 0.0) {
+    uvD += petalSwirl(vec2(uv.x * aspect, uv.y), 0.2 * u_petal) / max(u_scale, 0.4);
+  }
   float f = fluidNoise(uvD);
   float swirl = snoise(vec3(uvD * 0.8 + f * 1.5, 0.0) + vec3(u_loops[3].y, 0.0, u_loops[3].x)) * 0.5 + 0.5;
   float n = f * 0.5 + 0.5;
+
+  /*
+   * Five-lobed blossoms around a drifting centre, bent by the same noise as the
+   * folds. The field is folded into the colour value instead of drawn on top:
+   * the masses turn into petal shapes where the silk creases, and vanish into
+   * the flow elsewhere, which is the misty look rather than an ornament.
+   */
+  float petalField = 0.0;
+  if (u_petal > 0.0) {
+    // A faint swell left where the swirls turn, so the petals also read as a
+    // breath of light in the mist rather than only as a change of the folds.
+    for (int i = 0; i < 3; i++) {
+      vec2 centre = vec2(0.15 + 0.38 * float(i), 0.54 + 0.13 * sin(float(i) * 2.1));
+      vec2 pc = (uv - centre) * vec2(aspect, 1.0);
+      float pr = length(pc);
+      float lobe = 0.5 + 0.5 * cos(atan(pc.y, pc.x) * 5.0 + float(i));
+      petalField += smoothstep(mix(0.2, 0.44, lobe) + 0.24, mix(0.2, 0.44, lobe) - 0.16, pr);
+    }
+    petalField = clamp(petalField * 0.6, 0.0, 1.0);
+  }
 
   // Wide windows: the masses have to run into each other, not sit side by side
   // as patches.
@@ -190,6 +241,13 @@ void main() {
   col = mix(col, u_c3, smoothstep(0.24, 0.78, n + swirl * 0.25));
   col = mix(col, u_c4, smoothstep(0.42, 0.95, swirl) * 0.42);
   col = mix(col, u_c5, smoothstep(0.4, 0.9, n * swirl) * 0.28);
+  if (u_petal > 0.0) {
+    // Faint light inside the blossoms on a dark wall, a faint shade inside them
+    // on a pale one: the same shape, read as glow or as depth.
+    float bloomShape = smoothstep(0.0, 1.0, petalField);
+    col += u_core * bloomShape * u_petal_light * u_petal;
+    col = mix(col, u_c3, bloomShape * u_petal_ink * u_petal);
+  }
 
   vec2 flow = (uvD - suv) * u_grain_resolution;
 
@@ -221,7 +279,7 @@ void main() {
   // turning into a spotlight. Added before the vignette so corners still sink.
   float gd = length((uv - u_cursor) * vec2(aspect, 1.0));
   float g2 = gd * gd;
-  col += u_core * u_glow * (exp(-g2 * 9.0) * 0.7 + exp(-g2 * 2.2) * 0.3);
+  col += u_core * u_glow * exp(-g2 * 3.4) * 0.32;
 
   col = mix(col * (1.0 - u_vignette), col, vig);
 
@@ -243,6 +301,9 @@ const UNIFORMS = [
   "u_light_pos",
   "u_cursor",
   "u_glow",
+  "u_petal",
+  "u_petal_light",
+  "u_petal_ink",
   "u_light_core",
   "u_light_halo",
   "u_vignette",
@@ -489,6 +550,10 @@ function draw(): void {
     );
   }
 
+  setFloat("u_petal", fluidNumber(props.petal, 0, 1, 0.6));
+  setFloat("u_petal_light", palette.petalLight);
+  setFloat("u_petal_ink", palette.petalInk);
+
   // Lights up quickly, dies away slowly, the way a real highlight does.
   glow += (glowTarget - glow) * (glowTarget > glow ? 0.5 : 0.08);
   const cursorUniform = locations.get("u_cursor");
@@ -535,6 +600,15 @@ function onPointerMove(event: PointerEvent): void {
   pointer.targetY = y;
   cursor.x = x;
   cursor.y = y;
+  // Written straight to the element: the grid light must not wait for a render
+  // pass, and inline custom properties skip Vue's diffing entirely.
+  const lit = litGrid.value;
+  if (lit) {
+    lit.style.setProperty("--_glow-x", `${(x * 100).toFixed(2)}%`);
+    lit.style.setProperty("--_glow-y", `${(y * 100).toFixed(2)}%`);
+    lit.style.setProperty("--_glow-radius", `${(gridSize.value * 3.4).toFixed(0)}px`);
+    lit.style.setProperty("--_lit-alpha", String(Math.min(1, fluidNumber(props.glow, 0, 2, 1)) * 0.9));
+  }
   glowTarget = 1;
   // With the loop stopped (reduced motion, or a still frame) the light still
   // answers the pointer, so the wall is not dead under the cursor.
@@ -543,6 +617,7 @@ function onPointerMove(event: PointerEvent): void {
 
 function onPointerLeave(): void {
   glowTarget = 0;
+  litGrid.value?.style.setProperty("--_lit-alpha", "0");
 }
 
 function onVisibilityChange(): void {
@@ -691,6 +766,7 @@ onBeforeUnmount(() => {
     class="akari-fluid-wall"
     :class="{ 'is-painted': painted }"
     :style="{ '--_wall-height': props.height }"
+    :data-placement="props.placement"
   >
     <div class="akari-fluid-wall__canvas" aria-hidden="true">
       <canvas ref="canvas"></canvas>
@@ -700,10 +776,20 @@ onBeforeUnmount(() => {
       class="akari-fluid-wall__grid"
       aria-hidden="true"
       :style="{ '--_grid-size': `${gridSize}px` }"
-    ></div>
+    >
+      <div ref="litGrid" class="akari-fluid-wall__grid-lit"></div>
+    </div>
     <div v-if="hasContent" class="akari-fluid-wall__veil" aria-hidden="true"></div>
-    <div v-if="hasContent" class="akari-fluid-wall__content">
-      <slot />
+    <div v-if="hasContent" class="akari-fluid-wall__body">
+      <div v-if="slots.top" class="akari-fluid-wall__block" data-slot="top">
+        <slot name="top" />
+      </div>
+      <div v-if="slots.default" class="akari-fluid-wall__block" data-slot="main">
+        <slot />
+      </div>
+      <div v-if="slots.bottom" class="akari-fluid-wall__block" data-slot="bottom">
+        <slot name="bottom" />
+      </div>
     </div>
   </div>
 </template>
@@ -777,8 +863,8 @@ html.dark .akari-fluid-wall {
   inset: 0;
   pointer-events: none;
   /* Lines need more weight on the dark wall, less on the pale one. */
-  --_grid-fine: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 3.5%, transparent);
-  --_grid-coarse: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 6%, transparent);
+  --_grid-fine: rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.05);
+  --_grid-coarse: rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.08);
   background-image:
     linear-gradient(to right, var(--_grid-fine) 1px, transparent 1px),
     linear-gradient(to bottom, var(--_grid-fine) 1px, transparent 1px),
@@ -792,41 +878,168 @@ html.dark .akari-fluid-wall {
   mask-image: radial-gradient(135% 155% at 80% 46%, #000 0%, rgba(0, 0, 0, 0.55) 58%, transparent 96%);
 }
 
-html.dark .akari-fluid-wall__grid {
-  --_grid-fine: color-mix(in srgb, var(--md-sys-color-on-surface, #e6e1e5) 5%, transparent);
-  --_grid-coarse: color-mix(in srgb, var(--md-sys-color-on-surface, #e6e1e5) 8.5%, transparent);
+/*
+ * The pointer lights the grid, not the liquid: a second copy of the same grid
+ * in brighter ink, masked to a soft circle under the cursor. Because it is a
+ * child of the masked grid, the two masks intersect and the light dies out
+ * toward the corner exactly as the plain lines do.
+ */
+.akari-fluid-wall__grid-lit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --_glow-x: 50%;
+  --_glow-y: 50%;
+  --_lit-alpha: 0;
+  --_lit-fine: rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.22);
+  --_lit-coarse: rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.34);
+  background-image:
+    linear-gradient(to right, var(--_lit-fine) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--_lit-fine) 1px, transparent 1px),
+    linear-gradient(to right, var(--_lit-coarse) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--_lit-coarse) 1px, transparent 1px);
+  background-size:
+    var(--_grid-size) var(--_grid-size),
+    var(--_grid-size) var(--_grid-size),
+    calc(var(--_grid-size) * 4) calc(var(--_grid-size) * 4),
+    calc(var(--_grid-size) * 4) calc(var(--_grid-size) * 4);
+  mask-image: radial-gradient(
+    circle var(--_glow-radius, 240px) at var(--_glow-x) var(--_glow-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.55) 42%,
+    transparent 74%
+  );
+  opacity: var(--_lit-alpha);
+  transition: opacity 460ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* Keeps text over the wall legible without flattening the flow. */
+html.dark .akari-fluid-wall__grid-lit {
+  --_lit-fine: rgb(from var(--md-sys-color-on-surface, #e6e1e5) r g b / 0.3);
+  --_lit-coarse: rgb(from var(--md-sys-color-on-surface, #e6e1e5) r g b / 0.46);
+}
+
+html.dark .akari-fluid-wall__grid {
+  --_grid-fine: rgb(from var(--md-sys-color-on-surface, #e6e1e5) r g b / 0.06);
+  --_grid-coarse: rgb(from var(--md-sys-color-on-surface, #e6e1e5) r g b / 0.1);
+}
+
+/*
+ * The scrim follows the content instead of sitting on one edge: a wall that
+ * hosts a headline on the left must not wash out its right side, where the
+ * flow is supposed to show.
+ */
 .akari-fluid-wall__veil {
   position: absolute;
   inset: 0;
   background-image: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 88%, transparent) 0%,
-    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 48%, transparent) 40%,
-    transparent 78%
+    100deg,
+    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 72%, transparent) 0%,
+    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 32%, transparent) 48%,
+    transparent 86%
+  );
+}
+
+.akari-fluid-wall[data-placement="center"] .akari-fluid-wall__veil {
+  background-image: radial-gradient(
+    130% 170% at 50% 62%,
+    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 74%, transparent) 0%,
+    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 34%, transparent) 52%,
+    transparent 86%
+  );
+}
+
+.akari-fluid-wall[data-placement="end"] .akari-fluid-wall__veil {
+  background-image: linear-gradient(
+    260deg,
+    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 72%, transparent) 0%,
+    color-mix(in srgb, var(--md-sys-color-surface, #fef7ff) 32%, transparent) 48%,
+    transparent 86%
   );
 }
 
 html.dark .akari-fluid-wall__veil {
   background-image: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 88%, transparent) 0%,
-    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 44%, transparent) 42%,
-    transparent 80%
+    100deg,
+    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 64%, transparent) 0%,
+    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 22%, transparent) 50%,
+    transparent 88%
   );
 }
 
-.akari-fluid-wall__content {
+html.dark .akari-fluid-wall[data-placement="center"] .akari-fluid-wall__veil {
+  background-image: radial-gradient(
+    130% 170% at 50% 62%,
+    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 76%, transparent) 0%,
+    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 32%, transparent) 54%,
+    transparent 88%
+  );
+}
+
+html.dark .akari-fluid-wall[data-placement="end"] .akari-fluid-wall__veil {
+  background-image: linear-gradient(
+    260deg,
+    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 64%, transparent) 0%,
+    color-mix(in srgb, var(--md-sys-color-surface-container-lowest, #0f0d13) 22%, transparent) 50%,
+    transparent 88%
+  );
+}
+
+/*
+ * Slots share one column: a header rail, the body, a footer rail. Each block is
+ * a plain flex child, so a caller can drop in headings, chips or a form without
+ * the wall imposing its own rhythm.
+ */
+.akari-fluid-wall__body {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 4px;
+  justify-content: center;
+  gap: clamp(8px, 1.2vw, 14px);
   block-size: 100%;
-  padding: clamp(16px, 3vw, 28px);
+  padding: clamp(20px, 3.4vw, 34px);
+  color: var(--md-sys-color-on-surface, CanvasText);
+}
+
+.akari-fluid-wall[data-placement="center"] .akari-fluid-wall__body {
+  align-items: center;
+  text-align: center;
+}
+
+.akari-fluid-wall[data-placement="end"] .akari-fluid-wall__body {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.akari-fluid-wall__block {
+  inline-size: 100%;
+  max-inline-size: min(62ch, var(--akari-doc-text-measure, 760px));
+}
+
+.akari-fluid-wall__block[data-slot="main"] {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vw, 10px);
+}
+
+.akari-fluid-wall__block[data-slot="top"] {
+  position: absolute;
+  inset-block-start: clamp(20px, 3.4vw, 34px);
+  inset-inline-end: clamp(20px, 3.4vw, 34px);
+  inline-size: auto;
+}
+
+.akari-fluid-wall__block[data-slot="bottom"] {
+  position: absolute;
+  inset-block-end: clamp(20px, 3.4vw, 34px);
+  inset-inline-start: clamp(20px, 3.4vw, 34px);
+  inline-size: auto;
+}
+
+/* Headings inside a slot inherit the wall's ink rather than the page's. */
+.akari-fluid-wall__block :is(h1, h2, h3, p) {
+  margin: 0;
+  color: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {
