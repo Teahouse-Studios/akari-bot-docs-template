@@ -13,6 +13,8 @@ tab: API
 | `src` | `string` | requis | Image affichée en grand, et source de la vignette par défaut |
 | `alt` | `string` | `""` | Description de l'image, également `aria-label` de la boîte de dialogue |
 | `label` | `string` | `imagePreviewOpen` de la langue courante | `aria-label` et `title` du bouton déclencheur |
+| `open` | `boolean \| null` | `null` | État d'ouverture contrôlé. S'il est fourni, le bouton déclencheur n'est pas rendu et `v-model:open` porte l'état |
+| `origin` | `HTMLElement \| null` | `null` | Élément d'où l'aperçu part et où il revient en mode contrôlé |
 
 | Slot | Contenu |
 | --- | --- |
@@ -20,7 +22,7 @@ tab: API
 
 | Sortie | Description |
 | --- | --- |
-| Aucun événement | Le composant garde l'état d'ouverture et celui de la vue |
+| `update:open` | Émis à l'ouverture et à la fermeture, à coupler avec `v-model:open` |
 
 | Classe CSS | Emplacement |
 | --- | --- |

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import * as vitepress from "vitepress";
 import MarkdownIt from "markdown-it";
 
@@ -223,54 +223,6 @@ const canReset = computed(
 // 头像由文档引擎按品牌资源包、站点图标依次解析；主题单独使用时退回机器人图标。
 const avatar = computed(() => props.botAvatar || akari?.value.chatAvatar || "");
 
-const viewer = ref<ChatImage | null>(null);
-const mounted = ref(false);
-const scale = ref(1);
-const rotation = ref(0);
-const offset = ref({ x: 0, y: 0 });
-const dialog = ref<HTMLElement | null>(null);
-const frame = ref<HTMLElement | null>(null);
-const image = ref<HTMLImageElement | null>(null);
-const imageSize = ref({ width: 0, height: 0 });
-let morph: Animation | null = null;
-let closing = false;
-let lastTrigger: HTMLElement | null = null;
-let previousOverflow = "";
-let drag: {
-  pointerId: number;
-  x: number;
-  y: number;
-  ox: number;
-  oy: number;
-  moved: boolean;
-} | null = null;
-let suppressStageClick = false;
-
-const percentage = computed(() => `${Math.round(scale.value * 100)}%`);
-const imageTransform = computed(
-  () => `translate3d(${offset.value.x}px, ${offset.value.y}px, 0) scale(${scale.value})`,
-);
-function viewerChrome(): number {
-  return window.innerWidth <= 640 ? 120 : 148;
-}
-
-const fitScale = computed(() => {
-  if (typeof window === "undefined" || rotation.value % 180 === 0) {
-    return 1;
-  }
-  const { width, height } = imageSize.value;
-  if (!width || !height) {
-    return 1;
-  }
-
-  const maxWidth = Math.max(160, window.innerWidth - 48);
-  const maxHeight = Math.max(120, window.innerHeight - viewerChrome());
-  return Math.min(1, maxWidth / height, maxHeight / width);
-});
-const rotationTransform = computed(
-  () => `rotate(${rotation.value}deg) scale(${fitScale.value})`,
-);
-
 function segments(text: string) {
   return chatSegments(text);
 }
@@ -328,104 +280,15 @@ async function preloadImages(bubbles: ChatBubble[]): Promise<boolean> {
   return outcomes.every(Boolean);
 }
 
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
-function motionValue(token: string, fallback: string): string {
-  const host = dialog.value;
-  if (!host) {
-    return fallback;
-  }
-  return getComputedStyle(host).getPropertyValue(token).trim() || fallback;
-}
-
-function motionDuration(token: string, fallback: number): number {
-  const value = motionValue(token, `${fallback}ms`);
-  const parsed = Number.parseFloat(value);
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-  return value.endsWith("ms") ? parsed : parsed * 1000;
-}
-
-async function animateOpen(trigger: HTMLElement | null): Promise<void> {
-  await nextTick();
-  const element = frame.value;
-  if (!element) {
-    return;
-  }
-
-  const picture = image.value;
-  if (picture && !picture.complete) {
-    await new Promise<void>((resolve) => {
-      picture.addEventListener("load", () => resolve(), { once: true });
-      picture.addEventListener("error", () => resolve(), { once: true });
-    });
-  }
-
-  if (picture) {
-    const maxWidth = Math.max(160, window.innerWidth * 0.94 - 48);
-    const maxHeight = Math.max(120, window.innerHeight - viewerChrome());
-    const naturalWidth = picture.naturalWidth || 0;
-    const naturalHeight = picture.naturalHeight || 0;
-    const ratio = naturalWidth && naturalHeight ? naturalWidth / naturalHeight : 1.6;
-    let width = naturalWidth || Math.min(480, maxWidth);
-    let height = width / ratio;
-    if (width > maxWidth) {
-      width = maxWidth;
-      height = width / ratio;
-    }
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * ratio;
-    }
-    picture.style.width = `${Math.round(width)}px`;
-    picture.style.height = `${Math.round(height)}px`;
-    imageSize.value = { width: Math.round(width), height: Math.round(height) };
-  }
-  await nextTick();
-
-  if (!trigger || prefersReducedMotion()) {
-    return;
-  }
-
-  const target = element.getBoundingClientRect();
-  const source = trigger.getBoundingClientRect();
-  if (!target.width || !target.height || !source.width || !source.height) {
-    return;
-  }
-
-  const scaleX = source.width / target.width;
-  const scaleY = source.height / target.height;
-  const translateX = source.left - target.left;
-  const translateY = source.top - target.top;
-
-  morph?.cancel();
-  morph = element.animate(
-    [
-      {
-        transform: `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`,
-        opacity: 0.35,
-      },
-      { transform: "translate(0, 0) scale(1, 1)", opacity: 1 },
-    ],
-    {
-      duration: motionDuration("--md-sys-motion-duration-medium-3", 350),
-      easing: motionValue("--md-sys-motion-easing-emphasized-decelerate", "ease"),
-    },
-  );
-  await morph.finished.catch(() => undefined);
-}
+// 预览层由共享的 AkariImagePreview 负责，这里只保留当前图片与位移动画的起点。
+const previewOpen = ref(false);
+const previewImage = ref<ChatImage | null>(null);
+const previewOrigin = ref<HTMLElement | null>(null);
 
 function openViewer(image: ChatImage, trigger: EventTarget | null): void {
-  lastTrigger = trigger instanceof HTMLElement ? trigger : null;
-  resetView();
-  viewer.value = image;
-  void animateOpen(lastTrigger);
+  previewOrigin.value = trigger instanceof HTMLElement ? trigger : null;
+  previewImage.value = image;
+  previewOpen.value = true;
 }
 
 function onImageClick(image: ChatImage, event: Event): void {
@@ -453,59 +316,6 @@ function onBubbleClick(event: MouseEvent): void {
   const alt = trigger.dataset.alt ?? "";
   const natural = trigger.dataset.natural === "1";
   openViewer({ src, alt, ...(natural ? { natural: true } : {}) }, trigger);
-}
-
-async function closeViewer(): Promise<void> {
-  if (!viewer.value || closing) {
-    return;
-  }
-
-  const element = frame.value;
-  const trigger = lastTrigger;
-  const transformed =
-    scale.value !== 1 ||
-    rotation.value % 360 !== 0 ||
-    offset.value.x !== 0 ||
-    offset.value.y !== 0;
-  if (!element || !trigger || transformed || prefersReducedMotion()) {
-    viewer.value = null;
-    return;
-  }
-
-  const current = element.getBoundingClientRect();
-  const target = trigger.getBoundingClientRect();
-  if (!current.width || !current.height || !target.width || !target.height) {
-    viewer.value = null;
-    return;
-  }
-
-  closing = true;
-  if (morph && morph.playState !== "idle") {
-    morph.finish();
-  }
-  const animation = element.animate(
-    [
-      { transform: "translate(0, 0) scale(1, 1)", opacity: 1 },
-      {
-        transform: `translate(${target.left - current.left}px, ${target.top - current.top}px) scale(${target.width / current.width}, ${target.height / current.height})`,
-        opacity: 0.35,
-      },
-    ],
-    {
-      duration: motionDuration("--md-sys-motion-duration-medium-2", 300),
-      easing: motionValue("--md-sys-motion-easing-emphasized-accelerate", "ease"),
-      fill: "forwards",
-    },
-  );
-  await animation.finished.catch(() => undefined);
-  closing = false;
-  viewer.value = null;
-}
-
-function resetView(): void {
-  scale.value = 1;
-  rotation.value = Math.round(rotation.value / 360) * 360;
-  offset.value = { x: 0, y: 0 };
 }
 
 function actionKey(groupId: number, index: number): string {
@@ -607,117 +417,6 @@ function resetExample(): void {
   busy.value = false;
   status.value = t("chatExampleResetDone");
 }
-
-function setScale(value: number): void {
-  scale.value = Math.min(4, Math.max(0.5, Math.round(value * 100) / 100));
-}
-
-function zoom(delta: number): void {
-  setScale(scale.value + delta);
-}
-
-function rotate(delta: number): void {
-  rotation.value += delta;
-}
-
-function onWheel(event: WheelEvent): void {
-  setScale(scale.value * (event.deltaY < 0 ? 1.1 : 1 / 1.1));
-}
-
-function onPointerDown(event: PointerEvent): void {
-  if (event.button !== 0) {
-    return;
-  }
-  const target = event.currentTarget as HTMLElement;
-  target.setPointerCapture(event.pointerId);
-  drag = {
-    pointerId: event.pointerId,
-    x: event.clientX,
-    y: event.clientY,
-    ox: offset.value.x,
-    oy: offset.value.y,
-    moved: false,
-  };
-}
-
-function onPointerMove(event: PointerEvent): void {
-  if (!drag || event.pointerId !== drag.pointerId) {
-    return;
-  }
-  const dx = event.clientX - drag.x;
-  const dy = event.clientY - drag.y;
-  if (!drag.moved && Math.hypot(dx, dy) > 3) {
-    drag.moved = true;
-  }
-  offset.value = { x: drag.ox + dx, y: drag.oy + dy };
-}
-
-function onPointerUp(event: PointerEvent): void {
-  if (!drag || event.pointerId !== drag.pointerId) {
-    return;
-  }
-  suppressStageClick = drag.moved;
-  const target = event.currentTarget as HTMLElement;
-  if (target.hasPointerCapture(event.pointerId)) {
-    target.releasePointerCapture(event.pointerId);
-  }
-  drag = null;
-}
-
-function onStageClick(): void {
-  if (suppressStageClick) {
-    suppressStageClick = false;
-    return;
-  }
-  void closeViewer();
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  if (!viewer.value) {
-    return;
-  }
-  if (event.key === "Escape") {
-    event.preventDefault();
-    void closeViewer();
-  } else if (event.key === "+" || event.key === "=") {
-    event.preventDefault();
-    zoom(0.25);
-  } else if (event.key === "-" || event.key === "_") {
-    event.preventDefault();
-    zoom(-0.25);
-  } else if (event.key === "0") {
-    event.preventDefault();
-    resetView();
-  } else if (event.key.toLowerCase() === "r") {
-    event.preventDefault();
-    rotate(event.shiftKey ? -90 : 90);
-  }
-}
-
-watch(viewer, async (value, previous) => {
-  if (value) {
-    previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    await nextTick();
-    dialog.value?.focus();
-  } else if (previous) {
-    document.body.style.overflow = previousOverflow;
-    await nextTick();
-    lastTrigger?.focus();
-  }
-});
-
-onMounted(() => {
-  mounted.value = true;
-  document.addEventListener("keydown", onKeydown);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener("keydown", onKeydown);
-  if (viewer.value) {
-    document.body.style.overflow = previousOverflow;
-  }
-});
 </script>
 
 <template>
@@ -874,102 +573,11 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- 客户端挂载后再传送到 .akari-frame：目标由同一轮渲染创建，服务端直传会导致 hydration 失配。 -->
-    <Teleport v-if="mounted" to=".akari-frame">
-      <Transition name="chat-lightbox">
-        <div
-          v-if="viewer"
-          ref="dialog"
-          class="chat-lightbox"
-          role="dialog"
-          aria-modal="true"
-          :aria-label="
-            viewer.alt
-              ? t('chatExamplePreview', { alt: viewer.alt })
-              : t('chatExamplePreviewNoAlt')
-          "
-          tabindex="-1"
-        >
-          <div class="chat-lightbox__stage" @click="onStageClick" @wheel.prevent="onWheel">
-            <div ref="frame" class="chat-lightbox__frame">
-              <div class="chat-lightbox__rotor" :style="{ transform: rotationTransform }">
-                <img
-                  ref="image"
-                  class="chat-lightbox__image"
-                  :src="imageSrc(viewer.src)"
-                  :alt="viewer.alt"
-                  :style="{ transform: imageTransform }"
-                  draggable="false"
-                  @click.stop
-                  @dblclick="resetView"
-                  @pointerdown="onPointerDown"
-                  @pointermove="onPointerMove"
-                  @pointerup="onPointerUp"
-                  @pointercancel="onPointerUp"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="chat-lightbox__bar" @click.stop>
-            <m3e-icon-button
-              :aria-label="t('chatExampleZoomOut')"
-              :title="t('chatExampleZoomOut')"
-              @click="zoom(-0.25)"
-            >
-              <m3e-icon name="zoom_out"></m3e-icon>
-            </m3e-icon-button>
-            <button
-              type="button"
-              class="chat-lightbox__scale"
-              :aria-label="t('chatExampleZoomStatus', { percentage })"
-              :title="t('chatExampleResetView')"
-              @click="resetView"
-            >
-              {{ percentage }}
-            </button>
-            <m3e-icon-button
-              :aria-label="t('chatExampleZoomIn')"
-              :title="t('chatExampleZoomIn')"
-              @click="zoom(0.25)"
-            >
-              <m3e-icon name="zoom_in"></m3e-icon>
-            </m3e-icon-button>
-            <span class="chat-lightbox__divider" aria-hidden="true"></span>
-            <m3e-icon-button
-              :aria-label="t('chatExampleRotateLeft')"
-              :title="t('chatExampleRotateLeft')"
-              @click="rotate(-90)"
-            >
-              <m3e-icon name="rotate_left"></m3e-icon>
-            </m3e-icon-button>
-            <m3e-icon-button
-              :aria-label="t('chatExampleRotateRight')"
-              :title="t('chatExampleRotateRight')"
-              @click="rotate(90)"
-            >
-              <m3e-icon name="rotate_right"></m3e-icon>
-            </m3e-icon-button>
-            <m3e-icon-button
-              :aria-label="t('chatExampleResetView')"
-              :title="t('chatExampleResetView')"
-              @click="resetView"
-            >
-              <m3e-icon name="restart_alt"></m3e-icon>
-            </m3e-icon-button>
-          </div>
-
-          <m3e-icon-button
-            class="chat-lightbox__close"
-            :aria-label="t('chatExampleClosePreview')"
-            :title="t('chatExampleClose')"
-            @click="closeViewer"
-          >
-            <m3e-icon name="close"></m3e-icon>
-          </m3e-icon-button>
-
-        </div>
-      </Transition>
-    </Teleport>
+    <AkariImagePreview
+      v-model:open="previewOpen"
+      :src="previewImage ? imageSrc(previewImage.src) : ''"
+      :alt="previewImage?.alt ?? ''"
+      :origin="previewOrigin"
+    />
   </section>
 </template>

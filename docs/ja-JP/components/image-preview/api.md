@@ -13,6 +13,8 @@ tab: API
 | `src` | `string` | 必須 | 開いたときに表示する画像。既定のサムネイルの取得先にもなる |
 | `alt` | `string` | `""` | 画像の説明。プレビューダイアログの `aria-label` にもなる |
 | `label` | `string` | 現在の言語の `imagePreviewOpen` | トリガーのボタンの `aria-label` と `title` |
+| `open` | `boolean \| null` | `null` | 制御用の開閉状態。指定するとトリガーのボタンは描画されず、`v-model:open` で状態を持つ |
+| `origin` | `HTMLElement \| null` | `null` | 制御モードで開くとき、拡大表示が出入りする元の要素 |
 
 | スロット | 内容 |
 | --- | --- |
@@ -20,7 +22,7 @@ tab: API
 
 | 出力 | 説明 |
 | --- | --- |
-| イベントなし | 開閉と表示状態はコンポーネント自身が持つ |
+| `update:open` | プレビューが開閉したときに発火する。`v-model:open` と組み合わせて使う |
 
 | CSS クラス | 位置 |
 | --- | --- |

@@ -13,6 +13,8 @@ tab: 接口
 | `src` | `string` | 必填 | 打开后显示的图片地址。不写默认插槽时也用于缩略图 |
 | `alt` | `string` | `""` | 图片描述，同时作为预览对话框的 `aria-label` |
 | `label` | `string` | 当前语言的 `imagePreviewOpen` | 触发按钮的 `aria-label` 与 `title` |
+| `open` | `boolean \| null` | `null` | 受控开关。给出后不再渲染触发按钮，由 `v-model:open` 控制 |
+| `origin` | `HTMLElement \| null` | `null` | 受控打开时位移过渡的起点元素 |
 
 | 插槽 | 内容 |
 | --- | --- |
@@ -20,7 +22,7 @@ tab: 接口
 
 | 输出 | 说明 |
 | --- | --- |
-| 无事件 | 预览的开关与视图状态都由组件自己持有 |
+| `update:open` | 预览层打开或关闭时发出，配合 `v-model:open` 使用 |
 
 | CSS 类 | 位置 |
 | --- | --- |

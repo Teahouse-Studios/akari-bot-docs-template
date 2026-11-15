@@ -24,9 +24,14 @@ interface Props {
   alt?: string;
   /** Name of the button that opens the preview. */
   label?: string;
+  /** Controlled visibility; `null` keeps the built-in trigger. */
+  open?: boolean | null;
+  /** Element a controlled preview flies out of and back into. */
+  origin?: HTMLElement | null;
 }
 
-const props = withDefaults(defineProps<Props>(), { alt: "", label: "" });
+const props = withDefaults(defineProps<Props>(), { alt: "", label: "", open: null });
+const emit = defineEmits<{ "update:open": [value: boolean] }>();
 
 const { t } = useAkariI18n();
 
@@ -298,8 +303,11 @@ async function animateOpen(trigger: HTMLElement | null): Promise<void> {
   await morph.finished.catch(() => undefined);
 }
 
-async function open(event: Event): Promise<void> {
-  lastTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+async function openFrom(trigger: HTMLElement | null): Promise<void> {
+  if (!mounted.value || visible.value || !props.src) {
+    return;
+  }
+  lastTrigger = trigger;
   resetView();
   ready.value = false;
   visible.value = true;
@@ -308,6 +316,32 @@ async function open(event: Event): Promise<void> {
   await waitForBox(frame.value);
   await animateOpen(lastTrigger);
 }
+
+function onTriggerClick(event: MouseEvent): void {
+  void openFrom(event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+}
+
+// A controlled preview lets a caller open the same viewer from content it does
+// not render itself, such as markdown output or a list of attachments.
+watch(
+  () => props.open,
+  (value) => {
+    if (value === null) {
+      return;
+    }
+    if (value) {
+      void openFrom(props.origin ?? null);
+    } else {
+      void close();
+    }
+  },
+);
+
+watch(visible, (value) => {
+  if (props.open !== null) {
+    emit("update:open", value);
+  }
+});
 
 async function close(): Promise<void> {
   if (!visible.value || closing) {
@@ -434,11 +468,12 @@ onBeforeUnmount(() => {
 <template>
   <span class="akari-image-preview">
     <button
+      v-if="props.open === null"
       type="button"
       class="akari-image-preview__trigger"
       :aria-label="triggerLabel"
       :title="triggerLabel"
-      @click="open"
+      @click="onTriggerClick"
     >
       <slot>
         <img

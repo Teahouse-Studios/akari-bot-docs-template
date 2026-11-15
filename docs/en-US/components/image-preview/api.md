@@ -13,6 +13,8 @@ tab: API
 | `src` | `string` | required | Picture shown enlarged; also the default thumbnail's source |
 | `alt` | `string` | `""` | Description, also the dialog's `aria-label` |
 | `label` | `string` | the locale's `imagePreviewOpen` | The trigger button's `aria-label` and `title` |
+| `open` | `boolean \| null` | `null` | Controlled visibility. When set, the built-in trigger is left out and `v-model:open` owns the state |
+| `origin` | `HTMLElement \| null` | `null` | Element the preview morphs out of and back into in controlled mode |
 
 | Slot | Content |
 | --- | --- |
@@ -20,7 +22,7 @@ tab: API
 
 | Output | Description |
 | --- | --- |
-| No events | The component owns both the open state and the view state |
+| `update:open` | Emitted when the preview opens or closes; pair it with `v-model:open` |
 
 | Class | Where |
 | --- | --- |

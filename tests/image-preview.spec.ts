@@ -154,3 +154,4 @@ describe("scaleLabel", () => {
     expect(scaleLabel(0.5)).toBe("50%");
   });
 });
+

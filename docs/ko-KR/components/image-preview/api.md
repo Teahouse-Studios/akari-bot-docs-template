@@ -13,6 +13,8 @@ tab: API
 | `src` | `string` | 필수 | 확대해 보여 줄 이미지. 기본 썸네일의 주소로도 쓰인다 |
 | `alt` | `string` | `""` | 이미지 설명. 미리보기 대화 상자의 `aria-label` 로도 쓰인다 |
 | `label` | `string` | 현재 언어의 `imagePreviewOpen` | 트리거 버튼의 `aria-label` 과 `title` |
+| `open` | `boolean \| null` | `null` | 제어용 열림 상태. 지정하면 트리거 버튼을 그리지 않고 `v-model:open` 으로 상태를 다룬다 |
+| `origin` | `HTMLElement \| null` | `null` | 제어 모드에서 열 때 확대 표시가 드나드는 기준 요소 |
 
 | 슬롯 | 내용 |
 | --- | --- |
@@ -20,7 +22,7 @@ tab: API
 
 | 출력 | 설명 |
 | --- | --- |
-| 이벤트 없음 | 여닫기와 보기 상태는 컴포넌트가 스스로 가진다 |
+| `update:open` | 미리보기가 열리거나 닫힐 때 발생한다. `v-model:open` 과 함께 쓴다 |
 
 | CSS 클래스 | 위치 |
 | --- | --- |
