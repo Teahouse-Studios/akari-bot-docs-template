@@ -157,8 +157,8 @@ const pattern = usePagePattern();
  */
 .akari-doc-hero__text,
 .akari-doc-hero__media {
-  --_x: 50%;
-  --_y: 50%;
+  --akari-light-x: 50%;
+  --akari-light-y: 50%;
   --_ink: var(--md-sys-color-on-surface);
   position: relative;
   isolation: isolate;
@@ -217,6 +217,14 @@ const pattern = usePagePattern();
   --_reach: radial-gradient(circle at 100% 100%, #000, transparent 75%);
 }
 
+/* The light's position, taken down from the card (see styles/pattern.css). */
+.akari-doc-hero__light,
+.akari-doc-hero__glow,
+.akari-doc-hero__focus {
+  --akari-light-x: inherit;
+  --akari-light-y: inherit;
+}
+
 .akari-doc-hero__light {
   opacity: 0;
   transition: opacity var(--md-sys-motion-duration-medium-2, 300ms)
@@ -226,7 +234,7 @@ const pattern = usePagePattern();
 /* Both fall off in several steps, for an edge that is never felt. */
 .akari-doc-hero__glow {
   background: radial-gradient(
-    circle 360px at var(--_x) var(--_y),
+    circle 360px at var(--akari-light-x) var(--akari-light-y),
     color-mix(
         in srgb,
         var(--md-sys-color-primary) var(--akari-pattern-glow),
@@ -257,7 +265,7 @@ const pattern = usePagePattern();
 
 .akari-doc-hero__focus {
   --_reach: radial-gradient(
-    circle 220px at var(--_x) var(--_y),
+    circle 220px at var(--akari-light-x) var(--akari-light-y),
     #000 0%,
     rgb(0 0 0 / 0.7) 25%,
     rgb(0 0 0 / 0.35) 55%,
@@ -267,10 +275,11 @@ const pattern = usePagePattern();
   opacity: var(--akari-pattern-spot);
 }
 
-@media (hover: hover) {
-  :is(.akari-doc-hero__text, .akari-doc-hero__media):hover .akari-doc-hero__light {
-    opacity: 1;
-  }
+/* Lit only under a mouse or pen (data-akari-hover, see useContentLight). */
+:root[data-akari-hover]
+  :is(.akari-doc-hero__text, .akari-doc-hero__media):hover
+  .akari-doc-hero__light {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

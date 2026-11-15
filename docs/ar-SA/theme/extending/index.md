@@ -19,10 +19,14 @@ parallel:
 
 ## استبدال المكوّنات
 
-في `enhanceApp` داخل مدخل السمة `docs/.vitepress/theme/index.ts`، مرّر إلى `provideAkariComponents` الأجزاء التي تريد استبدالها. الأجزاء التي لا تمرّرها تبقى على المكوّنات المدمجة:
+في `enhanceApp` داخل مدخل السمة `docs/.vitepress/theme/index.ts`، استدعِ `provideAkariSiteData` لتسليم بيانات اللغة والتهيئة الخاصة بالموقع إلى السمة، ثم مرّر إلى `provideAkariComponents` الأجزاء التي تريد استبدالها. الأجزاء التي لا تمرّرها تبقى على المكوّنات المدمجة:
 
 ```ts
+import { type Theme } from "vitepress";
+import DefaultTheme from "vitepress/theme-without-fonts";
+import { provideAkariSiteData } from "./composables/useLocales";
 import { provideAkariComponents } from "./composables/useAkariConfig";
+import Layout from "./layouts/AkariLayout.vue";
 import CustomFooter from "./CustomFooter.vue";
 
 export default {

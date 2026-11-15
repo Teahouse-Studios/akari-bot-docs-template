@@ -4,7 +4,7 @@ tab: API
 
 # 버튼: API
 
-아래 내용은 `@m3e/web` 2.10.2의 컴포넌트 메타데이터에서 가져왔습니다.
+아래 내용은 `@m3e/web` 2.10.3의 컴포넌트 메타데이터에서 가져왔습니다.
 
 ## m3e-button
 
@@ -67,6 +67,6 @@ tab: API
 
 ## 문서에서 버튼 사용
 
-- 버튼의 앵커는 Shadow DOM 안에 있어 VitePress의 내부 링크 처리가 볼 수 없으므로, `href`가 있는 내부 `m3e-button`은 페이지 전체를 새로 불러옵니다. SPA 내비게이션이 필요하면 일반 `<a>`를 쓰거나 클릭할 때 `useRouter().go()`를 호출하세요. [내비게이션](/ko-KR/components/navigation#spa-navigation)을 참고하세요.
+- `href`가 있는 사이트 내 `m3e-button`은 테마가 이어받아 페이지 안에서 전환하며, `target="_self"`이면 페이지 전체를 불러옵니다. 스크립트에서 이동해야 한다면 `useRouter().go()`를 호출하세요. [내비게이션](/ko-KR/components/navigation#spa-navigation)을 참고하세요.
 - 보이는 크기와 관계없이 버튼은 최소 48×48dp의 터치 영역을 유지합니다.
 - 테마의 `m3e.ts`가 컴포넌트(`@m3e/web/button`, `@m3e/web/icon-button`, `@m3e/web/tooltip`)를 등록합니다.

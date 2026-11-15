@@ -12,7 +12,7 @@ parallel:
 
 ## 变体
 
-五种外观从高到低表达强调程度：
+五种外观表达不同的强调程度：
 
 <div class="demo-row">
   <m3e-button variant="elevated">Elevated</m3e-button>
@@ -32,7 +32,7 @@ parallel:
 
 - `filled`：页面中最重要的操作，同一区域通常只出现一个。
 - `tonal`：次重要操作，比 `filled` 柔和。
-- `outlined`：需要明确边界但不需要高强调的操作。
+- `outlined`：需要明确边界的操作，强调程度不高。
 - `text`：工具栏、卡片页脚中的低强调操作。
 - `elevated`：需要浮起感的主操作，适合与卡片或表面搭配。
 
@@ -106,11 +106,11 @@ parallel:
 </m3e-button>
 ```
 
-图标默认对辅助技术隐藏，按钮的可读名称来自可见文本；只使用图标时必须提供 `aria-label`。
+图标默认对辅助技术隐藏，按钮的可读名称来自可见文本。若按钮只用图标，必须提供 `aria-label`。
 
 ## 图标按钮
 
-图标按钮有 `standard`、`filled`、`tonal`、`outlined` 与 `elevated` 五种变体。它没有文字，需要用工具提示说明用途：
+图标按钮有 `standard`、`filled`、`tonal`、`outlined` 与 `elevated` 五种变体。图标按钮本身没有文字，需要用工具提示说明用途：
 
 <div class="demo-row">
   <m3e-icon-button id="button-demo-back" aria-label="返回">
@@ -141,11 +141,11 @@ parallel:
 <m3e-tooltip for="button-demo-settings">设置</m3e-tooltip>
 ```
 
-每个工具提示的 `for` 指向唯一的 `id`；同一页面中重复的 `id` 会让提示错位或只对第一个元素生效。
+每个工具提示的 `for` 指向唯一的 `id`。同一页面中若出现重复的 `id`，提示会错位，或只对第一个元素生效。
 
 ## 禁用与链接
 
-禁用按钮默认不进入键盘焦点；`disabled-interactive` 保留可聚焦性，便于用户发现该操作：
+禁用按钮默认不进入键盘焦点。`disabled-interactive` 保留可聚焦性，便于用户发现该操作：
 
 <div class="demo-row">
   <m3e-button variant="filled" disabled>禁用</m3e-button>
@@ -178,7 +178,7 @@ parallel:
 </m3e-button>
 ```
 
-设置 `href` 后按钮渲染为链接语义，支持 `target`、`rel` 与 `download`。m3e 按钮的锚点位于 Shadow DOM 内，VitePress 的全局站内链接拦截不会接管它，因此站内 `m3e-button` 链接会整页跳转。需要 SPA 导航时，优先使用真实的 `<a>`（可配 m3e 样式），或在点击处理里调用 `useRouter().go()`，参考[导航](/zh-CN/components/navigation)。
+设置 `href` 后按钮渲染为链接语义，支持 `target`、`rel` 与 `download`。主题会接管站内链接，在页面内切换。`target="_self"` 时整页加载，`target="_blank"` 时在新标签页打开。需要在脚本中跳转时，可调用 `useRouter().go()`，详见[导航](/zh-CN/components/navigation)。
 
 ## 选择状态
 
@@ -212,14 +212,14 @@ parallel:
 </m3e-button>
 ```
 
-选中时，`m3e-icon` 会自动使用填充字形；也可以用 `selected-icon` 与 `selected` 插槽替换图标和文本。切换会触发 `beforeinput`、`input` 与 `change` 事件，可在 `beforeinput` 中取消。
+选中时，`m3e-icon` 会自动使用填充字形。也可以用 `selected-icon` 与 `selected` 插槽替换图标和文本。切换会触发 `beforeinput`、`input` 与 `change` 事件，可在 `beforeinput` 中取消。
 
 ## 无障碍建议
 
 - 只含图标的按钮必须设置 `aria-label`，并搭配 `m3e-tooltip`。
 - 同一页面内工具提示目标 `id` 保持唯一。
 - 禁用操作若需要用户知晓，使用 `disabled-interactive`，并说明不可用的原因。
-- 链接式按钮使用 `href`，不要给普通按钮绑定路由逻辑后丢失链接语义。
+- 链接式按钮使用 `href`。不要给普通按钮绑定路由逻辑，否则会丢失链接语义。
 - 主操作使用 `filled`，同一视觉区域避免出现多个高强调按钮。
 
 全部属性、插槽与事件见[接口](/zh-CN/components/button/api)。

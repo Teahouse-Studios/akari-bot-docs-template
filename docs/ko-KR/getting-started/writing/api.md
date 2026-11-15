@@ -131,3 +131,4 @@ pnpm install
 
 - 컴포넌트 안의 제목에는 `<m3e-heading>`을 씁니다. `m3e-toc-ignore` 속성을 주면 목차에 포함되지 않습니다.
 - 아이콘은 `<m3e-icon name="search"></m3e-icon>`처럼 작성합니다. 아이콘은 먼저 `icons.ts`에 등록되어 있어야 합니다. [아이콘 사용하기](/ko-KR/styles/icons/using)를 참고하세요.
+- `href`가 있는 컴포넌트(버튼, 카드, 칩, 목록 항목 등)가 사이트 안의 페이지를 가리키면, 일반 링크와 마찬가지로 전체 페이지를 다시 불러오지 않고 페이지가 전환됩니다. `target="_self"`를 지정하면 VitePress의 관례에 따라 페이지 전체를 불러옵니다. `target="_blank"`는 새 탭에서 엽니다.

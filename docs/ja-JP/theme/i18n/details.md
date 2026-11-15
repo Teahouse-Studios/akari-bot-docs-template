@@ -19,7 +19,7 @@ tab: 詳細
 5. 足りない部分を補います。ないインターフェースの文字列は英語になり、`fonts` のない言語パックはテーマのフォントを、`dir` のない言語パックは左から右を使います。
 6. 言語設定に書いた `messages`、`fonts`、`dir`、`markdown` が言語パックの上に重ねられます。
 
-`settings.title`、`settings.labels`、`toc.overline`、`footer.message`、`search.placeholder` が設定されていない場合も、この表から取得されます。そのため、1 つの共通設定でもすべての言語で適切なデフォルトになります。共通設定に書いた文字列はすべての言語に引き継がれます。言語ごとに異なる文字列は言語設定に書きます。
+`settings.title`、`settings.labels`、`toc.overline`、`footer.message`、`search.placeholder` が設定されていない場合も、言語パックのインターフェース文字列から取得されます。そのため、1 つの共通設定でもすべての言語で適切なデフォルトになります。共通設定に書いた文字列はすべての言語に引き継がれます。言語ごとに異なる文字列は言語設定に書きます。
 
 ## 言語パックが使われる場所 {#where-language-packs-are-used}
 

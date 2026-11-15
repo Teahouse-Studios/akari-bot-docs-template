@@ -66,7 +66,7 @@ This replaces the folder with the template's version, so changes you made to the
 | Dependency | Version | Notes |
 | --- | --- | --- |
 | `vitepress` | `2.0.0-alpha.21` | Pinned; built on Vite 8 / Rolldown and Vue 3.5 |
-| `@m3e/web` | `2.10.2` | Material 3 Expressive Web Components |
+| `@m3e/web` | `2.10.3` | Material 3 Expressive Web Components |
 | `@m3e/icons` | `1.0.21` | Material Symbols icons, registered on demand |
 
 VitePress is still in alpha. When you upgrade it, check the theme code, the config types and the build output together.

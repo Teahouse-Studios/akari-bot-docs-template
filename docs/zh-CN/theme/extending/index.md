@@ -19,10 +19,14 @@ parallel:
 
 ## 替换组件
 
-在主题入口 `docs/.vitepress/theme/index.ts` 的 `enhanceApp` 中，把要替换的部分交给 `provideAkariComponents`，没有给出的部分仍使用内置组件：
+在主题入口 `docs/.vitepress/theme/index.ts` 的 `enhanceApp` 中，先调用 `provideAkariSiteData` 把站点的语言与配置数据交给主题，再把要替换的部分交给 `provideAkariComponents`。没有给出的部分仍使用内置组件：
 
 ```ts
+import { type Theme } from "vitepress";
+import DefaultTheme from "vitepress/theme-without-fonts";
+import { provideAkariSiteData } from "./composables/useLocales";
 import { provideAkariComponents } from "./composables/useAkariConfig";
+import Layout from "./layouts/AkariLayout.vue";
 import CustomFooter from "./CustomFooter.vue";
 
 export default {
@@ -35,7 +39,7 @@ export default {
 } satisfies Theme;
 ```
 
-自定义组件中用主题的组合式函数读取配置与状态，例如 `useAkariConfig()`、`useSidebar()`。可以替换的部分与可用的函数见[接口](/zh-CN/theme/extending/api)。
+在自定义组件中调用主题的组合式函数，读取配置与状态，例如 `useAkariConfig()`、`useSidebar()`。可以替换的部分与可用的函数见[接口](/zh-CN/theme/extending/api)。
 
 ## CSS 变量
 
@@ -48,7 +52,7 @@ export default {
 }
 ```
 
-单个组件也可以就地覆盖。下面三张卡片只改了圆角：
+单个组件也可以就地覆盖变量。下面三张卡片只改了圆角：
 
 <div class="demo-grid">
   <m3e-card variant="outlined" style="--m3e-card-shape: 4px;">
@@ -69,11 +73,11 @@ export default {
 <m3e-card variant="outlined" style="--m3e-card-shape: 28px;">…</m3e-card>
 ```
 
-优先覆盖主题与组件公开的变量，不要依赖组件内部的类名或 Shadow DOM 结构，它们会随版本变化。
+优先覆盖主题与组件公开的变量。不要依赖组件内部的类名或 Shadow DOM 结构，类名与结构会随版本变化。
 
 ## 注意事项
 
-- 替换组件时保留原来的根元素语义与无障碍属性，例如顶栏使用 `m3e-app-bar`、导航使用 `m3e-nav-menu`，并保留键盘操作。
+- 替换组件时保留原来的根元素语义与无障碍属性，例如顶栏使用 `m3e-app-bar`、导航使用 `m3e-nav-menu`。键盘操作也要保留。
 - 不要写死颜色，使用 `--md-sys-color-*` 令牌，才能跟随动态色、明暗与对比度。
 - 用到新的 m3e 组件或图标时，在 `m3e.ts` 与 `icons.ts` 中按需注册，不要导入 `@m3e/web/all`。
 - 不要在模块顶层访问 `window`、`document` 或 `localStorage`，否则服务端渲染会失败。

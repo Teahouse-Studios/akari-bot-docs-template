@@ -1,0 +1,46 @@
+---
+icon: image
+order: 4
+tab: 概览
+parallel:
+  - api
+---
+
+# 图片预览
+
+`AkariImagePreview` 把一张图片包成缩略图，点开后铺满内容区，可以缩放、旋转与拖动，键盘同样能操作。
+
+## 用法
+
+<AkariImagePreview src="/hero/theme-hero.svg" alt="主题外观" label="查看主题外观">
+  <img src="/hero/theme-hero.svg" alt="主题外观" width="360" />
+</AkariImagePreview>
+
+```html
+<AkariImagePreview src="/hero/theme-hero.svg" alt="主题外观" label="查看主题外观">
+  <img src="/hero/theme-hero.svg" alt="主题外观" width="360" />
+</AkariImagePreview>
+```
+
+默认插槽就是缩略图本身。不传默认插槽时，组件自己渲染一张 `<img>`。传了就按你给的排版显示，组件只负责在外面套一层按钮。
+
+属性、插槽、CSS 类与导出的几何函数见 `接口` 页。
+
+## 键盘
+
+| 键 | 作用 |
+| --- | --- |
+| `Esc` | 关闭预览 |
+| `+`、`=` | 放大一级 |
+| `-`、`_` | 缩小一级 |
+| `0` | 还原视图 |
+| `r` | 顺时针旋转 90° |
+| `Shift` + `r` | 逆时针旋转 90° |
+
+缩放范围 50%–400%，滚轮、双击与工具条按钮都能用。按住拖动可以平移，双击图片或点工具条上的还原按钮回到初始视图。
+
+## 动效与降级
+
+打开与收起时，图片从缩略图的位置放大过去，收起时再缩回去。视图被缩放、旋转或拖动过之后，这条动画跳过，直接淡入淡出。系统开启“减少动态效果”时只做淡入淡出，不移动。
+
+预览层会被传送到 `.akari-frame`，因此不受正文排版与 `overflow` 的裁剪。打开期间锁定页面滚动，关闭后焦点回到触发按钮。

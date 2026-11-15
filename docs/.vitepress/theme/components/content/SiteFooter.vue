@@ -116,8 +116,8 @@ function hrefFor(link: string): string {
   background-color: var(--akari-doc-surface-color, var(--md-sys-color-surface));
   /* Same scrolled edge as the document, open at the page bottom. */
   box-shadow:
-    inset 1px 1px 0 var(--_edge),
-    inset -1px 0 0 var(--_edge);
+    inset 1px 1px 0 var(--akari-doc-edge-color),
+    inset -1px 0 0 var(--akari-doc-edge-color);
   --_cap-top: 48px;
   --_cap-bottom: 32px;
   color: var(--md-sys-color-on-surface);

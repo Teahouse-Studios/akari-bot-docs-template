@@ -128,7 +128,7 @@ tab: API
 | `searchIndexUnavailable` | تعذّر تحميل فهرس البحث المحلي. |
 | `searchIndexInvalid` | فهرس البحث المحلي غير صالح. |
 | `searchRequestFailed` | فشل طلب البحث (HTTP {status}). |
-| `searchBackendMissing` | لا توجد خدمة بحث مسجّلة باسم \"{id}\". |
+| `searchBackendMissing` | لا توجد خدمة بحث مسجّلة باسم "{id}". |
 
 يُستخدم `searchResultCountOne` للأعداد التي تكون فئة الجمع الخاصة بها `one` («1 نتيجة» بالعربية)؛ وتستخدم الأعداد الأخرى `searchResultCount`. يحدّد `Intl.PluralRules` الفئة بحسب اللغة. ويُعرض `{keys}` على شكل مفاتيح لوحة مفاتيح عند ظهوره.
 

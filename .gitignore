@@ -9,3 +9,4 @@ docs/public/search-index.json
 plans/*
 specs/*
 **/.omc/*
+/reports

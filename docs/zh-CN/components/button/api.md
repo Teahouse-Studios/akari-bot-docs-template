@@ -4,7 +4,7 @@ tab: 接口
 
 # 按钮：接口
 
-以下内容来自 `@m3e/web` 2.10.2 的组件元数据。
+以下内容来自 `@m3e/web` 2.10.3 的组件元数据。
 
 ## m3e-button
 
@@ -40,7 +40,7 @@ tab: 接口
 
 ## m3e-icon-button
 
-属性与 `m3e-button` 相同，另外：
+属性与 `m3e-button` 相同，另有以下属性：
 
 | 属性 | 取值 | 默认值 | 说明 |
 | --- | --- | --- | --- |
@@ -67,6 +67,6 @@ tab: 接口
 
 ## 在文档中使用
 
-- 按钮的锚点在 Shadow DOM 内，VitePress 的站内链接拦截看不到它，所以带 `href` 的站内 `m3e-button` 会整页跳转。需要 SPA 导航时，用普通的 `<a>`，或在点击时调用 `useRouter().go()`，见[导航](/zh-CN/components/navigation#spa-导航)。
+- 带 `href` 的站内 `m3e-button` 由主题接管，在页面内切换。`target="_self"` 时整页加载。需要在脚本中跳转时，可调用 `useRouter().go()`，见[导航](/zh-CN/components/navigation#spa-导航)。
 - 无论视觉尺寸多大，按钮都保留至少 48×48dp 的触控区域。
-- 组件由主题的 `m3e.ts` 注册（`@m3e/web/button`、`@m3e/web/icon-button`、`@m3e/web/tooltip`）。
+- 主题的 `m3e.ts` 负责注册这三种组件（`@m3e/web/button`、`@m3e/web/icon-button`、`@m3e/web/tooltip`）。

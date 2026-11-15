@@ -4,7 +4,7 @@ tab: API
 
 # Boutons : API
 
-Le contenu ci-dessous provient des métadonnées de composants de `@m3e/web` 2.10.2.
+Le contenu ci-dessous provient des métadonnées de composants de `@m3e/web` 2.10.3.
 
 ## m3e-button
 
@@ -67,6 +67,6 @@ Les événements sont les mêmes que pour `m3e-button`.
 
 ## Utiliser les boutons dans la documentation
 
-- L'ancre du bouton se trouve dans son Shadow DOM, où la gestion des liens internes de VitePress ne la voit pas : un `m3e-button` interne avec `href` charge donc la page complète. Quand vous avez besoin d'une navigation SPA, utilisez un simple `<a>`, ou appelez `useRouter().go()` au clic. Voir [Navigation](/fr-FR/components/navigation#spa-navigation).
+- Un `m3e-button` interne avec `href` est pris en charge par le thème, qui effectue la navigation dans la page ; avec `target="_self"`, la page complète est chargée. Quand vous devez naviguer depuis un script, vous pouvez appeler `useRouter().go()`, voir [Navigation](/fr-FR/components/navigation#spa-navigation).
 - Quelle que soit sa taille visuelle, un bouton garde une zone tactile d'au moins 48×48dp.
 - Le `m3e.ts` du thème enregistre les composants (`@m3e/web/button`, `@m3e/web/icon-button`, `@m3e/web/tooltip`).

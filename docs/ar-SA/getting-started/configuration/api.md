@@ -105,7 +105,7 @@ function akariContent(
 | `site` | `{ lang, title, description, locales, rewrites }` | يُفرد داخل `defineConfig` |
 | `plugin` | `Plugin` من Vite | يحدّث التنقل في خادم التطوير |
 | `route` | `(page: string) => string` | مسار الملف المصدري ← مسار الصفحة، فمثلًا يصبح `zh-CN/theme/layout/index.md` المسار `/zh-CN/theme/layout` |
-| `rewrite` | `(page: string) => string` | مسار الملف المصدري ← مسار التقديم في VitePress، فيصبح الملف نفسه `theme/layout.md` |
+| `rewrite` | `(page: string) => string` | مسار الملف المصدري ← مسار التقديم في VitePress، مثل `zh-CN/theme/layout/index.md` ← `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | مجلدات اللغات، واللغة الجذرية أولًا. `key` هو مفتاح locale في VitePress (`root` للغة الجذرية)؛ و`prefix` هو بادئة المسار |
 
 ## akariHead

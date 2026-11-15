@@ -128,7 +128,7 @@ The six built-in language packs, Simplified Chinese (`zh`), English (`en`), Japa
 | `searchIndexUnavailable` | Couldn't load the local search index. |
 | `searchIndexInvalid` | The local search index is not valid. |
 | `searchRequestFailed` | The search request failed (HTTP {status}). |
-| `searchBackendMissing` | No search backend is registered as \"{id}\". |
+| `searchBackendMissing` | No search backend is registered as "{id}". |
 
 `searchResultCountOne` is used for counts whose plural category is `one` ("1 result" in English); other counts use `searchResultCount`. `Intl.PluralRules` decides the category for the language. `{keys}` is rendered as keycaps when shown.
 

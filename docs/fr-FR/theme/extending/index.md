@@ -19,10 +19,14 @@ Il existe trois façons d'adapter le thème, et aucune ne demande de modifier so
 
 ## Remplacer des composants
 
-Dans `enhanceApp` du point d'entrée du thème `docs/.vitepress/theme/index.ts`, passez à `provideAkariComponents` les parties à remplacer. Les parties omises gardent les composants intégrés :
+Dans `enhanceApp` du point d'entrée du thème `docs/.vitepress/theme/index.ts`, appelez d'abord `provideAkariSiteData` pour transmettre au thème les données de langue et de configuration du site, puis passez à `provideAkariComponents` les parties à remplacer. Les parties omises gardent les composants intégrés :
 
 ```ts
+import { type Theme } from "vitepress";
+import DefaultTheme from "vitepress/theme-without-fonts";
+import { provideAkariSiteData } from "./composables/useLocales";
 import { provideAkariComponents } from "./composables/useAkariConfig";
+import Layout from "./layouts/AkariLayout.vue";
 import CustomFooter from "./CustomFooter.vue";
 
 export default {

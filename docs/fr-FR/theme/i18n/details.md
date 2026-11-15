@@ -19,7 +19,7 @@ La configuration qu'obtient une page est le `config.ts` de son dossier de langue
 5. Combler les manques : les textes d'interface manquants sont en anglais, un pack sans `fonts` utilise les polices du thème, et un pack sans `dir` s'écrit de gauche à droite.
 6. Les `messages`, `fonts`, `dir` et `markdown` écrits dans la configuration de langue s'appliquent par-dessus le pack.
 
-Lorsque `settings.title`, `settings.labels`, `toc.overline`, `footer.message` et `search.placeholder` ne sont pas définis, ils proviennent aussi de cette table : une seule configuration partagée a ainsi des valeurs par défaut adaptées dans chaque langue. Les textes écrits dans la configuration partagée sont hérités par toutes les langues ; les textes qui varient selon la langue vont dans la configuration de langue.
+Lorsque `settings.title`, `settings.labels`, `toc.overline`, `footer.message` et `search.placeholder` ne sont pas définis, ils proviennent aussi des textes d'interface du pack de langue : une seule configuration partagée a ainsi des valeurs par défaut adaptées dans chaque langue. Les textes écrits dans la configuration partagée sont hérités par toutes les langues ; les textes qui varient selon la langue vont dans la configuration de langue.
 
 ## Où les packs de langue sont utilisés {#where-language-packs-are-used}
 

@@ -13,7 +13,7 @@ parallel:
 
 ## 사이드 내비게이션
 
-`m3e-nav-menu`는 여러 단계의 내비게이션을 담습니다. `m3e-nav-menu-item`은 `label`, `icon`, `badge` 슬롯으로 내용을 배치합니다. 그룹을 펼치려면 `open`을, 현재 말단 항목을 강조하려면 `selected`를 씁니다.
+`m3e-nav-menu`는 여러 단계의 내비게이션을 담습니다. `m3e-nav-menu-item`은 `label`, `icon`, `badge` 슬롯으로 내용을 배치합니다. 그룹을 펼치려면 `open`을, 현재 최하위 항목을 강조하려면 `selected`를 씁니다.
 
 <div class="demo-surface" style="max-width: 320px; max-block-size: 320px;">
   <m3e-nav-menu aria-label="컴포넌트 내비게이션 데모">
@@ -223,7 +223,9 @@ function navigate(event: MouseEvent, link: string): void {
 }
 ```
 
-m3e 버튼이나 아이콘 버튼 안의 앵커는 Shadow DOM 안에 있어 VitePress의 전역 가로채기가 볼 수 없습니다. 이런 컴포넌트에 SPA 내비게이션이 필요하면 호스트 요소의 클릭을 감지해 `router.go()`를 명시적으로 호출하세요. 이 페이지의 정적 데모는 일반 `<a>` 요소를 쓰므로 내부 클릭은 VitePress가 처리하고, 외부 링크는 여전히 페이지 전체를 불러옵니다. 어떤 방식을 쓰든 `div`와 클릭 핸들러로 링크를 흉내 내지 말고, 내부 내비게이션에서 실제 `href`를 빼지 마세요.
+m3e 버튼이나 아이콘 버튼 내부에서 생성된 앵커는 테마가 이어받으므로, 사이트 내 링크는 페이지 안에서 전환됩니다. `target="_self"`이면 페이지 전체를 불러오고, `target="_blank"`이면 새 탭에서 엽니다. 링크가 아닌 요소로 직접 클릭을 흉내 낼 때만 호스트 요소에서 클릭을 감지해 `router.go()`를 호출하면 됩니다.
+
+이 페이지의 정적 데모는 일반 `<a>` 요소를 쓰므로 내부 클릭은 VitePress가 처리하고, 외부 링크는 여전히 페이지 전체를 불러옵니다. 어떤 방식을 쓰든 `div`와 클릭 핸들러로 링크를 흉내 내지 말고, 내부 내비게이션에서 실제 `href`를 빼지 마세요.
 
 ## 접근성
 

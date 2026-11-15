@@ -152,7 +152,7 @@ parallel:
 
 ## البطاقات القابلة للتفاعل
 
-أضف `actionable` إلى بطاقة لتجعل سطحها كله منطقة تفاعل واحدة. ومع `href` تعمل رابطًا مباشرة:
+أضف `actionable` إلى بطاقة لتجعل سطحها كله منطقة تفاعل واحدة. ومع `href` تعمل رابطًا مباشرًا:
 
 <div class="demo-grid">
   <m3e-card variant="outlined" actionable href="/ar-SA/getting-started/installation.html">
@@ -188,7 +188,7 @@ parallel:
 
 <m3e-card variant="outlined">
   <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">معلومات الإصدار</m3e-heading>
-  <div slot="content">يطابق هذا التوثيق VitePress 2.0.0-alpha.21 و@m3e/web 2.10.2.</div>
+  <div slot="content">يطابق هذا التوثيق VitePress 2.0.0-alpha.21 و@m3e/web 2.10.3.</div>
   <div slot="actions" end>
     <m3e-button variant="filled">
       <m3e-dialog-trigger for="card-demo-dialog">عرض التفاصيل</m3e-dialog-trigger>
@@ -222,7 +222,7 @@ parallel:
 </m3e-dialog>
 ```
 
-يمنح `dismissible` مربع الحوار زر إغلاق. والنقر على طبقة التعتيم (scrim) أو الضغط على `Escape` يغلقه أيضًا. وللمسارات التي يجب ألا تُقاطَع، أضف `disable-close` وإجراء تأكيد صريحًا.
+يمنح `dismissible` مربع الحوار زر إغلاق. والنقر على طبقة التعتيم (scrim) أو الضغط على `Escape` يغلقه أيضًا. وللتدفقات التي يجب ألا تُقاطَع، أضف `disable-close` وإجراء تأكيد صريحًا.
 
 ## تخطيط الشبكة
 
@@ -239,7 +239,7 @@ parallel:
   </m3e-card>
   <m3e-card variant="filled">
     <m3e-heading m3e-toc-ignore slot="header" variant="title" size="medium">الأنماط</m3e-heading>
-    <div slot="content">تعرّف على رموز الألوان وتسلسل الطباعة.</div>
+    <div slot="content">تعرّف على رموز الألوان والتسلسل الهرمي للطباعة.</div>
   </m3e-card>
 </div>
 

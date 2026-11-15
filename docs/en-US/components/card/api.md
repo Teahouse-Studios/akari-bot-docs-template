@@ -4,7 +4,7 @@ tab: API
 
 # Cards: API
 
-The content below comes from the component metadata of `@m3e/web` 2.10.2.
+The content below comes from the component metadata of `@m3e/web` 2.10.3.
 
 ## m3e-card
 

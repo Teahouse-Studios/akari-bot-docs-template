@@ -4,7 +4,7 @@ tab: API
 
 # Buttons: API
 
-The content below comes from the component metadata of `@m3e/web` 2.10.2.
+The content below comes from the component metadata of `@m3e/web` 2.10.3.
 
 ## m3e-button
 
@@ -67,6 +67,6 @@ Events are the same as for `m3e-button`.
 
 ## Using buttons in docs
 
-- The button's anchor is inside its Shadow DOM, where VitePress's internal link handling cannot see it, so an internal `m3e-button` with `href` loads the full page. When you need SPA navigation, use a plain `<a>`, or call `useRouter().go()` on click. See [Navigation](/components/navigation#spa-navigation).
+- An internal `m3e-button` with `href` is taken over by the theme and switches pages in place; `target="_self"` loads the full page. When you need to navigate from script, call `useRouter().go()`. See [Navigation](/components/navigation#spa-navigation).
 - Whatever its visual size, a button keeps a touch target of at least 48×48dp.
 - The theme's `m3e.ts` registers the components (`@m3e/web/button`, `@m3e/web/icon-button`, `@m3e/web/tooltip`).

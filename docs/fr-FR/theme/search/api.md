@@ -17,6 +17,32 @@ tab: API
 
 `search` peut figurer dans une configuration de langue, pour donner à chaque langue son propre backend.
 
+## SearchDock
+
+`<SearchDock>` est enregistré globalement par le thème. Placez-le dans une page, là où le champ de recherche doit atterrir ; aucun import n'est nécessaire. Il rend un cadre réservé, et la copie fixe du déclencheur de la barre supérieure vole au-dessus et reprend ses propriétés.
+
+```md
+<SearchDock variant="hero" align="center" placeholder="Rechercher dans le guide" />
+```
+
+| Propriété | Type | Par défaut | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string` | `search.placeholder` | Texte indicatif une fois amarré ici |
+| `variant` | `"bar" \| "pill" \| "icon" \| "hero"` | `"bar"` | Apparence du champ |
+| `align` | `"start" \| "center" \| "end"` | `"start"` | Alignement de l'icône, du libellé et du raccourci dans le champ |
+| `width` | `string \| number` | Largeur de la variante | Longueur CSS ou largeur en pixels du cadre réservé |
+| `height` | `string \| number` | Hauteur de la variante | Longueur CSS ou hauteur en pixels du cadre réservé |
+| `fill` | `boolean` | `false` | Remplir le cadre parent au lieu de la taille naturelle de la variante |
+| `priority` | `number` | `0` | Prioritaire sur les autres tags de la même page |
+
+`bar` est le champ de la barre supérieure, `pill` un champ tonal, `icon` un bouton flottant rond et `hero` un grand champ tonal. `width` et `height` acceptent une longueur CSS (`"20rem"`, `"min(100%, 30rem)"`) ou un nombre de pixels ; sans eux, le cadre naturel de la variante est utilisé. Ajoutez `fill` pour occuper le cadre parent (`width: 100%; height: 100%`) ; le parent doit avoir une largeur et une hauteur définies, et `width` / `height` explicites l'emportent encore sur un axe.
+
+Le tag accepte aussi le slot par défaut, placé dans le cadre réservé derrière le champ. Il est marqué `aria-hidden` ; c'est le champ lui-même qui ouvre la recherche.
+
+Plusieurs tags peuvent coexister sur une page. Le `priority` le plus élevé gagne, à égalité le premier enregistré, et les cadres de taille nulle ou masqués sont ignorés. Un tag doit aussi tenir entièrement dans la zone de page et la fenêtre, sans chevaucher la barre supérieure ni la rangée d'onglets ; sinon le champ reste dans la barre jusqu'à ce que le défilement libère de la place. Laissez un seul tag par page : au démontage, le champ revient dans la barre et s'efface ; entre deux pages à tags, il anime d'un cadre à l'autre. Un premier chargement direct le place sans transition. Toutes les durées viennent des jetons de ressort MD3 du thème, donc du réglage Standard/Expressive et de `prefers-reduced-motion`.
+
+`<AkariSearchDock>` est un alias du même composant.
+
 ## Backend local
 
 ```ts

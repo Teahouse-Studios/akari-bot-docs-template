@@ -105,7 +105,7 @@ Lit les fichiers de configuration et les dossiers de `srcDir`. `logger` vaut `co
 | `site` | `{ lang, title, description, locales, rewrites }` | À étaler dans `defineConfig` |
 | `plugin` | `Plugin` Vite | Met à jour la navigation dans le serveur de développement |
 | `route` | `(page: string) => string` | Chemin du fichier source → chemin de la page, par exemple `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
-| `rewrite` | `(page: string) => string` | Chemin du fichier source → chemin servi par VitePress, par exemple → `theme/layout.md` |
+| `rewrite` | `(page: string) => string` | Chemin du fichier source → chemin servi par VitePress, par exemple `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | Dossiers de langue, langue racine en premier. `key` est la clé de locale VitePress (`root` pour la langue racine) ; `prefix` est le préfixe des chemins |
 
 ## akariHead

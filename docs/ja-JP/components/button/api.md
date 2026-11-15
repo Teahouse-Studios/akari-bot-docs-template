@@ -4,7 +4,7 @@ tab: API
 
 # ボタン：API
 
-以下の内容は `@m3e/web` 2.10.2 のコンポーネントのメタデータに基づいています。
+以下の内容は `@m3e/web` 2.10.3 のコンポーネントのメタデータに基づいています。
 
 ## m3e-button
 
@@ -67,6 +67,6 @@ tab: API
 
 ## ドキュメントでボタンを使う
 
-- ボタンのアンカーは Shadow DOM の中にあり、VitePress の内部リンクの処理からは見えません。そのため、`href` を持つ内部リンクの `m3e-button` はページ全体を読み込みます。SPA のナビゲーションが必要な場合は、普通の `<a>` を使うか、クリック時に `useRouter().go()` を呼び出してください。[ナビゲーション](/ja-JP/components/navigation#spa-navigation) を参照してください。
+- `href` を持つサイト内の `m3e-button` はテーマが引き継ぎ、ページ内で切り替えます。`target="_self"` のときはページ全体を読み込みます。スクリプトからナビゲーションする必要がある場合は、`useRouter().go()` を呼び出してください。[ナビゲーション](/ja-JP/components/navigation#spa-navigation) を参照してください。
 - 見た目のサイズにかかわらず、ボタンは少なくとも 48×48dp のタッチターゲットを保ちます。
 - コンポーネント（`@m3e/web/button`、`@m3e/web/icon-button`、`@m3e/web/tooltip`）はテーマの `m3e.ts` で登録されています。

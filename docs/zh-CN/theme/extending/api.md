@@ -20,9 +20,9 @@ function provideAkariComponents(
 | 槽位 | 替换的部分 | 内置组件 |
 | --- | --- | --- |
 | `AppBar` | 顶栏 | `m3e-app-bar` 顶栏 |
-| `DesktopNav` | 桌面端 rail 与导航抽屉 | `m3e-nav-rail` 与 `m3e-nav-menu`；根元素 `display: contents`，rail 占页面网格第 1 列整高，常驻抽屉在第 2 列第 2 行 |
+| `DesktopNav` | 桌面端 rail 与导航抽屉 | `m3e-nav-rail` 与 `m3e-nav-menu`。根元素 `display: contents`，rail 占页面网格第 1 列整高，常驻抽屉在第 2 列第 2 行 |
 | `Sidebar` | 窄屏的导航抽屉 | 递归的 `m3e-nav-menu` |
-| `Settings` | 设置模态框中的面板 | 六组选项；标题、关闭按钮与动效由模态框提供 |
+| `Settings` | 设置模态框中的面板 | 六组选项。标题、关闭按钮与动效由模态框提供 |
 | `Hero` | 页面头图 | 标题卡片与图片卡片，只在头部信息有 `hero` 时渲染 |
 | `Toc` | 右侧目录 | 悬挂的目录 |
 | `Pager` | 正文末尾的翻页 | 上一页、下一页卡片 |
@@ -48,7 +48,7 @@ const config = useAkariConfig();
 </template>
 ```
 
-实际替换顶栏时，还要保留打开窄屏导航抽屉的开关（`<m3e-drawer-toggle for="akari-sidebar">`），否则窄屏无法打开导航。
+实际替换顶栏时，还要保留打开窄屏导航抽屉的开关（`<m3e-drawer-toggle for="akari-sidebar">`）。否则窄屏无法打开导航。
 
 ## 组合式函数
 
@@ -64,7 +64,7 @@ const config = useAkariConfig();
 | `useAkariLocales()` | `{ locales, homeHref }` | [国际化](/zh-CN/theme/i18n/api#useakarilocales) |
 | `useAkariSearch()` | 搜索面板的状态与操作 | [搜索](/zh-CN/theme/search/api#useakarisearch) |
 
-`useAkariConfig()` 的结果包含 `lang`、`messages`、`appBar`、`sidebar`、`settings`、`toc`、`footer`、`search`、`fonts` 与 `components`，每一组都已填好默认值并做过校验（例如 `toc.maxDepth` 限制在 1 到 6）。
+`useAkariConfig()` 的结果包含 `lang`、`messages`、`appBar`、`sidebar`、`settings`、`toc`、`footer`、`search`、`fonts` 与 `components`。每一组都已填好默认值并做过校验，例如 `toc.maxDepth` 限制在 1 到 6。
 
 ## 其他导出
 
@@ -127,4 +127,4 @@ docs/.vitepress/
     └── styles/            令牌、外壳、正文、图案与标签栏样式
 ```
 
-与浏览器无关的逻辑（配置解析、导航匹配、语言路径、设置校验、头图解析、动效曲线等）都是纯函数，单元测试在仓库根目录的 `tests/` 中。
+与浏览器无关的逻辑（配置解析、导航匹配、语言路径、设置校验、头图解析、动效曲线等）都是纯函数。单元测试在仓库根目录的 `tests/` 中。

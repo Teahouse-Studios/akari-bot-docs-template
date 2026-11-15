@@ -82,7 +82,7 @@ The same palette, mapped to light and dark:
   </m3e-theme>
 </div>
 
-Contrast has three levels: Default, Medium and High. It affects the lightness difference between foreground and background, and the strength of outlines. Light and dark mode has four options; see [Settings and appearance](/theme/settings).
+Contrast has three levels: Default, Medium and High. It affects the lightness difference between foreground and background, and the strength of outlines. Light and dark modes have four options; see [Settings and appearance](/theme/settings).
 
 ## Usage guidelines
 

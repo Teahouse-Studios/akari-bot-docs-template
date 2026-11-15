@@ -12,16 +12,16 @@ parallel:
 配置写在 `docs` 目录中，分两层：
 
 - `docs/config.ts`：各语言共用的配置。
-- `docs/<语言代码>/config.ts`：一种语言的配置，例如 `docs/zh-CN/config.ts`。带有这个文件的文件夹就是一个语言文件夹。
+- `docs/<语言代码>/config.ts`：一种语言的配置，例如 `docs/zh-CN/config.ts`。有 `config.ts` 的文件夹就是语言文件夹。
 
-语言配置里的字段替换共用配置中的同名字段，对象逐个字段合并，所以语言配置只需要写这种语言不同的部分。`docs/.vitepress/config.mts` 只负责把主题接入 VitePress，一般不需要修改。
+语言配置里的字段会替换共用配置中的同名字段。对象按字段逐个合并，因此语言配置只需写与共用配置不同的部分。`docs/.vitepress/config.mts` 只负责把主题接入 VitePress，一般不需要修改。
 
 ```text
 docs/
 ├─ config.ts                 共用配置
 ├─ en-US/                    English，放在站点根路径
 │  ├─ config.ts              语言配置
-│  └─ …                      页面，见「撰写页面」
+│  └─ …                      页面，见“撰写页面”
 ├─ zh-CN/                    简体中文，放在 /zh-CN/
 │  ├─ config.ts
 │  └─ …
@@ -30,7 +30,7 @@ docs/
 
 ## 共用配置
 
-各语言相同的部分：根语言、logo、版本号与社交链接、分类的图标与顺序、设置与搜索。
+以下内容各语言相同：根语言、logo、版本号与社交链接、分类的图标与顺序、设置与搜索。
 
 ```ts
 // docs/config.ts
@@ -62,14 +62,14 @@ export default defineAkariConfig({
 
 ## 语言配置
 
-这种语言在本站的标题与文字。`lang` 默认就是文件夹名，主题按它选择[语言包](/zh-CN/theme/i18n#语言包)：语言菜单中的名称、文字方向、界面文字与代码块复制按钮的文字都由语言包提供，需要时再在这里改写。
+语言配置里写这种语言在本站的标题与文字。`lang` 默认取文件夹名，主题按 `lang` 选择[语言包](/zh-CN/theme/i18n#语言包)。语言菜单中的名称、文字方向、界面文字与代码块复制按钮的文字都由语言包提供，需要时在这里改写。
 
 ```ts
 // docs/zh-CN/config.ts
 import { defineAkariConfig } from "../.vitepress/theme/define.ts";
 
 export default defineAkariConfig({
-  // 语言的自称是「中文」，这里改为更明确的名称。
+  // 语言的自称是“中文”，这里改为更明确的名称。
   label: "简体中文",
   title: "Vitepress Theme Akari Docs",
   description: "基于 VitePress 与 M3E Web Components 的文档主题",
@@ -98,4 +98,4 @@ export default defineAkariConfig({
 | 改写界面文字 | 语言配置 | `messages` |
 | 新增一种语言 | 新的语言文件夹 | 见[国际化](/zh-CN/theme/i18n) |
 
-全部字段的类型与默认值见[接口](/zh-CN/getting-started/configuration/api)；配置怎样叠加、怎样生成语言与导航见[技术细节](/zh-CN/getting-started/configuration/details)。
+全部字段的类型与默认值见[接口](/zh-CN/getting-started/configuration/api)。配置怎样叠加、怎样生成语言与导航，见[技术细节](/zh-CN/getting-started/configuration/details)。

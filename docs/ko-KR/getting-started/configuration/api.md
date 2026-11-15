@@ -105,7 +105,7 @@ function akariContent(
 | `site` | `{ lang, title, description, locales, rewrites }` | `defineConfig`에 펼쳐 넣습니다 |
 | `plugin` | Vite `Plugin` | 개발 서버에서 내비게이션을 갱신합니다 |
 | `route` | `(page: string) => string` | 소스 파일 경로 → 페이지 경로. 예: `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
-| `rewrite` | `(page: string) => string` | 소스 파일 경로 → VitePress 제공 경로. 예: → `theme/layout.md` |
+| `rewrite` | `(page: string) => string` | 소스 파일 경로 → VitePress 제공 경로. 예: `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | 언어 폴더 목록. 루트 언어가 먼저 옵니다. `key`는 VitePress 로캘 키(루트 언어는 `root`)이고, `prefix`는 경로 접두사입니다 |
 
 ## akariHead

@@ -12,7 +12,7 @@ parallel:
 
 ## 변형
 
-세 가지 변형은 각기 다른 단계에 어울립니다.
+세 가지 변형은 각기 다른 계층에 대응합니다.
 
 <div class="demo-grid">
   <m3e-card variant="filled">
@@ -32,7 +32,7 @@ parallel:
 ```html
 <m3e-card variant="filled">
   <m3e-heading slot="header" variant="title" size="large">Filled</m3e-heading>
-  <div slot="content">기본 변형입니다. 컨테이너 색상은 표면 단계에서 가져옵니다.</div>
+  <div slot="content">기본 변형입니다. 컨테이너 색상은 표면 계층에서 가져옵니다.</div>
 </m3e-card>
 <m3e-card variant="outlined">
   <m3e-heading slot="header" variant="title" size="large">Outlined</m3e-heading>
@@ -188,7 +188,7 @@ parallel:
 
 <m3e-card variant="outlined">
   <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">버전 정보</m3e-heading>
-  <div slot="content">이 문서는 VitePress 2.0.0-alpha.21과 @m3e/web 2.10.2에 맞춰 작성되었습니다.</div>
+  <div slot="content">이 문서는 VitePress 2.0.0-alpha.21과 @m3e/web 2.10.3에 맞춰 작성되었습니다.</div>
   <div slot="actions" end>
     <m3e-button variant="filled">
       <m3e-dialog-trigger for="card-demo-dialog">자세히 보기</m3e-dialog-trigger>

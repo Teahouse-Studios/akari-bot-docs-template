@@ -66,7 +66,7 @@ git checkout template/main -- docs/.vitepress
 | الاعتمادية | الإصدار | ملاحظات |
 | --- | --- | --- |
 | `vitepress` | `2.0.0-alpha.21` | إصدار مثبّت؛ مبني على Vite 8 / Rolldown وVue 3.5 |
-| `@m3e/web` | `2.10.2` | مكونات الويب Material 3 Expressive |
+| `@m3e/web` | `2.10.3` | مكونات الويب Material 3 Expressive |
 | `@m3e/icons` | `1.0.21` | أيقونات Material Symbols، تُسجَّل عند الحاجة |
 
 ما زال VitePress في مرحلة alpha. عند ترقيته، افحص شيفرة السمة وأنواع التهيئة ونتيجة البناء معًا.

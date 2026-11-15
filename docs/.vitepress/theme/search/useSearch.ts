@@ -19,6 +19,8 @@ import type {
 import { createSearchBackend, describeSearchError } from "./backends";
 import type { AkariSearchBackend } from "./types";
 
+export type AkariSearchTriggerRole = "home" | "dock";
+
 export interface AkariSearchApi {
   isOpen: Ref<boolean>;
   query: Ref<string>;
@@ -29,9 +31,14 @@ export interface AkariSearchApi {
   openSearch(): void;
   closeSearch(): void;
   finalizeClose(): void;
-  setTrigger(element: HTMLElement | null): void;
-  /** The registered trigger, or the app bar's search button. */
-  getTrigger(): HTMLElement | null;
+  setTrigger(element: HTMLElement | null, role?: AkariSearchTriggerRole): void;
+  /** Chooses the trigger the dialog morphs from and returns to. */
+  setActiveTrigger(role: AkariSearchTriggerRole): void;
+  /**
+   * The trigger in use (or the one for `role`), or the app bar's button
+   * when a docked copy took over.
+   */
+  getTrigger(role?: AkariSearchTriggerRole): HTMLElement | null;
   getTriggerRect(): DOMRect | null;
   setQuery(value: string): void;
   retry(): void;
@@ -91,7 +98,13 @@ export function provideAkariSearch(
   let controller: AbortController | undefined;
   let requestId = 0;
   let previousFocus: HTMLElement | null = null;
-  let triggerElement: HTMLElement | null = null;
+  // The app bar keeps its trigger as a layout placeholder; a page can dock
+  // a second one. The dialog morphs from whichever is in use.
+  const triggers: Record<AkariSearchTriggerRole, HTMLElement | null> = {
+    home: null,
+    dock: null,
+  };
+  let activeTrigger: AkariSearchTriggerRole = "home";
 
   function clearTimer(): void {
     if (timer !== undefined) {
@@ -191,18 +204,36 @@ export function provideAkariSearch(
     isOpen.value = false;
     query.value = "";
     resetResults();
-    const focusTarget =
-      previousFocus?.isConnected ? previousFocus : triggerElement;
+    const focusTarget = previousFocus?.isConnected
+      ? previousFocus
+      : getTrigger();
     focusTarget?.focus({ preventScroll: true });
     previousFocus = null;
   }
 
-  function setTrigger(element: HTMLElement | null): void {
-    triggerElement = element;
+  function setTrigger(
+    element: HTMLElement | null,
+    role: AkariSearchTriggerRole = "home",
+  ): void {
+    triggers[role] = element;
   }
 
-  function getTrigger(): HTMLElement | null {
-    if (triggerElement?.isConnected) return triggerElement;
+  function setActiveTrigger(role: AkariSearchTriggerRole): void {
+    activeTrigger = role;
+  }
+
+  function getTrigger(role?: AkariSearchTriggerRole): HTMLElement | null {
+    if (role) {
+      const element = triggers[role];
+      return element?.isConnected ? element : null;
+    }
+
+    const primary = triggers[activeTrigger];
+    if (primary?.isConnected) return primary;
+
+    const fallback = triggers[activeTrigger === "home" ? "dock" : "home"];
+    if (fallback?.isConnected) return fallback;
+
     return document.querySelector<HTMLElement>(".akari-search-trigger");
   }
 
@@ -344,6 +375,7 @@ export function provideAkariSearch(
     closeSearch,
     finalizeClose,
     setTrigger,
+    setActiveTrigger,
     getTrigger,
     getTriggerRect,
     setQuery,

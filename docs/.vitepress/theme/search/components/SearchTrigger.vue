@@ -3,7 +3,15 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 
 import { useAkariI18n } from "../../composables/useI18n";
 import { useAkariConfig } from "../../composables/useAkariConfig";
-import { useAkariSearch } from "../useSearch";
+import {
+  useAkariSearch,
+  type AkariSearchTriggerRole,
+} from "../useSearch";
+
+const props = withDefaults(
+  defineProps<{ role?: AkariSearchTriggerRole; placeholder?: string }>(),
+  { role: "home" },
+);
 
 const config = useAkariConfig();
 const { t } = useAkariI18n();
@@ -11,6 +19,10 @@ const { isOpen, openSearch, setTrigger } = useAkariSearch();
 const trigger = ref<HTMLButtonElement | null>(null);
 
 const shortcutLabel = ref("⌘K");
+
+const label = computed(
+  () => props.placeholder?.trim() || config.value.search.placeholder,
+);
 
 const shortcutKeys = computed(() =>
   config.value.search.shortcut
@@ -21,21 +33,21 @@ const shortcutKeys = computed(() =>
 const ariaLabel = computed(() =>
   config.value.search.shortcut
     ? t("searchShortcutLabel", {
-        label: config.value.search.placeholder,
+        label: label.value,
         shortcut: shortcutLabel.value,
       })
-    : config.value.search.placeholder,
+    : label.value,
 );
 
 onMounted(() => {
-  setTrigger(trigger.value);
+  setTrigger(trigger.value, props.role);
 
   if (!/(Mac|iPhone|iPad)/.test(navigator.userAgent)) {
     shortcutLabel.value = "Ctrl K";
   }
 });
 
-onUnmounted(() => setTrigger(null));
+onUnmounted(() => setTrigger(null, props.role));
 </script>
 
 <template>
@@ -43,6 +55,7 @@ onUnmounted(() => setTrigger(null));
     ref="trigger"
     type="button"
     class="akari-search-trigger"
+    :data-role="props.role"
     :aria-label="ariaLabel"
     :aria-keyshortcuts="shortcutKeys"
     :aria-expanded="isOpen"
@@ -51,7 +64,7 @@ onUnmounted(() => setTrigger(null));
   >
     <m3e-icon name="search"></m3e-icon>
     <span class="akari-search-trigger__label">
-      {{ config.search.placeholder }}
+      {{ label }}
     </span>
     <kbd v-if="config.search.shortcut" class="akari-search-trigger__kbd">
       {{ shortcutLabel }}
@@ -91,9 +104,42 @@ onUnmounted(() => setTrigger(null));
     background-color 160ms cubic-bezier(0.2, 0, 0, 1),
     border-color 160ms cubic-bezier(0.2, 0, 0, 1),
     color 160ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 160ms cubic-bezier(0.2, 0, 0, 1),
+    font-size var(--md-sys-motion-spring-default-effects, 200ms cubic-bezier(0.34, 0.8, 0.34, 1)),
     width var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
     padding var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
+    padding-inline var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
+    border-width var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
+    margin-inline var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
+    opacity var(--md-sys-motion-spring-default-effects, 200ms cubic-bezier(0.34, 0.8, 0.34, 1)),
     gap var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1));
+}
+
+/*
+ * The docked copy lives on the page, so the app bar can hand this field's
+ * width back to the title and tabs. Its box stays in the actions row while
+ * it collapses (the negative margin absorbs the row's gap); the box eases
+ * open again while the copy flies home.
+ */
+.akari-search-trigger[data-dock-slot-away] {
+  width: 0 !important;
+  min-width: 0;
+  padding-inline: 0;
+  border-width: 0;
+  margin-inline-end: calc(-1 * var(--_gap, 8px));
+  opacity: 0;
+}
+
+.akari-search-trigger[data-dock-slot-instant] {
+  transition: none;
+}
+
+/*
+ * While the copy is away this button keeps only its measured slot; visibility
+ * keeps it out of the tab order until the copy lands and the slot is restored.
+ */
+.akari-search-trigger[data-dock-hidden] {
+  visibility: hidden;
 }
 
 .akari-search-trigger:hover {
@@ -115,10 +161,13 @@ onUnmounted(() => setTrigger(null));
 .akari-search-trigger__label {
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: opacity var(--md-sys-motion-spring-default-effects, 200ms cubic-bezier(0.34, 0.8, 0.34, 1));
+  transition:
+    opacity var(--md-sys-motion-spring-default-effects, 200ms cubic-bezier(0.34, 0.8, 0.34, 1)),
+    max-width var(--md-sys-motion-spring-default-effects, 200ms cubic-bezier(0.34, 0.8, 0.34, 1));
 }
 
 .akari-search-trigger__kbd {

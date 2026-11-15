@@ -131,3 +131,4 @@ Pour utiliser un autre composant, importez son sous-chemin dans `m3e.ts`, par ex
 
 - Pour un titre à l'intérieur d'un composant, utilisez `<m3e-heading>`. Avec l'attribut `m3e-toc-ignore`, il n'apparaît pas dans la table des matières.
 - Écrivez une icône sous la forme `<m3e-icon name="search"></m3e-icon>`. L'icône doit d'abord être enregistrée dans `icons.ts` ; voir [Utiliser les icônes](/fr-FR/styles/icons/using).
+- Un composant muni d'un `href` (bouton, carte, puce, élément de liste, etc.) qui renvoie vers une page du site passe à cette page sur place, comme un lien ordinaire, sans recharger toute la page. Avec `target="_self"`, la page est entièrement rechargée, selon la convention de VitePress. Avec `target="_blank"`, elle s'ouvre dans un nouvel onglet.

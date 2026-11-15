@@ -188,7 +188,7 @@ A card's action can open a dialog. Put `m3e-dialog-trigger` inside the button. `
 
 <m3e-card variant="outlined">
   <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">Version info</m3e-heading>
-  <div slot="content">These docs match VitePress 2.0.0-alpha.21 and @m3e/web 2.10.2.</div>
+  <div slot="content">These docs match VitePress 2.0.0-alpha.21 and @m3e/web 2.10.3.</div>
   <div slot="actions" end>
     <m3e-button variant="filled">
       <m3e-dialog-trigger for="card-demo-dialog">View details</m3e-dialog-trigger>

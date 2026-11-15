@@ -66,7 +66,7 @@ Cela remplace le dossier par la version du modèle ; les modifications que vous
 | Dépendance | Version | Remarques |
 | --- | --- | --- |
 | `vitepress` | `2.0.0-alpha.21` | Version figée ; repose sur Vite 8 / Rolldown et Vue 3.5 |
-| `@m3e/web` | `2.10.2` | Web Components Material 3 Expressive |
+| `@m3e/web` | `2.10.3` | Web Components Material 3 Expressive |
 | `@m3e/icons` | `1.0.21` | Icônes Material Symbols, enregistrées à la demande |
 
 VitePress est encore en alpha. Quand vous le mettez à jour, vérifiez ensemble le code du thème, les types de configuration et le résultat du build.

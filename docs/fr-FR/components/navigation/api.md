@@ -4,7 +4,7 @@ tab: API
 
 # Navigation : API
 
-Le contenu ci-dessous provient des métadonnées de composants de `@m3e/web` 2.10.2.
+Le contenu ci-dessous provient des métadonnées de composants de `@m3e/web` 2.10.3.
 
 ## m3e-nav-menu et m3e-nav-menu-item
 

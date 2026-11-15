@@ -4,7 +4,7 @@ tab: 接口
 
 # 卡片：接口
 
-以下内容来自 `@m3e/web` 2.10.2 的组件元数据。
+以下内容来自 `@m3e/web` 2.10.3 的组件元数据。
 
 ## m3e-card
 
@@ -23,7 +23,7 @@ tab: 接口
 | （默认） | 没有内边距，适合铺满的图片或自定义布局 |
 | `header` | 标题、图标或媒体，不额外加内边距 |
 | `content` | 带内边距的正文 |
-| `actions` | 操作按钮，默认靠起始边；给元素加 `end` 属性改为靠结束边 |
+| `actions` | 操作按钮，默认靠起始边。给元素加 `end` 属性改为靠结束边 |
 | `footer` | 元信息、版权或次要说明 |
 
 | 事件 | 时机 |
@@ -54,14 +54,16 @@ tab: 接口
 | `closing`、`closed` | 开始关闭、关闭完成 |
 | `cancel` | 通过遮罩或 `Esc` 取消 |
 
-`m3e-dialog-trigger`（属性 `for`：对话框的 id）放在按钮内部，点击按钮时打开对话框；`m3e-dialog-action`（属性 `return-value`）放在对话框的按钮内部，点击时关闭对话框并返回这个值。
+`m3e-dialog-trigger` 放在按钮内部，属性 `for` 填对话框的 id。点击按钮时，对话框打开。
+
+`m3e-dialog-action` 放在对话框内的按钮内部，属性 `return-value` 指定返回值。点击时对话框关闭，并返回这个值。
 
 ## 自定义外观
 
-卡片的圆角、颜色与内边距由 `--m3e-card-*` 变量控制，例如 `--m3e-card-shape` 是圆角：
+卡片的圆角、颜色与内边距由 `--m3e-card-*` 变量控制。例如 `--m3e-card-shape` 控制圆角：
 
 ```html
 <m3e-card variant="outlined" style="--m3e-card-shape: 28px;">…</m3e-card>
 ```
 
-组件由主题的 `m3e.ts` 注册（`@m3e/web/card`、`@m3e/web/dialog`）。
+组件在主题的 `m3e.ts` 中注册，来源是 `@m3e/web/card` 与 `@m3e/web/dialog`。

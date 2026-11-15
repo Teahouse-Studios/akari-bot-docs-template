@@ -26,6 +26,11 @@ import {
 } from "../docs/.vitepress/theme/search/local";
 import { MissingLocalIndexError } from "../docs/.vitepress/theme/search/localIndex";
 import { registerSearchBackend } from "../docs/.vitepress/theme/search/registry";
+import {
+  normalizeSearchDockAnchor,
+  searchDockHasRoom,
+  searchDockSize,
+} from "../docs/.vitepress/theme/search/dock";
 
 // An index as VitePress builds it: one document per section, the page's
 // title as the first section's.
@@ -113,6 +118,108 @@ describe("resolveAkariConfig search", () => {
       type: "registered",
       id: "my-search",
     });
+  });
+});
+
+describe("search dock anchor", () => {
+  it("fills in the defaults a tag leaves out", () => {
+    expect(normalizeSearchDockAnchor(undefined)).toEqual({
+      placeholder: undefined,
+      variant: "bar",
+      align: "start",
+      priority: 0,
+    });
+  });
+
+  it("keeps valid placeholder, variant, align, and priority", () => {
+    expect(
+      normalizeSearchDockAnchor({
+        placeholder: "  Search the docs  ",
+        variant: "hero",
+        align: "center",
+        priority: 3,
+      }),
+    ).toEqual({
+      placeholder: "Search the docs",
+      variant: "hero",
+      align: "center",
+      priority: 3,
+    });
+  });
+
+  it("falls back on values the tag cannot use", () => {
+    expect(
+      normalizeSearchDockAnchor({
+        variant: "giant" as never,
+        align: "left" as never,
+        priority: Number.NaN,
+      }),
+    ).toEqual({
+      placeholder: undefined,
+      variant: "bar",
+      align: "start",
+      priority: 0,
+    });
+  });
+
+  it("gives each variant its natural box", () => {
+    expect(searchDockSize("hero")).toEqual({ width: "420px", height: "56px" });
+    expect(searchDockSize("pill", 300, "2.5rem")).toEqual({
+      width: "300px",
+      height: "2.5rem",
+    });
+  });
+
+  it("ignores unusable lengths and keeps the variant box", () => {
+    expect(searchDockSize("icon", -1, "  ")).toEqual({
+      width: "56px",
+      height: "56px",
+    });
+  });
+
+  it("fills the parent box when requested", () => {
+    expect(searchDockSize("hero", undefined, undefined, true)).toEqual({
+      width: "100%",
+      height: "100%",
+    });
+    expect(searchDockSize("hero", 320, "12rem", true)).toEqual({
+      width: "320px",
+      height: "12rem",
+    });
+  });
+});
+
+describe("search dock room", () => {
+  const viewport = { width: 1000, height: 800 };
+  const page = { left: 96, top: 64, right: 900, bottom: 2000 };
+  const rect = { left: 200, top: 200, width: 280, height: 40 };
+
+  it("accepts a tag fully inside the page and viewport", () => {
+    expect(searchDockHasRoom(rect, viewport, page)).toBe(true);
+  });
+
+  it("rejects a tag that leaves the viewport", () => {
+    expect(searchDockHasRoom({ ...rect, top: -20 }, viewport, page)).toBe(false);
+    expect(
+      searchDockHasRoom({ ...rect, left: 760 }, viewport, page),
+    ).toBe(false);
+  });
+
+  it("rejects a tag outside the page surface", () => {
+    expect(
+      searchDockHasRoom({ ...rect, top: 20 }, viewport, page),
+    ).toBe(false);
+    expect(
+      searchDockHasRoom({ ...rect, left: 40 }, viewport, page),
+    ).toBe(false);
+  });
+
+  it("rejects a tag that collides with a tab shelf or app bar", () => {
+    expect(
+      searchDockHasRoom(rect, viewport, page, [
+        { left: 100, top: 190, right: 500, bottom: 230 },
+      ]),
+    ).toBe(false);
   });
 });
 

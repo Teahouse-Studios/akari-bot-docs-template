@@ -66,7 +66,7 @@ git checkout template/main -- docs/.vitepress
 | 依存関係 | バージョン | 備考 |
 | --- | --- | --- |
 | `vitepress` | `2.0.0-alpha.21` | 固定。Vite 8 / Rolldown と Vue 3.5 上に構築 |
-| `@m3e/web` | `2.10.2` | Material 3 Expressive Web Components |
+| `@m3e/web` | `2.10.3` | Material 3 Expressive Web Components |
 | `@m3e/icons` | `1.0.21` | Material Symbols のアイコン。必要に応じて登録 |
 
 VitePress はまだアルファ版です。アップグレードするときは、テーマのコード、設定の型、ビルド結果をあわせて確認してください。

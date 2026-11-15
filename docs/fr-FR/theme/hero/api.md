@@ -12,7 +12,7 @@ tab: API
 | --- | --- | --- | --- |
 | `image` | `string \| { src, alt? } \| { light, dark, alt? }` | Obligatoire | URL de l'image ; `base` est ajouté automatiquement aux chemins du site, et les URL externes sont utilisées telles quelles. Sous la forme `{ light, dark }`, les deux images servent en mode clair et en mode sombre |
 | `alt` | `string` | `""` | Texte alternatif de l'image ; laissez-le vide pour une image purement décorative |
-| `date` | `string \| Date` | Aucune | Affichée au-dessus du titre. Une date comme `2026-05-19` est mise en forme selon la langue de la page et produite dans un `<time datetime>` ; tout autre texte s'affiche tel quel |
+| `date` | `string \| Date` | Aucune | Affichée au-dessus du titre. Une date comme `2026-05-19` est mise en forme selon la langue de la page et produite dans un `<time datetime="2026-05-19">` ; tout autre texte s'affiche tel quel |
 | `tagline` | `string` | La `description` de la page | Résumé d'une ligne sous le titre |
 | `background` | `string` | `--md-sys-color-primary-container` | Couleur de fond de la carte d'image ; toute couleur CSS ou tout jeton |
 | `fit` | `"cover" \| "contain"` | `"cover"` | `cover` remplit la carte et rogne ce qui dépasse ; `contain` montre toute l'image avec une marge, ce qui convient aux illustrations sur fond transparent |
@@ -48,4 +48,4 @@ Vous pouvez définir les trois premières sur `:root`. Les deux variables des mo
 
 ## Remplacer le composant hero
 
-Vous pouvez remplacer le hero par votre propre composant ; voir [Étendre le thème](/fr-FR/theme/extending/api#provideakaricomponents). La mise en page ne rend ce composant que si la page définit un `hero` avec une image, et elle masque le premier `h1` du contenu : un composant personnalisé doit donc rendre lui-même le titre de la page. Donnez au titre l'attribut `data-akari-page-title`, et le changement de titre de la barre d'application le suivra. Dans le composant, lisez le frontmatter avec `useData()` de VitePress.
+Vous pouvez remplacer le hero par votre propre composant ; voir [Étendre le thème](/fr-FR/theme/extending/api#provideakaricomponents). La mise en page ne rend ce composant que si la page définit un `hero` avec une image, et elle masque le premier `h1` du contenu : un composant personnalisé doit donc rendre lui-même le titre de la page. Donnez au titre l'attribut `data-akari-page-title`, et le changement de titre de la barre d'application le suivra. Dans le composant, lisez le frontmatter avec `useData()` de VitePress. La mise en page donne à l'élément racine du composant la classe `akari-doc__page`, de sorte que, lorsque vous passez d'une page parallèle à l'autre dans un même groupe, le hero glisse latéralement avec le contenu, alors qu'un composant à plusieurs nœuds racines ne reçoit pas cette classe et que son hero reste en place.

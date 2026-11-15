@@ -4,7 +4,7 @@ tab: API
 
 # البطاقات: API
 
-المحتوى أدناه مأخوذ من البيانات الوصفية لمكونات `@m3e/web` 2.10.2.
+المحتوى أدناه مأخوذ من البيانات الوصفية لمكونات `@m3e/web` 2.10.3.
 
 ## m3e-card
 
@@ -12,7 +12,7 @@ tab: API
 | --- | --- | --- | --- |
 | `variant` | `elevated`، `filled`، `outlined` | `filled` | المظهر |
 | `orientation` | `vertical`، `horizontal` | `vertical` | اتجاه ترتيب المحتوى |
-| `inline` | منطقية | `false` | يرتّب البطاقة عنصرًا ضمن السطر |
+| `inline` | منطقية | `false` | يرتّب البطاقة عنصرًا سطريًا |
 | `actionable` | منطقية | `false` | يجعل البطاقة كلها منطقة تفاعل واحدة |
 | `href`، `target`، `rel`، `download` | كما في الزر | كما في الزر | يجعل البطاقة رابطًا عند ضبط `actionable` |
 | `disabled`، `disabled-interactive` | منطقية | `false` | يعطّل البطاقة عند ضبط `actionable` |

@@ -104,7 +104,7 @@ Les enfants directs de `m3e-tabs` ne peuvent être que des `m3e-tab` et des `m3e
 
 ## Chips et filtres
 
-`m3e-chip` est un chip non interactif qui sert à afficher des catégories, des états et des piles techniques. Entourez les chips de `.demo-row` pour contrôler l'espacement :
+`m3e-chip` est un chip non interactif qui sert à afficher des catégories, des états et des stacks techniques. Entourez les chips de `.demo-row` pour contrôler l'espacement :
 
 <div class="demo-row">
   <m3e-chip>
@@ -223,7 +223,7 @@ function navigate(event: MouseEvent, link: string): void {
 }
 ```
 
-L'ancre d'un bouton ou d'un bouton d'icône m3e se trouve dans son Shadow DOM, où l'interception globale de VitePress ne la voit pas. Quand un tel composant a besoin d'une navigation SPA, écoutez les clics sur l'élément hôte et appelez `router.go()` explicitement. Les démos statiques de cette page utilisent de simples éléments `<a>` : VitePress gère donc les clics internes, tandis que les liens externes chargent toujours la page complète. Quelle que soit l'approche, ne simulez pas un lien avec un `div` et un gestionnaire de clic, et ne retirez pas le vrai `href` de la navigation interne.
+Les ancres générées à l'intérieur d'un bouton ou d'un bouton d'icône m3e sont prises en charge par le thème : les liens internes effectuent la navigation dans la page ; avec `target="_self"`, la page complète est chargée, et avec `target="_blank"`, le lien s'ouvre dans un nouvel onglet. C'est seulement lorsque vous simulez un clic avec un élément qui n'est pas un lien que vous devez écouter les clics sur l'élément hôte et appeler `router.go()`. Les démos statiques de cette page utilisent de simples éléments `<a>` : VitePress gère donc les clics internes, tandis que les liens externes chargent toujours la page complète. Quelle que soit l'approche, ne simulez pas un lien avec un `div` et un gestionnaire de clic, et ne retirez pas le vrai `href` de la navigation interne.
 
 ## Accessibilité
 

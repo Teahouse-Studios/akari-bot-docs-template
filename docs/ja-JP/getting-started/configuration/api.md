@@ -105,7 +105,7 @@ function akariContent(
 | `site` | `{ lang, title, description, locales, rewrites }` | `defineConfig` に展開します |
 | `plugin` | Vite の `Plugin` | 開発サーバーでナビゲーションを更新します |
 | `route` | `(page: string) => string` | ソースファイルのパス → ページのパス。たとえば `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
-| `rewrite` | `(page: string) => string` | ソースファイルのパス → VitePress の配信パス。たとえば → `theme/layout.md` |
+| `rewrite` | `(page: string) => string` | ソースファイルのパス → VitePress の配信パス。たとえば `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | 言語フォルダー。ルート言語が先頭です。`key` は VitePress のロケールキー（ルート言語は `root`）、`prefix` はパスの接頭辞です |
 
 ## akariHead

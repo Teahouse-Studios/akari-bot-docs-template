@@ -9,11 +9,11 @@ parallel:
 
 # 导航
 
-导航相关的 m3e 组件有三类：`m3e-nav-menu` 组织多级页面，`m3e-tabs` 在同一页面内切换视图，Chip 与徽标表达状态与筛选。
+导航相关的 m3e 组件有三类：`m3e-nav-menu` 组织多级页面，`m3e-tabs` 在同一页面内切换视图，Chip 与徽标用来标示状态与筛选。
 
 ## 侧边导航
 
-`m3e-nav-menu` 承载多级导航，`m3e-nav-menu-item` 通过 `label`、`icon`、`badge` 插槽组织内容。分组使用 `open` 展开，当前叶子项使用 `selected` 高亮：
+`m3e-nav-menu` 承载多级导航，`m3e-nav-menu-item` 通过 `label`、`icon`、`badge` 插槽组织内容。分组用 `open` 展开，当前叶子项用 `selected` 高亮：
 
 <div class="demo-surface" style="max-width: 320px; max-block-size: 320px;">
   <m3e-nav-menu aria-label="组件导航演示">
@@ -55,11 +55,11 @@ parallel:
 </m3e-nav-menu>
 ```
 
-分组是否展开由 `open` 控制，也可以在运行时由组件根据子项选择状态自动管理。`disabled` 会禁用该项及其所有子项。菜单默认在高度受限时内部滚动。
+分组是否展开由 `open` 控制。运行时，组件还会根据子项的选择状态自动展开或收起。`disabled` 会禁用该项与它的全部子项。高度受限时，菜单默认在内部滚动。
 
 ## 标签页
 
-`m3e-tabs` 的直接子元素只能包含 `m3e-tab` 与 `m3e-tab-panel`。每个 `m3e-tab` 的 `for` 指向对应面板的 `id`，且只能有一个标签带 `selected`：
+`m3e-tabs` 的直接子元素只能是 `m3e-tab` 与 `m3e-tab-panel`。每个 `m3e-tab` 的 `for` 指向对应面板的 `id`。同一组标签里只能有一个带 `selected`：
 
 <m3e-tabs variant="primary">
   <m3e-tab selected for="nav-demo-panel-overview">
@@ -100,11 +100,11 @@ parallel:
 </m3e-tabs>
 ```
 
-`variant="primary"` 是主标签样式（默认 `secondary`），`stretch` 让标签等宽铺满容器。标签多时允许横向滚动或翻页，不要把文字压缩到不可读。
+`variant="primary"` 是主标签样式（默认 `secondary`），`stretch` 让标签等宽铺满容器。标签多时可以横向滚动或翻页。不要把文字压缩到不可读。
 
 ## 标签与筛选
 
-`m3e-chip` 是非交互标签，适合展示分类、状态与技术栈。外层用 `.demo-row` 控制间距：
+`m3e-chip` 是非交互标签，适合展示分类、状态与技术栈。外层容器用 `.demo-row` 控制间距：
 
 <div class="demo-row">
   <m3e-chip>
@@ -156,7 +156,7 @@ parallel:
 </m3e-filter-chip-set>
 ```
 
-Filter Chip 自带选中状态与键盘操作，`selected` 设置初始值，点击后触发变更事件。它与非交互的 `m3e-chip` 语义不同，不要混用。
+Filter Chip 自带选中状态与键盘操作。`selected` 设置初始值，点击后触发变更事件。Filter Chip 与非交互的 `m3e-chip` 语义不同，不要混用。
 
 ## 徽标
 
@@ -178,11 +178,11 @@ Filter Chip 自带选中状态与键盘操作，`selected` 设置初始值，点
 <m3e-badge for="navigation-demo-update" position="above-after">4</m3e-badge>
 ```
 
-锚定徽标会跟随目标元素的布局变化，位置由 `position` 决定。徽标没有默认 ARIA 角色，附加到交互元素时应使用 `aria-describedby` 或同步的可见文本说明数量。
+徽标锚定后会跟随目标元素的布局变化，位置由 `position` 决定。徽标没有默认 ARIA 角色。把徽标附加到交互元素时，应使用 `aria-describedby`，或用同步的可见文本说明数量。
 
 ## SPA 导航
 
-侧边栏与页脚的内部链接应输出真实 `<a>`，由 VitePress 2 在捕获阶段拦截站内点击并完成 SPA 导航。VitePress 2 已移除 vue-router 与 `RouterLink`，不要导入或使用旧版示例：
+侧边栏与页脚的内部链接应输出真实 `<a>`。VitePress 2 在捕获阶段拦截站内点击，完成 SPA 导航。VitePress 2 已移除 vue-router 与 `RouterLink`，不要导入这两者，也不要使用旧版示例：
 
 ```vue
 <a
@@ -204,7 +204,7 @@ Filter Chip 自带选中状态与键盘操作，`selected` 设置初始值，点
 </a>
 ```
 
-`withBase` 来自 `vitepress`，用于给站内路径加上部署 base。普通左键点击由 VitePress 核心统一接管，同时保留中键新标签页、复制链接与无障碍语义；外部链接保持原生行为并添加 `target="_blank"` 与 `rel="noreferrer"`。
+`withBase` 来自 `vitepress`，用于给站内路径加上部署 base。普通左键点击由 VitePress 核心统一接管。中键开新标签页、复制链接与无障碍语义也都保留。外部链接保持原生行为，并添加 `target="_blank"` 与 `rel="noreferrer"`。
 
 如果必须在脚本中跳转，可使用 `useRouter().go()`：
 
@@ -223,7 +223,9 @@ function navigate(event: MouseEvent, link: string): void {
 }
 ```
 
-m3e 按钮或图标按钮内部的锚点位于 Shadow DOM，VitePress 的全局拦截无法看到它；这类组件需要 SPA 时，应在宿主元素上监听点击并显式调用 `router.go()`。本篇的静态演示使用普通 `<a>`，站内点击由 VitePress 接管；外部链接保持整页跳转。无论采用哪种写法，都不要用 `div` 加点击事件模拟链接，也不要在内部导航上丢失真实 `href`。
+m3e 按钮或图标按钮内部生成的锚点会由主题接管，站内链接在页面内切换。`target="_self"` 时整页加载，`target="_blank"` 时在新标签页打开。只有自己用非链接元素模拟点击时，才需要在宿主元素上监听并调用 `router.go()`。
+
+本篇的静态演示使用普通 `<a>`，站内点击由 VitePress 接管。外部链接保持整页跳转。无论采用哪种写法，都不要用 `div` 加点击事件模拟链接，内部导航也不要丢失真实的 `href`。
 
 ## 可访问性
 

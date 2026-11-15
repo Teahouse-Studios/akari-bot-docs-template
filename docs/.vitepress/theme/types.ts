@@ -229,6 +229,31 @@ export type AkariSearchBackendConfig =
     }
   | { type: "registered"; id: string };
 
+/** The look the flying search trigger takes when a page docks it. */
+export type AkariSearchDockVariant = "bar" | "pill" | "icon" | "hero";
+
+/** Where a docked trigger's contents sit along its inline axis. */
+export type AkariSearchDockAlign = "start" | "center" | "end";
+
+/**
+ * What a `<SearchDock>` tag tells the trigger. The tag itself supplies the
+ * landing box; these options change how the copy looks once it arrives.
+ */
+export interface AkariSearchDockAnchorOptions {
+  placeholder?: string;
+  variant?: AkariSearchDockVariant;
+  align?: AkariSearchDockAlign;
+  /** Higher wins when one page contains more than one dock tag. */
+  priority?: number;
+}
+
+export interface ResolvedAkariSearchDockAnchorOptions {
+  placeholder?: string;
+  variant: AkariSearchDockVariant;
+  align: AkariSearchDockAlign;
+  priority: number;
+}
+
 export interface AkariSearchConfig {
   enabled?: boolean;
   placeholder?: string;
@@ -267,6 +292,20 @@ export interface AkariMessages {
   moreActions: string;
   /** The floating button that scrolls back to the top, and its label. */
   backToTop: string;
+  /** Label of the dialog that shows a picture enlarged. Placeholders: `{alt}`. */
+  imagePreview: string;
+  /** The same dialog for a picture that carries no description. */
+  imagePreviewNoAlt: string;
+  /** Name of the button that opens the enlarged picture. */
+  imagePreviewOpen: string;
+  imagePreviewZoomIn: string;
+  imagePreviewZoomOut: string;
+  /** Placeholders: `{percentage}`. */
+  imagePreviewZoomStatus: string;
+  imagePreviewRotateLeft: string;
+  imagePreviewRotateRight: string;
+  imagePreviewResetView: string;
+  imagePreviewClose: string;
   /** The floating button that opens the table of contents on compact windows. */
   tocButton: string;
   languageLabel: string;
@@ -371,19 +410,24 @@ export interface AkariMessages {
   chatExampleDismiss: string;
   /** Fallback label for a button without one. */
   chatExampleButton: string;
-  /** Image viewer dialog label. Placeholders: `{alt}`. */
-  chatExamplePreview: string;
-  /** Image viewer dialog label when the image has no description. */
-  chatExamplePreviewNoAlt: string;
-  chatExampleZoomOut: string;
-  chatExampleZoomIn: string;
-  chatExampleResetView: string;
-  /** Placeholders: `{percentage}`. */
-  chatExampleZoomStatus: string;
-  chatExampleRotateLeft: string;
-  chatExampleRotateRight: string;
-  chatExampleClosePreview: string;
-  chatExampleClose: string;
+  /** SearchDock demo controls and labels. */
+  dockDemoVariant: string;
+  dockDemoAlign: string;
+  dockDemoPlaceholder: string;
+  dockDemoBar: string;
+  dockDemoPill: string;
+  dockDemoIcon: string;
+  dockDemoHero: string;
+  dockDemoStart: string;
+  dockDemoCenter: string;
+  dockDemoEnd: string;
+  dockDemoFill: string;
+  dockDemoNatural: string;
+  dockDemoHideTag: string;
+  dockDemoShowTag: string;
+  dockDemoReload: string;
+  dockDemoCaption: string;
+  dockDemoHint: string;
 }
 
 /**

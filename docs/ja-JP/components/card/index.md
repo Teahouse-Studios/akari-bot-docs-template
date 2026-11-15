@@ -188,7 +188,7 @@ parallel:
 
 <m3e-card variant="outlined">
   <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">バージョン情報</m3e-heading>
-  <div slot="content">このドキュメントは VitePress 2.0.0-alpha.21 と @m3e/web 2.10.2 に対応しています。</div>
+  <div slot="content">このドキュメントは VitePress 2.0.0-alpha.21 と @m3e/web 2.10.3 に対応しています。</div>
   <div slot="actions" end>
     <m3e-button variant="filled">
       <m3e-dialog-trigger for="card-demo-dialog">詳細を見る</m3e-dialog-trigger>

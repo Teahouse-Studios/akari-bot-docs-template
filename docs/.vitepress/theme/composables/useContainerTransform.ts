@@ -139,18 +139,86 @@ export function useContainerTransform(options: ContainerTransformOptions) {
     hiddenTrigger = null;
   }
 
+  /**
+   * The ghost lives outside the dock's scoped-style subtree, so class-based
+   * variant styling (font, padding, gap, kbd border) would be lost. Copy the
+   * resolved style of every node onto its clone so the ghost is a visual
+   * match no matter which variant the trigger currently uses.
+   */
+  const GHOST_STYLE_PROPERTIES = [
+    "font",
+    "line-height",
+    "letter-spacing",
+    "color",
+    "background-color",
+    "padding-top",
+    "padding-right",
+    "padding-bottom",
+    "padding-left",
+    "gap",
+    "display",
+    "align-items",
+    "justify-content",
+    "text-align",
+    "white-space",
+    "overflow",
+    "text-overflow",
+    "box-sizing",
+    "flex",
+    "min-width",
+    "max-width",
+    "opacity",
+    "border-top-width",
+    "border-right-width",
+    "border-bottom-width",
+    "border-left-width",
+    "border-top-style",
+    "border-right-style",
+    "border-bottom-style",
+    "border-left-style",
+    "border-top-color",
+    "border-right-color",
+    "border-bottom-color",
+    "border-left-color",
+    "border-top-left-radius",
+    "border-top-right-radius",
+    "border-bottom-right-radius",
+    "border-bottom-left-radius",
+    "box-shadow",
+  ] as const;
+
+  function copyGhostStyles(source: HTMLElement, clone: HTMLElement): void {
+    const sources: Element[] = [source, ...source.querySelectorAll("*")];
+    const clones: Element[] = [clone, ...clone.querySelectorAll("*")];
+
+    for (let index = 0; index < sources.length; index += 1) {
+      const from = sources[index];
+      const to = clones[index] as HTMLElement | SVGElement | undefined;
+      if (!to) continue;
+
+      const computed = getComputedStyle(from);
+      for (const property of GHOST_STYLE_PROPERTIES) {
+        const value = computed.getPropertyValue(property);
+        if (value) to.style.setProperty(property, value);
+      }
+
+      const iconSize = computed.getPropertyValue("--m3e-icon-size");
+      if (iconSize) to.style.setProperty("--m3e-icon-size", iconSize);
+    }
+  }
+
   function createGhost(source: HTMLElement, rect: DOMRect): HTMLElement | null {
     removeGhost();
 
     const host = options.ghostHost.value;
     if (!host) return null;
 
-    const sourceStyle = getComputedStyle(source);
     const clone = source.cloneNode(true) as HTMLElement;
     clone.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
     clone.removeAttribute("id");
     clone.setAttribute("aria-hidden", "true");
     clone.tabIndex = -1;
+    copyGhostStyles(source, clone);
     Object.assign(clone.style, {
       position: "fixed",
       left: `${rect.left}px`,
@@ -163,13 +231,6 @@ export function useContainerTransform(options: ContainerTransformOptions) {
       boxSizing: "border-box",
       overflow: "hidden",
       transition: "none",
-      color: sourceStyle.color,
-      backgroundColor: sourceStyle.backgroundColor,
-      borderColor: sourceStyle.borderTopColor,
-      borderWidth: sourceStyle.borderTopWidth,
-      borderStyle: "solid",
-      borderRadius: `${rect.height / 2}px`,
-      boxShadow: sourceStyle.boxShadow,
     });
 
     host.replaceChildren(clone);

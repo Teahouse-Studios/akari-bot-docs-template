@@ -7,7 +7,7 @@ icon: home
 
 # 概览
 
-Vitepress Theme Akari Docs 是一个用 VitePress 与 `@m3e/web` 搭建的文档主题。
+Vitepress Theme Akari Docs 是一个基于 VitePress 与 `@m3e/web` 的文档主题。
 
 <div class="demo-row">
   <m3e-button variant="filled" href="/zh-CN/getting-started/installation.html">
@@ -34,23 +34,23 @@ Vitepress Theme Akari Docs 是一个用 VitePress 与 `@m3e/web` 搭建的文档
   </m3e-card>
   <m3e-card variant="outlined">
     <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">按目录组织</m3e-heading>
-    <div slot="content">语言文件夹下的目录是分类、文件夹是文章，导航与语言列表都由目录和头部信息生成。</div>
+    <div slot="content">语言文件夹下的目录是分类，分类里的文件夹是文章。导航与语言列表都根据目录与头部信息生成。</div>
   </m3e-card>
   <m3e-card variant="outlined">
     <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">平行页面与头图</m3e-heading>
-    <div slot="content">一篇文章可以分成几页，用标签栏切换；带头图的页面换成图片的配色。</div>
+    <div slot="content">一篇文章可以分成几页，用标签栏切换。带头图的页面按图片取配色。</div>
   </m3e-card>
   <m3e-card variant="outlined">
     <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">设置与明暗模式</m3e-heading>
-    <div slot="content">四种明暗模式；颜色、色调变体、对比度、动效、方向与字号即时生效，保存在当前浏览器。</div>
+    <div slot="content">四种明暗模式。颜色、色调变体、对比度、动效、方向与字号即时生效，设置保存在当前浏览器。</div>
   </m3e-card>
   <m3e-card variant="outlined">
     <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">搜索与多语言</m3e-heading>
-    <div slot="content">本地索引开箱即用，也可以换成 HTTP 或自定义后端；切换语言停留在对应页面。</div>
+    <div slot="content">搜索默认使用本地索引，也可以换成 HTTP 或自定义后端。切换语言时停留在对应页面。</div>
   </m3e-card>
   <m3e-card variant="outlined">
     <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">可替换、可扩展</m3e-heading>
-    <div slot="content">替换顶栏、目录、页尾等组件，或覆盖 CSS 变量调整外观。</div>
+    <div slot="content">可以替换顶栏、目录、页尾等组件，也可以覆盖 CSS 变量调整外观。</div>
   </m3e-card>
 </div>
 
@@ -61,11 +61,11 @@ npm install
 npm run dev
 ```
 
-接着阅读：
+按顺序阅读：
 
 - [安装](/zh-CN/getting-started/installation)：从模板创建仓库、运行环境与部署。
 - [配置](/zh-CN/getting-started/configuration)：共用配置与语言配置。
 - [撰写页面](/zh-CN/getting-started/writing)：新建文章、头部信息与 Markdown 写法。
 - [布局与顶栏](/zh-CN/theme/layout)、[侧边导航](/zh-CN/theme/sidebar)：主题外壳的各个部分。
 
-本站有中文、英文、日文、韩文、法文与阿拉伯文六个版本，用 rail 底部的语言按钮切换。
+本站有中文、英文、日文、韩文、法文与阿拉伯文六个版本。切换版本用 rail 底部的语言按钮。

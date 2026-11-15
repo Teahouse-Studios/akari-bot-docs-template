@@ -428,6 +428,16 @@ onUnmounted(() => {
  * ways instead of the rail vanishing.
  */
 .akari-desktop-nav__rail {
+  /*
+   * The divider's fade pair, read by its ::after rule: out on the way to
+   * hidden, in on the way to shown. M3's fade eases the incoming edge in
+   * with emphasized-decelerate and lets the outgoing one go faster on
+   * emphasized-accelerate.
+   */
+  --_divider-fade-out: opacity var(--md-sys-motion-duration-short-3, 150ms)
+    var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15));
+  --_divider-fade-in: opacity var(--md-sys-motion-duration-short-4, 200ms)
+    var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
   position: sticky;
   top: 0;
   z-index: 5;
@@ -450,29 +460,39 @@ onUnmounted(() => {
 /*
  * Divider between the rail and a drawer beside it: shown with the hover
  * drawer, and with the pinned drawer (same conditions as its open state).
- * It starts 64px below the top of the strip and runs to its bottom.
+ * The base runs the full height of the strip, for the hover drawer, which
+ * floats over the whole page, app bar included. The pinned drawer hangs
+ * below the app bar only, so it moves its edge down there (media query
+ * below).
+ *
+ * It fades rather than pops, so the hairline settles just behind the
+ * drawer's slide instead of appearing with it.
  */
 .akari-desktop-nav__rail::after {
   content: "";
   position: absolute;
-  inset-block: 64px 0;
+  inset-block: 0;
   inset-inline-end: 0;
   z-index: 2;
   width: 1px;
   background-color: var(--akari-doc-divider-color);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--md-sys-motion-spring-fast-effects, 150ms cubic-bezier(0.31, 0.94, 0.34, 1));
+  /* Hidden is the exit state, so the base carries the fade-out. */
+  transition: var(--_divider-fade-out);
 }
 
 .akari-desktop-nav__rail[data-overlay]::after {
   opacity: 1;
-  transition-duration: 0ms;
+  transition: var(--_divider-fade-in);
 }
 
+/* The pinned drawer starts at the app bar's lower edge, so does its divider. */
 @media (min-width: 1600px) {
   .akari-desktop-nav__rail[data-category]::after {
+    inset-block-start: var(--akari-doc-app-bar-height);
     opacity: 1;
+    transition: var(--_divider-fade-in);
   }
 }
 
@@ -620,6 +640,15 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /*
+   * The divider's ::after reads its fade pair from these, so zeroing them
+   * here turns its opacity transition off as well.
+   */
+  .akari-desktop-nav__rail {
+    --_divider-fade-out: none;
+    --_divider-fade-in: none;
+  }
+
   .akari-desktop-nav__rail,
   .akari-desktop-nav__rail > .akari-rail,
   .akari-nav-drawer--pinned,

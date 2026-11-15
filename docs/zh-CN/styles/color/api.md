@@ -4,7 +4,7 @@ tab: 接口
 
 # 色彩：接口
 
-`m3e-theme` 按 Material 3 的动态色规范（2025 版）生成以下令牌，写在 CSS 中使用：
+`m3e-theme` 按 Material 3 的动态色规范（2025 版）生成以下令牌。这些令牌可以直接写进 CSS：
 
 ```css
 .panel {
@@ -14,7 +14,7 @@ tab: 接口
 }
 ```
 
-令牌只在 `m3e-theme` 之内有值；主题把它们同步到了根元素，页面中的任何位置都可以使用。
+令牌只在 `m3e-theme` 之内有值。主题把这些令牌同步到根元素，页面中的任何位置都可以使用。
 
 ## 强调色
 
@@ -37,7 +37,7 @@ tab: 接口
 
 | 令牌 | 用途 |
 | --- | --- |
-| `--md-sys-color-surface`、`--md-sys-color-on-surface` | 默认的表面与文字；文档表面使用 `surface` |
+| `--md-sys-color-surface`、`--md-sys-color-on-surface` | 默认的表面与文字。文档表面使用 `surface` |
 | `--md-sys-color-surface-dim`、`--md-sys-color-surface-bright` | 最暗、最亮的表面 |
 | `--md-sys-color-surface-container-lowest` | 最低一层容器 |
 | `--md-sys-color-surface-container-low` | 较低的容器，例如演示区 |
@@ -64,7 +64,7 @@ tab: 接口
 
 ## 局部色板
 
-在页面中包一层 `m3e-theme`，就能为其中的内容生成另一套色板，[色彩](/zh-CN/styles/color)概览页的演示就是这样做的：
+在页面中包一层 `m3e-theme`，就能为其中的内容生成另一套色板。[色彩](/zh-CN/styles/color)概览页的演示用的就是这种写法：
 
 ```html
 <m3e-theme color="#006A6A" scheme="dark" variant="vibrant" contrast="high">

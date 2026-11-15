@@ -188,7 +188,7 @@ L'action d'une carte peut ouvrir une boîte de dialogue. Placez `m3e-dialog-trig
 
 <m3e-card variant="outlined">
   <m3e-heading m3e-toc-ignore slot="header" variant="title" size="large">Informations de version</m3e-heading>
-  <div slot="content">Cette documentation correspond à VitePress 2.0.0-alpha.21 et @m3e/web 2.10.2.</div>
+  <div slot="content">Cette documentation correspond à VitePress 2.0.0-alpha.21 et @m3e/web 2.10.3.</div>
   <div slot="actions" end>
     <m3e-button variant="filled">
       <m3e-dialog-trigger for="card-demo-dialog">Voir les détails</m3e-dialog-trigger>

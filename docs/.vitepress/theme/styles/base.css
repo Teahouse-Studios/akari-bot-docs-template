@@ -22,10 +22,20 @@ html {
  * of the bar and its shelf too.
  */
 html.akari-tabs-pinned {
-  --_shelf: calc(56px + 2 * var(--akari-doc-hero-inset, 8px));
-  --akari-doc-toc-offset: calc(var(--akari-doc-app-bar-height) + var(--_shelf) + 32px);
   scroll-padding-top: calc(
-    var(--akari-doc-app-bar-height) + var(--_shelf) + var(--akari-doc-gap)
+    var(--akari-doc-app-bar-height) + 56px + 2 * var(--akari-doc-hero-inset, 8px) +
+      var(--akari-doc-gap)
+  );
+}
+
+/*
+ * The table of contents takes its offset where it reads it: a custom
+ * property set on html would restyle the whole page each time the bar is
+ * held or let go.
+ */
+html.akari-tabs-pinned .akari-toc {
+  --akari-doc-toc-offset: calc(
+    var(--akari-doc-app-bar-height) + 56px + 2 * var(--akari-doc-hero-inset, 8px) + 32px
   );
 }
 
@@ -81,28 +91,49 @@ m3e-app-bar {
 /*
  * Edge of the document and footer surfaces. At rest they have none; once the
  * content slides under the app bar a faint outline fades in. The strength is
- * a registered percentage so one transition here drives every edge in step;
- * each surface mixes it into an opaque color (see --_edge), so where two edge
- * layers overlap they land on the same pixel instead of darkening.
+ * a registered percentage, mixed into an opaque color (see
+ * --akari-doc-edge-color), so where two edge layers overlap they land on the
+ * same pixel instead of darkening.
+ *
+ * Neither inherits: both are set, and the strength eased, on just the
+ * elements that draw an edge (the surfaces, their caps and the caps'
+ * corners), all with the same timing so they stay in step. Set on html and
+ * inherited, every frame of the fade restyled and repainted the whole page,
+ * just as the tab bar flies into the app bar at the top of the page.
  */
 @property --akari-doc-edge-strength {
   syntax: "<percentage>";
-  inherits: true;
+  inherits: false;
   initial-value: 0%;
 }
 
-html {
+@property --akari-doc-edge-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
+html[data-akari-scrolled] :is(.akari-doc, .akari-site-footer, .akari-surface-cap),
+html[data-akari-scrolled] .akari-surface-cap::before,
+html[data-akari-scrolled] .akari-surface-cap::after {
+  --akari-doc-edge-strength: var(--akari-doc-divider-strength);
+}
+
+/* The document surface lists the fade with its own transitions. */
+.akari-site-footer,
+.akari-surface-cap,
+.akari-surface-cap::before,
+.akari-surface-cap::after {
   transition: --akari-doc-edge-strength
     var(--md-sys-motion-duration-medium-1, 250ms)
     var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
 }
 
-html[data-akari-scrolled] {
-  --akari-doc-edge-strength: var(--akari-doc-divider-strength);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  html {
+  .akari-site-footer,
+  .akari-surface-cap,
+  .akari-surface-cap::before,
+  .akari-surface-cap::after {
     transition: none;
   }
 }
@@ -205,25 +236,33 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
    * the token is read here with the M3 role as its fallback.
    */
   background-color: var(--akari-doc-surface-color, var(--md-sys-color-surface));
-  box-shadow: inset 0 0 0 1px var(--_edge);
+  box-shadow: inset 0 0 0 1px var(--akari-doc-edge-color);
   box-sizing: border-box;
   transition:
     opacity var(--md-sys-motion-duration-long-1, 450ms)
       var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)),
     transform var(--md-sys-motion-spring-slow-spatial, 750ms cubic-bezier(0.27, 1.06, 0.18, 1)),
-    padding var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1));
+    padding var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
+    --akari-doc-edge-strength var(--md-sys-motion-duration-medium-1, 250ms)
+      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
 }
 
 .akari-doc.is-leaving {
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-medium-1, 250ms)
-    var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15));
+  transition:
+    opacity var(--md-sys-motion-duration-medium-1, 250ms)
+      var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15)),
+    --akari-doc-edge-strength var(--md-sys-motion-duration-medium-1, 250ms)
+      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
 }
 
+/* The start state applies at once; the edge keeps fading meanwhile. */
 .akari-doc.is-entering {
   opacity: 0;
   transform: translateY(16px);
-  transition: none;
+  transition: --akari-doc-edge-strength
+    var(--md-sys-motion-duration-medium-1, 250ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
 }
 
 /*
@@ -232,23 +271,37 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
  * slides a short way against the direction of travel as it fades, the
  * incoming one follows from the other side. The tab bar is the navigation
  * itself and stays; the surface cap belongs to the surface.
+ *
+ * What slides, the hero and the rest of the page, is marked .akari-doc__page
+ * (see the layout), and the distance is a non-inheriting property set on it.
+ * Picked out with :not() instead, or with the distance inherited from the
+ * surface, every switch of state restyled the whole page.
  */
+@property --akari-doc-axis-shift {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 /* The content sliding in must not widen the page while it is off to the side. */
 .akari-doc[data-axis] {
-  --_axis-shift: 30px;
   overflow-x: clip;
 }
 
-.akari-doc[data-axis="backward"] {
-  --_axis-shift: -30px;
+.akari-doc[data-axis] > .akari-doc__page {
+  --akari-doc-axis-shift: 30px;
 }
 
-:root[dir="rtl"] .akari-doc[data-axis] {
-  --_axis-shift: -30px;
+.akari-doc[data-axis="backward"] > .akari-doc__page {
+  --akari-doc-axis-shift: -30px;
 }
 
-:root[dir="rtl"] .akari-doc[data-axis="backward"] {
-  --_axis-shift: 30px;
+:root[dir="rtl"] .akari-doc[data-axis] > .akari-doc__page {
+  --akari-doc-axis-shift: -30px;
+}
+
+:root[dir="rtl"] .akari-doc[data-axis="backward"] > .akari-doc__page {
+  --akari-doc-axis-shift: 30px;
 }
 
 .akari-doc[data-axis].is-leaving,
@@ -257,16 +310,16 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   transform: none;
 }
 
-.akari-doc[data-axis] > :not(.akari-surface-cap, .akari-tabs-shelf) {
+.akari-doc[data-axis] > .akari-doc__page {
   transition:
     opacity var(--md-sys-motion-duration-medium-2, 300ms)
       var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)),
     transform var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1));
 }
 
-.akari-doc[data-axis].is-leaving > :not(.akari-surface-cap, .akari-tabs-shelf) {
+.akari-doc[data-axis].is-leaving > .akari-doc__page {
   opacity: 0;
-  transform: translateX(calc(-1 * var(--_axis-shift)));
+  transform: translateX(calc(-1 * var(--akari-doc-axis-shift)));
   transition:
     opacity var(--md-sys-motion-duration-short-4, 200ms)
       var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15)),
@@ -274,9 +327,9 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
       var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15));
 }
 
-.akari-doc[data-axis].is-entering > :not(.akari-surface-cap, .akari-tabs-shelf) {
+.akari-doc[data-axis].is-entering > .akari-doc__page {
   opacity: 0;
-  transform: translateX(var(--_axis-shift));
+  transform: translateX(var(--akari-doc-axis-shift));
   transition: none;
 }
 
@@ -285,14 +338,15 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   .akari-doc__layout,
   .akari-doc,
   .akari-doc.is-leaving,
-  .akari-doc[data-axis] > :not(.akari-surface-cap, .akari-tabs-shelf),
-  .akari-doc[data-axis].is-leaving > :not(.akari-surface-cap, .akari-tabs-shelf) {
+  .akari-doc.is-entering,
+  .akari-doc[data-axis] > .akari-doc__page,
+  .akari-doc[data-axis].is-leaving > .akari-doc__page {
     transition: none;
   }
 
   .akari-doc.is-entering,
-  .akari-doc[data-axis].is-leaving > :not(.akari-surface-cap, .akari-tabs-shelf),
-  .akari-doc[data-axis].is-entering > :not(.akari-surface-cap, .akari-tabs-shelf) {
+  .akari-doc[data-axis].is-leaving > .akari-doc__page,
+  .akari-doc[data-axis].is-entering > .akari-doc__page {
     transform: none;
   }
 }
@@ -312,8 +366,11 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
 
 /* Opaque edge color of a surface: outline-variant mixed into its fill. */
 .akari-doc,
-.akari-site-footer {
-  --_edge: color-mix(
+.akari-site-footer,
+.akari-surface-cap,
+.akari-surface-cap::before,
+.akari-surface-cap::after {
+  --akari-doc-edge-color: color-mix(
     in srgb,
     var(--md-sys-color-outline-variant) var(--akari-doc-edge-strength),
     var(--akari-doc-surface-color, var(--md-sys-color-surface))
@@ -345,7 +402,7 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   margin-block: calc(0px - var(--_cap-top, var(--akari-doc-padding)))
     calc(0px - var(--_cap-bottom, var(--akari-doc-padding)));
   margin-inline: calc(0px - var(--_cap-inline, var(--akari-doc-padding)));
-  background: linear-gradient(var(--_edge), var(--_edge)) var(--_r) 0 /
+  background: linear-gradient(var(--akari-doc-edge-color), var(--akari-doc-edge-color)) var(--_r) 0 /
     calc(100% - 2 * var(--_r)) 1px no-repeat;
   pointer-events: none;
 }
@@ -371,8 +428,8 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   background: radial-gradient(
     circle at 100% 100%,
     transparent calc(var(--_r) - 1.5px),
-    var(--_edge) calc(var(--_r) - 1px),
-    var(--_edge) calc(var(--_r) - 0.25px),
+    var(--akari-doc-edge-color) calc(var(--_r) - 1px),
+    var(--akari-doc-edge-color) calc(var(--_r) - 0.25px),
     var(--akari-doc-page-background) calc(var(--_r) + 0.5px)
   );
 }
@@ -382,8 +439,8 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   background: radial-gradient(
     circle at 0 100%,
     transparent calc(var(--_r) - 1.5px),
-    var(--_edge) calc(var(--_r) - 1px),
-    var(--_edge) calc(var(--_r) - 0.25px),
+    var(--akari-doc-edge-color) calc(var(--_r) - 1px),
+    var(--akari-doc-edge-color) calc(var(--_r) - 0.25px),
     var(--akari-doc-page-background) calc(var(--_r) + 0.5px)
   );
 }
@@ -450,7 +507,8 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
 .akari-drawers {
   position: fixed;
   inset: var(--akari-doc-app-bar-height) 0 0;
-  z-index: 3;
+  /* Above the flying search copy; its inset starts below the app bar. */
+  z-index: 8;
   pointer-events: none;
   --m3e-drawer-container-color: var(--md-sys-color-surface-container-low);
   --m3e-modal-drawer-container-color: var(--md-sys-color-surface-container);

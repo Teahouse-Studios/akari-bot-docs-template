@@ -33,7 +33,9 @@ import { provideAkariSettings } from "../composables/useSettings";
 import { provideAkariSettingsDialog } from "../composables/useSettingsDialog";
 import { provideAkariTabs } from "../composables/useTabs";
 import SearchDialog from "../search/components/SearchDialog.vue";
+import SearchDockLayer from "../search/components/SearchDockLayer.vue";
 import { provideAkariSearch } from "../search/useSearch";
+import { provideAkariSearchDock } from "../search/useSearchDock";
 import {
   AKARI_CONTENT_ID,
   AKARI_NAV_RAIL_QUERY,
@@ -44,7 +46,8 @@ const config = provideAkariConfig();
 const settingsApi = provideAkariSettings(config);
 const { settings } = settingsApi;
 const { resolved: resolvedScheme } = provideAkariColorScheme(settingsApi);
-provideAkariSearch(config);
+const search = provideAkariSearch(config);
+provideAkariSearchDock(search);
 provideAkariLocaleDialog();
 provideAkariSettingsDialog();
 const tabs = provideAkariTabs(config);
@@ -112,16 +115,21 @@ const SHELL_COLOR_TOKENS = [
 ] as const;
 
 function copyThemeColorTokens(theme: HTMLElement): void {
+  // Every token is read before any is written: a new value on the root
+  // invalidates the whole page's style, so reading the next token after it
+  // would recompute all of it again, once per token.
   const computed = getComputedStyle(theme);
+  const values = SHELL_COLOR_TOKENS.map((token) =>
+    computed.getPropertyValue(token).trim(),
+  );
   const rootStyle = document.documentElement.style;
 
-  for (const token of SHELL_COLOR_TOKENS) {
-    const value = computed.getPropertyValue(token).trim();
-    if (value) rootStyle.setProperty(token, value);
-  }
+  SHELL_COLOR_TOKENS.forEach((token, index) => {
+    if (values[index]) rootStyle.setProperty(token, values[index]);
+  });
 }
 
-function syncBodyTheme(): void {
+function syncBodyScheme(): void {
   if (typeof document === "undefined") return;
 
   // Before mount the head script has already set the scheme.
@@ -130,7 +138,12 @@ function syncBodyTheme(): void {
     document.documentElement.classList.toggle("dark", scheme === "dark");
     document.documentElement.style.colorScheme = scheme;
   }
+}
 
+function syncBodyTheme(): void {
+  if (typeof document === "undefined") return;
+
+  syncBodyScheme();
   const theme = themeElement.value;
   if (!theme) return;
 
@@ -152,7 +165,10 @@ function syncThemeAttributes(): void {
   theme.setAttribute("motion", settings.motion);
 }
 
-watch(resolvedScheme, () => syncBodyTheme(), { immediate: true });
+// The palette follows when m3e-theme reports its change (syncBodyTheme):
+// read when the scheme changes, it would still be the old one, at the cost
+// of recomputing the whole page's style.
+watch(resolvedScheme, () => syncBodyScheme(), { immediate: true });
 watch(
   () => [
     themeColor.value,
@@ -228,8 +244,8 @@ onUnmounted(() => {
             sits in the same place on every page of the group.
           -->
           <DocTabs />
-          <component :is="components.Hero" v-if="hero" />
-          <div class="akari-doc__inner">
+          <component :is="components.Hero" v-if="hero" class="akari-doc__page" />
+          <div class="akari-doc__inner akari-doc__page">
             <div
               class="akari-doc__layout"
               :data-hero="hero ? '' : undefined"
@@ -270,6 +286,7 @@ onUnmounted(() => {
         <component :is="components.Sidebar" />
       </div>
     </m3e-drawer-container>
+    <SearchDockLayer v-if="config.search.enabled" />
     <SearchDialog v-if="config.search.enabled" />
     <LocaleDialog v-if="locales.length > 1" />
     <SettingsDialog v-if="config.settings.enabled" />

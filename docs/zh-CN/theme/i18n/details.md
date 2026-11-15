@@ -6,31 +6,33 @@ tab: 技术细节
 
 ## 页面属于哪种语言
 
-语言由地址决定：地址以 `/<语言文件夹>/` 开头的页面属于那种语言，其余都属于根语言。根语言的页面在源码中位于它自己的文件夹（`docs/en-US/`），提供时去掉了文件夹名，见[撰写页面 · 技术细节](/zh-CN/getting-started/writing/details#地址规则)。
+语言由地址决定：地址以 `/<语言文件夹>/` 开头的页面属于那种语言，其余都属于根语言。根语言的页面在源码中位于自己的文件夹（`docs/en-US/`），对外提供时去掉文件夹名，见[撰写页面 · 技术细节](/zh-CN/getting-started/writing/details#地址规则)。
 
-一个页面最终使用的配置，是它所在语言文件夹的 `config.ts` 叠在共用配置与 VitePress 的 locale 配置之上的结果，见[配置 · 技术细节](/zh-CN/getting-started/configuration/details#两层配置怎样叠加)。
+一个页面最终使用的配置，由它所在语言文件夹的 `config.ts` 叠加在共用配置与 VitePress 的 locale 配置之上得到，见[配置 · 技术细节](/zh-CN/getting-started/configuration/details#两层配置怎样叠加)。
 
 ## 语言包的选择
 
-1. 可选的语言包是内置的六个（`zh`、`en`、`ja`、`ko`、`fr`、`ar`），加上 `languages` 中写的；`code` 与内置语言包相同的叠在内置语言包上。
+1. 可选的语言包是内置的六个（`zh`、`en`、`ja`、`ko`、`fr`、`ar`），加上 `languages` 中写的。`code` 与内置语言包相同的语言包叠在内置语言包上。
 2. 取当前语言的 `lang`，转为小写（`_` 换为 `-`），找 `code` 完全相同的语言包。
-3. 找不到时比较主语言：`zh-CN`、`zh-TW` 都使用中文，`en-GB` 使用英文，`fr-CA` 使用法文。
+3. 找不到时按主语言匹配：`zh-CN`、`zh-TW` 都使用中文，`en-GB` 使用英文，`fr-CA` 使用法文。
 4. 仍找不到时使用英文。
 5. 补齐空缺：缺少的界面文字取英文，没有 `fonts` 时用主题的字体，没有 `dir` 时从左到右。
 6. 语言配置中写出的 `messages`、`fonts`、`dir`、`markdown` 叠在语言包之上。
 
-`settings.title`、`settings.labels`、`toc.overline`、`footer.message` 与 `search.placeholder` 没有写时，也取自这张表，所以同一份共用配置在每种语言下都有合适的默认值。写在共用配置中的文字会被所有语言继承，需要按语言区分的文字要写在语言配置里。
+`settings.title`、`settings.labels`、`toc.overline`、`footer.message` 与 `search.placeholder` 没有写时，也取自语言包中的界面文字。所以同一份共用配置在每种语言下都有合适的默认值。
+
+写在共用配置中的文字由所有语言继承。需要按语言区分的文字要写在语言配置里。
 
 ## 语言包用在哪里
 
-- 构建时，`akariContent` 为每种语言生成 VitePress 的 locale：`label` 缺省为 `Intl.DisplayNames` 给出的语言自称（首字母大写，如 `Français`），`dir` 缺省为语言包的方向，`markdown` 是语言包的 Markdown 文字叠上语言配置的，`head` 是这种语言的字体标签。VitePress 用 locale 的 `markdown` 渲染代码块复制按钮与提示块标题。
+- 构建时，`akariContent` 为每种语言生成 VitePress 的 locale。`label` 缺省为 `Intl.DisplayNames` 给出的语言自称（首字母大写，如 `Français`），`dir` 缺省为语言包的方向，`markdown` 是语言配置叠在语言包的 Markdown 文字之上，`head` 是这种语言的字体标签。VitePress 用 locale 的 `markdown` 渲染代码块复制按钮与提示块标题。
 - 页面中，主题按当前语言解析出界面文字与字体，即 `useAkariConfig()` 的 `messages` 与 `fonts`。
 - 页面中标了 `lang` 属性的片段（例如语言对话框中各语言的名称）使用那种语言的字体序列。这些规则由所有带 `fonts` 的语言包生成，样式表中没有写死任何一种语言。
 
 ## 切换语言的目标
 
 1. 把当前地址换到目标语言下：`/getting-started/installation.html` → `/zh-CN/getting-started/installation.html`，反向时去掉前缀。
-2. 目标语言的导航中有这个地址时打开它；导航包括平行页面组中的每一页。
+2. 目标语言的导航中有这个地址时，打开这个地址。导航包括平行页面组中的每一页。
 3. 否则打开目标语言的首页：根语言为 `/`，其他语言为 `/<语言文件夹>/`。
 
 判断只看目标语言的导航，所以没有进导航的页面（例如结构之外的页面）不会成为切换的目标。
@@ -39,9 +41,10 @@ tab: 技术细节
 
 - 语言按钮是一个圆形描边图标按钮（`m3e-icon-button variant="outlined"`），只有一种语言时不渲染。
 - 对话框与搜索面板使用同一种容器变换：按钮展开为居中的面板，面板标题前的图标就是按钮本身，关闭时原路收回。
-- 列表中每种语言占两行：上一行是它的 `label`，下一行是它在当前界面语言中的名称，由 `Intl.DisplayNames` 生成（中文界面中 `en-US` 显示为「英语（美国）」）。当前语言高亮，带勾选图标。与搜索结果一样，列表只有首项的上边与末项的下边是圆角。
-- 点击切换语言并关闭对话框，走 SPA 导航；按住 `⌘`、`Ctrl` 等修饰键点击时在新标签页打开。
-- 打开时焦点落在当前语言上，`Tab` 在语言之间移动；`Esc`、点击遮罩或关闭按钮收起对话框，焦点回到语言按钮。
+- 列表中每种语言占两行：上一行是它的 `label`，下一行是它在当前界面语言中的名称，由 `Intl.DisplayNames` 生成（中文界面中 `en-US` 显示为“英语（美国）”）。
+- 当前语言高亮，带勾选图标。与搜索结果一样，列表只有首项的上边与末项的下边是圆角。
+- 点击切换语言并关闭对话框，走 SPA 导航。按住 `⌘`、`Ctrl` 等修饰键点击时，在新标签页打开。
+- 打开时焦点落在当前语言上，`Tab` 在语言之间移动。按 `Esc`、点击遮罩或关闭按钮收起对话框，焦点回到语言按钮。
 - 窄屏时按钮在导航抽屉底部，对话框覆盖在抽屉之上。
 
 ## 搜索范围

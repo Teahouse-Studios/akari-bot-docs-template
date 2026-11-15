@@ -21,8 +21,14 @@ parallel:
 
 テーマのエントリー `docs/.vitepress/theme/index.ts` の `enhanceApp` で、置き換えたい部分を `provideAkariComponents` に渡します。渡さなかった部分は組み込みのコンポーネントのままです。
 
+`provideAkariSiteData` はサイトの言語と設定のデータをテーマに渡し、`provideAkariComponents` はその一部のコンポーネントを置き換えます。
+
 ```ts
+import { type Theme } from "vitepress";
+import DefaultTheme from "vitepress/theme-without-fonts";
+import { provideAkariSiteData } from "./composables/useLocales";
 import { provideAkariComponents } from "./composables/useAkariConfig";
+import Layout from "./layouts/AkariLayout.vue";
 import CustomFooter from "./CustomFooter.vue";
 
 export default {

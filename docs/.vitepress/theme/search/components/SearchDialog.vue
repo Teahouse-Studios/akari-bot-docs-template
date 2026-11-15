@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 import { withBase } from "vitepress";
 
 import { useContainerTransform } from "../../composables/useContainerTransform";
@@ -78,6 +78,28 @@ const { open: openDialog, close: closeDialog } = useContainerTransform({
   focus: focusInput,
   onClosed: finalizeClose,
 });
+
+const html = typeof document === "undefined" ? null : document.documentElement;
+let lockedOverflow: string | null = null;
+
+function lockPageScroll(): void {
+  if (!html || lockedOverflow !== null) return;
+  lockedOverflow = html.style.overflow;
+  html.style.overflow = "hidden";
+}
+
+function unlockPageScroll(): void {
+  if (!html || lockedOverflow === null) return;
+  html.style.overflow = lockedOverflow;
+  lockedOverflow = null;
+}
+
+watch(isOpen, (open) => {
+  if (open) lockPageScroll();
+  else unlockPageScroll();
+});
+
+onUnmounted(unlockPageScroll);
 
 watch(
   isOpen,

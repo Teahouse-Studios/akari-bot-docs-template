@@ -128,7 +128,7 @@ tab: API
 | `searchIndexUnavailable` | 로컬 검색 색인을 불러오지 못했습니다. |
 | `searchIndexInvalid` | 로컬 검색 색인 형식이 올바르지 않습니다. |
 | `searchRequestFailed` | 검색 요청에 실패했습니다(HTTP {status}). |
-| `searchBackendMissing` | \"{id}\"(으)로 등록된 검색 백엔드가 없습니다. |
+| `searchBackendMissing` | "{id}"(으)로 등록된 검색 백엔드가 없습니다. |
 
 `searchResultCountOne`은 복수 범주가 `one`인 개수에 쓰이고(영어의 “1 result”), 그 밖의 개수에는 `searchResultCount`가 쓰입니다. 범주는 `Intl.PluralRules`가 언어에 따라 정합니다. `{keys}`는 표시될 때 키캡으로 렌더링됩니다.
 

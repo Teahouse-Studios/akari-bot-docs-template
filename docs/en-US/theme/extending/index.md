@@ -19,10 +19,14 @@ There are three ways to adjust the theme, and none of them needs changes to the 
 
 ## Replacing components
 
-In `enhanceApp` of the theme entry `docs/.vitepress/theme/index.ts`, pass the parts you want to replace to `provideAkariComponents`. Parts you leave out keep the built-in components:
+In `enhanceApp` of the theme entry `docs/.vitepress/theme/index.ts`, call `provideAkariSiteData` to hand the site's language and config data to the theme, then pass the parts you want to replace to `provideAkariComponents`. Parts you leave out keep the built-in components:
 
 ```ts
+import { type Theme } from "vitepress";
+import DefaultTheme from "vitepress/theme-without-fonts";
+import { provideAkariSiteData } from "./composables/useLocales";
 import { provideAkariComponents } from "./composables/useAkariConfig";
+import Layout from "./layouts/AkariLayout.vue";
 import CustomFooter from "./CustomFooter.vue";
 
 export default {

@@ -19,7 +19,7 @@ The config a page ends up with is the `config.ts` of its language folder layered
 5. Fill the gaps: missing interface strings are English, a pack without `fonts` uses the theme's fonts, and one without `dir` is left to right.
 6. The `messages`, `fonts`, `dir` and `markdown` written in the language config are laid over the pack.
 
-When `settings.title`, `settings.labels`, `toc.overline`, `footer.message` and `search.placeholder` are not set, they also come from this table, so one shared config has sensible defaults in every language. Strings written in the shared config are inherited by every language; strings that differ by language belong in the language config.
+When `settings.title`, `settings.labels`, `toc.overline`, `footer.message` and `search.placeholder` are not set, they also come from the interface strings of the language pack, so one shared config has sensible defaults in every language. Strings written in the shared config are inherited by every language; strings that differ by language belong in the language config.
 
 ## Where language packs are used
 

@@ -10,31 +10,33 @@ tab: 接口
 | --- | --- | --- | --- |
 | `rootLanguage` | `string` | 按字母顺序的第一个语言文件夹 | 只在共用配置中有效：放在站点根路径的语言 |
 | `lang` | `string` | 语言文件夹名 | 语言代码，用于 `<html lang>` 与选择语言包 |
-| `label` | `string` | 语言的自称 | 语言菜单中的名称，例如 `ja-JP` 默认为「日本語」 |
-| `dir` | `"ltr" \| "rtl" \| "auto"` | 语言包的方向 | 文字方向。设置中的文字方向为「跟随语言」时采用它 |
+| `label` | `string` | 语言的自称 | 语言菜单中的名称，例如 `ja-JP` 默认为“日本語” |
+| `dir` | `"ltr" \| "rtl" \| "auto"` | 语言包的方向 | 文字方向。设置中的文字方向为“跟随语言”时采用此值 |
 | `markdown` | `MarkdownLocaleOptions` | 语言包的 | 这种语言在 Markdown 中的文字，叠在语言包之上，例如 `codeCopyButton: { tooltipText, copiedText }` |
 | `messages` | `Partial<AkariMessages>` | 无 | 改写或补全界面文字 |
-| `languages` | `AkariLanguage[]` | 无 | 内置之外的语言包，或对内置语言包的改写；一般写在共用配置中 |
+| `languages` | `AkariLanguage[]` | 无 | 内置之外的语言包，或对内置语言包的改写。一般写在共用配置中 |
 
 其余字段（`title`、`description`、`appBar`、`footer`、`search` 等）同样可以写在语言配置中，见[配置](/zh-CN/getting-started/configuration/api)。
 
 ## AkariLanguage
 
-语言包的结构，用 `defineAkariLanguage`（从 `docs/.vitepress/theme/define.ts` 导入）书写：
+用 `defineAkariLanguage` 书写语言包（从 `docs/.vitepress/theme/define.ts` 导入）。结构如下：
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `code` | `string` | 必填，语言代码。页面先找完整代码相同的语言包（`pt-BR`），再找主语言相同的（`pt`） |
 | `dir` | `"ltr" \| "rtl"` | 文字方向，缺省为 `"ltr"` |
-| `fonts` | `{ google: string[]; family: string[] }` | 字体，两项的写法同 [`fonts`](/zh-CN/styles/typography/api#fonts)；缺省为主题的字体（Roboto 与思源黑体） |
+| `fonts` | `{ google: string[]; family: string[] }` | 字体，两项的写法同 [`fonts`](/zh-CN/styles/typography/api#fonts)。缺省为主题的字体（Roboto 与思源黑体） |
 | `messages` | `Partial<AkariMessages>` | 界面文字，缺少的条目用英文 |
-| `markdown` | `MarkdownLocaleOptions` | Markdown 中的文字：`codeCopyButton` 是代码块复制按钮的提示，`container` 是提示块的默认标题（`tipLabel`、`warningLabel`、`dangerLabel`、`infoLabel`、`detailsLabel` 等） |
+| `markdown` | `MarkdownLocaleOptions` | Markdown 中的文字：`codeCopyButton` 是代码块复制按钮的提示。`container` 是提示块的默认标题（`tipLabel`、`warningLabel`、`dangerLabel`、`infoLabel`、`detailsLabel` 等） |
 
-内置语言包在 `docs/.vitepress/theme/i18n/languages/`，每种语言一个文件，由同一目录的 `index.ts` 列出。给主题本身增加一种内置语言，就在这里加一个文件，并把它列入 `AKARI_LANGUAGES`。
+内置语言包在 `docs/.vitepress/theme/i18n/languages/`，每种语言一个文件，由同一目录的 `index.ts` 列出。给主题本身增加一种内置语言时，就在这里加一个文件，并把它列入 `AKARI_LANGUAGES`。
 
 ## messages
 
-内置的六个语言包——简体中文（`zh`）、英文（`en`）、日文（`ja`）、韩文（`ko`）、法文（`fr`）与阿拉伯文（`ar`）——都有完整的界面文字。语言配置的 `messages` 中写出的条目替换语言包的文字，没写的条目沿用语言包。带 `{name}` 的条目在运行时填入对应的值。
+内置语言包有六个：简体中文（`zh`）、英文（`en`）、日文（`ja`）、韩文（`ko`）、法文（`fr`）与阿拉伯文（`ar`）。每个语言包都带完整的界面文字。
+
+语言配置的 `messages` 中写出的条目替换语言包的文字，没写的条目沿用语言包。带 `{name}` 的条目在运行时填入对应的值。
 
 ### 导航与顶栏
 
@@ -130,7 +132,7 @@ tab: 接口
 | `searchRequestFailed` | 搜索请求失败（HTTP {status}）。 |
 | `searchBackendMissing` | 未找到搜索后端 "{id}"。 |
 
-`searchResultCountOne` 用于复数类别为 `one` 的数量（英文的「1 result」），其他数量用 `searchResultCount`；类别由 `Intl.PluralRules` 按语言判断。`{keys}` 在显示时渲染为键帽。
+`searchResultCountOne` 用于复数类别为 `one` 的数量（英文的“1 result”），其他数量用 `searchResultCount`。类别由 `Intl.PluralRules` 按语言判断。`{keys}` 在显示时渲染为键帽。
 
 ## useAkariI18n
 
@@ -157,7 +159,7 @@ const { locales, homeHref } = useAkariLocales();
 
 | 返回值 | 说明 |
 | --- | --- |
-| `locales` | 语言列表，每项为 `{ key, label, lang, href, current }`；`href` 是切换到这种语言时要打开的地址。站点只有一种语言时为空数组 |
+| `locales` | 语言列表，每项为 `{ key, label, lang, href, current }`。`href` 是切换到这种语言时要打开的地址。站点只有一种语言时为空数组 |
 | `homeHref` | 当前语言首页的地址，已加上 `base` |
 
 两个函数都只能在布局内部的组件中调用。
@@ -169,7 +171,7 @@ const { locales, homeHref } = useAkariLocales();
 | 导出 | 说明 |
 | --- | --- |
 | `AKARI_LANGUAGES` | 内置的语言包 |
-| `resolveLanguage(lang, languages?)` | 一种语言最终使用的语言包：返回 `{ code, dir, fonts, messages, markdown }`，空缺已按上述规则补齐；`languages` 是站点自己的语言包 |
+| `resolveLanguage(lang, languages?)` | 一种语言最终使用的语言包：返回 `{ code, dir, fonts, messages, markdown }`，空缺已按上述规则补齐。`languages` 是站点自己的语言包 |
 | `defineAkariLanguage(language)` | 书写语言包时的类型辅助 |
 
 ## 搜索中的语言

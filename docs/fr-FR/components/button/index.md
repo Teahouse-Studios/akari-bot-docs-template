@@ -12,7 +12,7 @@ parallel:
 
 ## Variantes
 
-Les cinq variantes expriment une mise en valeur de la plus forte à la plus faible :
+Les cinq variantes expriment différents degrés de mise en valeur :
 
 <div class="demo-row">
   <m3e-button variant="elevated">Elevated</m3e-button>
@@ -178,7 +178,7 @@ Par défaut, un bouton désactivé ne peut pas recevoir le focus clavier. `disab
 </m3e-button>
 ```
 
-Avec `href`, le bouton est rendu avec une sémantique de lien et prend en charge `target`, `rel` et `download`. L'ancre d'un bouton m3e se trouve dans son Shadow DOM : la gestion globale des liens internes de VitePress ne la prend donc pas en charge, et un lien interne `m3e-button` charge la page complète. Quand vous avez besoin d'une navigation SPA, préférez un vrai `<a>` (vous pouvez lui donner le style m3e), ou appelez `useRouter().go()` dans un gestionnaire de clic. Voir [Navigation](/fr-FR/components/navigation).
+Avec `href`, le bouton est rendu avec une sémantique de lien et prend en charge `target`, `rel` et `download`. Le thème intercepte les liens internes et effectue la navigation dans la page ; avec `target="_self"`, la page complète est chargée, et avec `target="_blank"`, le lien s'ouvre dans un nouvel onglet. Quand vous devez naviguer depuis un script, vous pouvez appeler `useRouter().go()`. Voir [Navigation](/fr-FR/components/navigation).
 
 ## État de sélection
 

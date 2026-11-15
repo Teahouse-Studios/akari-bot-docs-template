@@ -19,10 +19,14 @@ parallel:
 
 ## 컴포넌트 대체
 
-테마 엔트리 `docs/.vitepress/theme/index.ts`의 `enhanceApp`에서 대체할 부분을 `provideAkariComponents`에 전달합니다. 전달하지 않은 부분은 기본 제공 컴포넌트를 그대로 씁니다.
+테마 엔트리 `docs/.vitepress/theme/index.ts`의 `enhanceApp`에서 먼저 `provideAkariSiteData`로 사이트의 언어와 구성 데이터를 테마에 넘기고, 이어서 대체할 부분을 `provideAkariComponents`에 전달합니다. 전달하지 않은 부분은 기본 제공 컴포넌트를 그대로 씁니다.
 
 ```ts
+import { type Theme } from "vitepress";
+import DefaultTheme from "vitepress/theme-without-fonts";
+import { provideAkariSiteData } from "./composables/useLocales";
 import { provideAkariComponents } from "./composables/useAkariConfig";
+import Layout from "./layouts/AkariLayout.vue";
 import CustomFooter from "./CustomFooter.vue";
 
 export default {

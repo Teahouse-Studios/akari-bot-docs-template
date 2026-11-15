@@ -12,7 +12,7 @@ parallel:
 
 ## 변형
 
-다섯 가지 변형은 높은 강조부터 낮은 강조까지를 나타냅니다.
+다섯 가지 변형은 서로 다른 강조 정도를 나타냅니다.
 
 <div class="demo-row">
   <m3e-button variant="elevated">Elevated</m3e-button>
@@ -178,7 +178,7 @@ parallel:
 </m3e-button>
 ```
 
-`href`를 설정하면 버튼은 링크 의미로 렌더링되며 `target`, `rel`, `download`를 지원합니다. m3e 버튼의 앵커는 Shadow DOM 안에 있으므로 VitePress의 전역 내부 링크 처리가 이를 가로채지 않고, 내부 링크인 `m3e-button`은 페이지 전체를 새로 불러옵니다. SPA 내비게이션이 필요하면 실제 `<a>`를 쓰거나(m3e 스타일을 입힐 수 있습니다) 클릭 핸들러에서 `useRouter().go()`를 호출하세요. [내비게이션](/ko-KR/components/navigation)을 참고하세요.
+`href`를 설정하면 버튼은 링크 의미로 렌더링되며 `target`, `rel`, `download`를 지원합니다. 테마가 사이트 내 링크를 이어받아 페이지 안에서 전환하며, `target="_self"`이면 페이지 전체를 불러오고, `target="_blank"`이면 새 탭에서 엽니다. 스크립트에서 이동해야 한다면 `useRouter().go()`를 호출하세요. 자세한 내용은 [내비게이션](/ko-KR/components/navigation)을 참고하세요.
 
 ## 선택 상태
 
@@ -219,7 +219,7 @@ parallel:
 - 아이콘만 있는 버튼에는 반드시 `aria-label`을 설정하고 `m3e-tooltip`을 함께 둡니다.
 - 툴팁 대상 `id`는 페이지에서 고유하게 유지하세요.
 - 사용자가 비활성 동작을 알아야 한다면 `disabled-interactive`를 쓰고, 사용할 수 없는 이유를 설명하세요.
-- 링크 버튼에는 `href`를 쓰세요. 일반 버튼에 라우팅 로직을 연결해 링크 의미를 잃지 않게 하세요.
+- 링크 버튼에는 `href`를 쓰세요. 일반 버튼에 라우팅 로직을 연결하면 링크 의미가 사라집니다.
 - 주요 동작에는 `filled`를 쓰고, 같은 시각 영역에 강조가 높은 버튼을 여러 개 두지 마세요.
 
 모든 속성, 슬롯, 이벤트는 [API](/ko-KR/components/button/api)를 참고하세요.

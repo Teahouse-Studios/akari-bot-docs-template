@@ -12,7 +12,7 @@ parallel:
 
 ## Variants
 
-The five variants express emphasis from high to low:
+The five variants express different levels of emphasis:
 
 <div class="demo-row">
   <m3e-button variant="elevated">Elevated</m3e-button>
@@ -178,7 +178,7 @@ By default, a disabled button cannot take keyboard focus. `disabled-interactive`
 </m3e-button>
 ```
 
-With `href` set, the button renders with link semantics and supports `target`, `rel` and `download`. The anchor of an m3e button sits inside its Shadow DOM, so VitePress's global handling of internal links does not take it over, and an internal `m3e-button` link loads the full page. When you need SPA navigation, prefer a real `<a>` (you can give it m3e styling), or call `useRouter().go()` in a click handler. See [Navigation](/components/navigation).
+With `href` set, the button renders with link semantics and supports `target`, `rel` and `download`. The theme takes over same-site links and switches pages in place; `target="_self"` loads the full page, and `target="_blank"` opens a new tab. When you need to navigate from script, call `useRouter().go()`. See [Navigation](/components/navigation).
 
 ## Selection state
 

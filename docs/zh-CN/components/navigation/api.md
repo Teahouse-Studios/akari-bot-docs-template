@@ -4,7 +4,7 @@ tab: 接口
 
 # 导航：接口
 
-以下内容来自 `@m3e/web` 2.10.2 的组件元数据。
+以下内容来自 `@m3e/web` 2.10.3 的组件元数据。
 
 ## m3e-nav-menu 与 m3e-nav-menu-item
 
@@ -13,7 +13,7 @@ tab: 接口
 | 属性 | 取值 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `open` | 布尔 | `false` | 展开子项 |
-| `selected` | 布尔 | `false` | 当前项；组件把它映射为 `aria-current` |
+| `selected` | 布尔 | `false` | 当前项。组件把这一项映射为 `aria-current` |
 | `disabled` | 布尔 | `false` | 禁用这一项及其所有子项 |
 
 | 插槽 | 内容 |
@@ -44,10 +44,10 @@ tab: 接口
 | `m3e-tab` 属性 | 取值 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `for` | 面板 id | 无 | 对应的 `m3e-tab-panel` |
-| `selected` | 布尔 | `false` | 当前标签；只能有一个 |
+| `selected` | 布尔 | `false` | 当前标签。同一组中只能有一个 |
 | `disabled` | 布尔 | `false` | 禁用 |
 
-`m3e-tab` 与 `m3e-tab-panel` 直接写在 `m3e-tabs` 中，见[概览](/zh-CN/components/navigation#标签页)中的示例；`prev-icon`、`next-icon` 插槽替换翻页图标。切换标签时触发 `beforeinput`（可以取消）、`input` 与 `change`。`m3e-tab` 另有 `icon` 插槽。
+`m3e-tab` 与 `m3e-tab-panel` 直接写在 `m3e-tabs` 中，写法见[概览](/zh-CN/components/navigation#标签页)的示例。`prev-icon`、`next-icon` 插槽替换翻页图标。切换标签时触发 `beforeinput`（可以取消）、`input` 与 `change`。`m3e-tab` 另有 `icon` 插槽。
 
 ## m3e-chip 与 m3e-filter-chip
 
@@ -58,9 +58,9 @@ tab: 接口
 | `selected` | 过滤 | 布尔 | `false` | 选中 |
 | `disabled`、`disabled-interactive` | 过滤 | 布尔 | `false` | 禁用 |
 
-两者都有默认插槽（文字）、`icon` 与 `trailing-icon` 插槽。`m3e-chip` 不可交互；`m3e-filter-chip` 切换时触发 `beforeinput`、`input` 与 `change`。
+两者都有默认插槽（文字）、`icon` 与 `trailing-icon` 插槽。`m3e-chip` 不可交互。`m3e-filter-chip` 切换时触发 `beforeinput`、`input` 与 `change`。
 
-`m3e-filter-chip-set` 包住一组过滤 Chip：`multi` 允许多选，`vertical` 纵向排列，`hide-selection-indicator` 隐藏选中标记，`disabled` 禁用整组，`name` 用于表单；选择变化时触发 `change`。
+`m3e-filter-chip-set` 包住一组过滤 Chip。`multi` 允许多选，`vertical` 让整组纵向排列，`hide-selection-indicator` 隐藏选中标记，`disabled` 禁用整组，`name` 用于表单。选择变化时触发 `change`。
 
 ## m3e-badge
 

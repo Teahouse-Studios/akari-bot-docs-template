@@ -131,3 +131,4 @@ To use another component, import its subpath in `m3e.ts`, for example `import "@
 
 - For a heading inside a component, use `<m3e-heading>`. With the `m3e-toc-ignore` attribute, it stays out of the table of contents.
 - Write an icon as `<m3e-icon name="search"></m3e-icon>`. The icon must be registered in `icons.ts` first; see [Using icons](/styles/icons/using).
+- A component with an `href` (a button, card, chip, list item and so on) that points to a page of the site switches pages in place like a plain link, without reloading the whole page. With `target="_self"` it loads the page in full, by VitePress's convention, and `target="_blank"` opens it in a new tab.

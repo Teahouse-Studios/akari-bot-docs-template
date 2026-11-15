@@ -223,7 +223,7 @@ function navigate(event: MouseEvent, link: string): void {
 }
 ```
 
-The anchor inside an m3e button or icon button lives in its Shadow DOM, where VitePress's global interception cannot see it. When such a component needs SPA navigation, listen for clicks on the host element and call `router.go()` explicitly. The static demos on this page use plain `<a>` elements, so VitePress handles internal clicks, while external links still load the full page. Whichever approach you use, do not fake a link with a `div` and a click handler, and do not drop the real `href` from internal navigation.
+The anchors generated inside an m3e button or icon button are taken over by the theme: same-site links switch pages in place, `target="_self"` loads the full page, and `target="_blank"` opens a new tab. Only when you fake a click on a non-link element do you need to listen on the host element and call `router.go()` explicitly. The static demos on this page use plain `<a>` elements, so VitePress handles internal clicks, while external links still load the full page. Whichever approach you use, do not fake a link with a `div` and a click handler, and do not drop the real `href` from internal navigation.
 
 ## Accessibility
 

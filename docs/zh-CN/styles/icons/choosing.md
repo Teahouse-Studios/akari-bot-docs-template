@@ -10,7 +10,7 @@ Material Symbols 的每个图标都有三种样式与两种形态。主题默认
 | Rounded | 圆角端点与转角，更柔和 | `@m3e/icons/rounded/<name>` |
 | Sharp | 直角转角，更硬朗 | `@m3e/icons/sharp/<name>` |
 
-同一界面中保持一种样式。主题的导航、顶栏与按钮全部使用 Outlined；如果站点整体换成 Rounded，需要同时替换 `icons.ts` 中的全部导入，并给 `<m3e-icon>` 设置 `variant="rounded"`。
+同一界面中保持一种样式。主题的导航、顶栏与按钮全部使用 Outlined。如果站点整体换成 Rounded，需要同时做两件事：替换 `icons.ts` 中的全部导入，并给 `<m3e-icon>` 设置 `variant="rounded"`。
 
 ## 轮廓与填充
 

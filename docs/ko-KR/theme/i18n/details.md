@@ -19,7 +19,7 @@ tab: 세부 사항
 5. 빈 곳을 채웁니다. 빠진 인터페이스 문자열은 영어로 표시되고, `fonts`가 없는 언어 팩은 테마의 글꼴을 쓰며, `dir`이 없는 언어 팩은 왼쪽에서 오른쪽입니다.
 6. 언어 구성에 쓴 `messages`, `fonts`, `dir`, `markdown`을 언어 팩 위에 겹칩니다.
 
-`settings.title`, `settings.labels`, `toc.overline`, `footer.message`, `search.placeholder`를 설정하지 않으면 이 값들도 이 표에서 가져오므로, 공통 구성 하나로도 모든 언어에서 적절한 기본값을 얻습니다. 공통 구성에 쓴 문자열은 모든 언어가 상속하므로, 언어마다 다른 문자열은 언어 구성에 씁니다.
+`settings.title`, `settings.labels`, `toc.overline`, `footer.message`, `search.placeholder`를 설정하지 않으면 이 값들도 언어 팩의 인터페이스 문자열에서 가져오므로, 공통 구성 하나로도 모든 언어에서 적절한 기본값을 얻습니다. 공통 구성에 쓴 문자열은 모든 언어가 상속하므로, 언어마다 다른 문자열은 언어 구성에 씁니다.
 
 ## 언어 팩이 쓰이는 곳 {#where-language-packs-are-used}
 

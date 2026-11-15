@@ -17,6 +17,32 @@ tab: API
 
 `search` can go in a language config, to give each language its own backend.
 
+## SearchDock
+
+`<SearchDock>` is registered globally by the theme. Put it in a page where the search field should land; no import is needed. It renders a reserved box, and the fixed copy of the app-bar trigger flies over it and takes on its props.
+
+```md
+<SearchDock variant="hero" align="center" placeholder="Search the guide" />
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `placeholder` | `string` | `search.placeholder` | Placeholder while docked here |
+| `variant` | `"bar" \| "pill" \| "icon" \| "hero"` | `"bar"` | Look of the field |
+| `align` | `"start" \| "center" \| "end"` | `"start"` | Alignment of the icon, label, and shortcut inside the field |
+| `width` | `string \| number` | Variant width | CSS length or pixel width of the reserved box |
+| `height` | `string \| number` | Variant height | CSS length or pixel height of the reserved box |
+| `fill` | `boolean` | `false` | Fill the parent box instead of the variant's natural size |
+| `priority` | `number` | `0` | Wins over other tags on the same page |
+
+`bar` is the app-bar field, `pill` a tonal field, `icon` a round FAB, and `hero` a large tonal field. `width` and `height` accept a CSS length (`"20rem"`, `"min(100%, 30rem)"`) or a pixel number; without them the variant's natural box is used. Add `fill` to take the parent box instead (`width: 100%; height: 100%`); the parent needs a definite width and height, and explicit `width` / `height` still override either axis.
+
+The tag also takes the default slot, laid out inside the reserved box behind the field. It is marked `aria-hidden`; the field itself is the button that opens search.
+
+Several tags may exist on one page. The highest `priority` wins, ties go to the first registered, and tags with a zero-sized or hidden box are skipped. A tag also has to sit fully inside the page area and viewport, clear of the app bar and tab strip; otherwise the field stays in the app bar until scrolling gives the tag room. Leave one tag on a page: when the page unmounts, the field flies home and fades out; moving between pages with tags animates between their boxes. A direct first load snaps into place without a transition. All timing comes from the theme's MD3 spring tokens, so it follows the Standard/Expressive setting and `prefers-reduced-motion`.
+
+`<AkariSearchDock>` is an alias for the same component.
+
 ## Local backend
 
 ```ts
