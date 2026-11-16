@@ -11,6 +11,7 @@ import ModuleConfig from "./components/content/ModuleConfig.vue";
 import ModuleData from "./components/content/ModuleData.vue";
 import ModuleMeta from "./components/content/ModuleMeta.vue";
 import NoticeBox from "./components/content/NoticeBox.vue";
+import VineSeedControl from "./components/content/VineSeedControl.vue";
 import SearchDock from "./search/components/SearchDock.vue";
 import Layout from "./layouts/AkariLayout.vue";
 import { routeComponentLinks } from "./links";
@@ -36,6 +37,7 @@ export default {
     app.component("ModuleData", ModuleData);
     app.component("ModuleAlias", ModuleAlias);
     app.component("AkariFluidWall", AkariFluidWall);
+    app.component("VineSeedControl", VineSeedControl);
     app.component("AkariImagePreview", ImagePreview);
     app.component("SearchDock", SearchDock);
     app.component("AkariSearchDock", SearchDock);
@@ -53,6 +55,7 @@ export {
   ModuleData,
   ModuleMeta,
   NoticeBox,
+  VineSeedControl,
 };
 export * from "./types";
 export { defineAkariConfig, defineAkariThemeConfig } from "./config";

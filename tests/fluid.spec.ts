@@ -3,12 +3,24 @@ import { describe, expect, it } from "vitest";
 import {
   FLUID_FALLBACK_TOKENS,
   FLUID_LOOPS,
+  FLUID_TEXTURE_SIZES,
+  FLUID_TEXTURE_WEIGHTS,
+  FLUID_TEXTURES,
+  FLUID_VARIANT_SPECS,
+  FLUID_VARIANTS,
+  fluidCurtain,
   fluidLoopOffset,
   fluidLoopOffsets,
   fluidNumber,
   fluidPalette,
   fluidRenderSize,
+  fluidTextureTone,
+  buildFluidRibbons,
+  ribbonBandPath,
+  ribbonLacePath,
+  ribbonScallopPath,
   mixFluid,
+  resolveFluid,
   type FluidRgb,
 } from "../docs/.vitepress/theme/fluid";
 
@@ -176,4 +188,189 @@ describe("fluidRenderSize", () => {
     expect(fluidRenderSize(0, 0, 1)).toEqual({ width: 1, height: 1 });
     expect(fluidRenderSize(10, 10, 0)).toEqual({ width: 10, height: 10 });
   });
+});
+
+describe("fluid variants", () => {
+  it("gives every name a complete spec", () => {
+    for (const variant of FLUID_VARIANTS) {
+      const spec = FLUID_VARIANT_SPECS[variant];
+      expect(spec.scale).toBeGreaterThan(0);
+      expect(spec.speed).toBeGreaterThan(0);
+      expect(spec.stretch).toHaveLength(2);
+      expect(["none", "sakura"]).toContain(spec.texture);
+    }
+  });
+
+  it("keeps silk on the values the wall shipped with", () => {
+    const spec = resolveFluid("silk");
+    expect(spec).toMatchObject({
+      scale: 1.5,
+      curl: 8.5,
+      warp: 0.7,
+      petal: 0.6,
+      grid: 72,
+      glow: 1,
+      speed: 1,
+      tone: 0.2,
+      mote: 30,
+      curtain: 0,
+      texture: "none",
+    });
+  });
+
+  it("lets a tag override the table, clamped to the shader's range", () => {
+    expect(resolveFluid("aurora", { scale: 2 }).scale).toBe(2);
+    expect(resolveFluid("aurora", { scale: 99 }).scale).toBe(5);
+    expect(resolveFluid("aurora", { scale: "not a number" }).scale).toBe(FLUID_VARIANT_SPECS.aurora.scale);
+    expect(resolveFluid("aurora", { texture: "sakura" }).texture).toBe("sakura");
+    expect(resolveFluid("aurora", { texture: "lace" }).texture).toBe("lace");
+    expect(resolveFluid("aurora", { texture: "confetti" }).texture).toBe("none");
+  });
+
+  it("gives every overlay a tile size, a weight and a usable alpha", () => {
+    for (const texture of FLUID_TEXTURES) {
+      expect(FLUID_TEXTURE_SIZES[texture]).toBeGreaterThan(0);
+      expect(FLUID_TEXTURE_WEIGHTS[texture]).toBeGreaterThanOrEqual(0);
+      if (texture !== "none") expect(FLUID_TEXTURE_WEIGHTS[texture]).toBeGreaterThan(0);
+    }
+    expect(FLUID_TEXTURE_WEIGHTS.none).toBe(0);
+    expect(resolveFluid("aurora", { texture: "dots" }).textureOpacity).toBeGreaterThan(0);
+    expect(resolveFluid("silk", { texture: "vine" }).texture).toBe("vine");
+    expect(resolveFluid("silk", { texture: "waves" }).texture).toBe("none");
+  });
+
+  it("falls back to silk for a name it does not know", () => {
+    expect(resolveFluid("plasma").scale).toBe(FLUID_VARIANT_SPECS.silk.scale);
+    expect(resolveFluid(undefined).scale).toBe(FLUID_VARIANT_SPECS.silk.scale);
+  });
+
+  it("gives the curtain a clock that follows the speed", () => {
+    expect(fluidCurtain(10)).toBeCloseTo(fluidCurtain(10, 1), 6);
+    expect(fluidCurtain(10, 2)).toBeGreaterThan(fluidCurtain(10, 1));
+    expect(fluidCurtain(0)).toBe(0);
+  });
+
+  it("paints ink on paper and light on a dark wall", () => {
+    expect(fluidTextureTone("auto", "light")).toBe("ink");
+    expect(fluidTextureTone("auto", "dark")).toBe("light");
+    expect(fluidTextureTone("ink", "dark")).toBe("ink");
+    expect(fluidTextureTone(undefined, "dark")).toBe("light");
+  });
+
+  it("lets the accent decide how much of the warm role reaches the ramp", () => {
+    const cool = fluidPalette(FLUID_FALLBACK_TOKENS.dark, "dark", 0, 0).stops[3];
+    const warm = fluidPalette(FLUID_FALLBACK_TOKENS.dark, "dark", 0, 1).stops[3];
+    expect(warm[0]).toBeGreaterThan(cool[0]);
+  });
+});
+
+describe("buildFluidRibbons", () => {
+  it("lays ribbons across the wall, entering and leaving outside it", () => {
+    const ribbons = buildFluidRibbons(1200, 320, 7, 5);
+    expect(ribbons).toHaveLength(5);
+    expect(ribbons.map((ribbon) => ribbon.layer)).toEqual([0, 1, 2, 3, 4]);
+    let horizontalCrossings = 0;
+    for (const ribbon of ribbons) {
+      const [x0, y0, , , , , x3, y3] = ribbon.curve;
+      const startsOutside = x0 < 0 || y0 < 0 || x0 > 1200 || y0 > 320;
+      const endsOutside = x3 < 0 || y3 < 0 || x3 > 1200 || y3 > 320;
+      expect(startsOutside || endsOutside).toBe(true);
+      expect(ribbon.width).toBeGreaterThanOrEqual(20);
+      expect(ribbon.width).toBeLessThanOrEqual(34);
+      expect(ribbon.points.length).toBeGreaterThan(4);
+      if ((x0 < 0 && x3 > 1200) || (x0 > 1200 && x3 < 0)) horizontalCrossings += 1;
+    }
+    expect(horizontalCrossings).toBeLessThanOrEqual(1);
+  });
+
+  it("redraws the same ribbons for the same seed and nothing for an empty wall", () => {
+    expect(buildFluidRibbons(800, 240, 11, 4)).toEqual(buildFluidRibbons(800, 240, 11, 4));
+    expect(buildFluidRibbons(800, 240, 12, 4)).not.toEqual(buildFluidRibbons(800, 240, 11, 4));
+    expect(buildFluidRibbons(0, 0, 1, 3)).toEqual([]);
+  });
+
+  it("stretches the ribbons picked for a layout frame instead of re-picking them", () => {
+    const layout = { width: 800, height: 240 };
+    expect(buildFluidRibbons(800, 240, 11, 6, layout)).toEqual(buildFluidRibbons(800, 240, 11, 6));
+    let previous = buildFluidRibbons(640, 240, 11, 6, layout);
+    for (let width = 644; width <= 1040; width += 4) {
+      const ribbons = buildFluidRibbons(width, 240, 11, 6, layout);
+      ribbons.forEach((ribbon, index) => {
+        expect(ribbon.width).toBe(previous[index].width);
+        expect(ribbon.span).toBe(previous[index].span);
+        ribbon.points.forEach(([x, y], point) => {
+          const [px, py] = previous[index].points[point];
+          expect(Math.hypot(x - px, y - py)).toBeLessThanOrEqual(4.01);
+        });
+      });
+      previous = ribbons;
+    }
+    const florets = (width: number) =>
+      buildFluidRibbons(width, 240, 11, 6, layout).map((ribbon) => ribbonLacePath(ribbon).split("Z").length);
+    expect(florets(640)).toEqual(florets(1040));
+  });
+
+  it("adds independent bends and spreads ribbon centerlines", () => {
+    const ribbons = buildFluidRibbons(1200, 320, 7, 5);
+    const signatures = new Set(
+      ribbons.map((ribbon) =>
+        [8, 16, 24]
+          .map((index) => ribbon.points[index].map((value) => Math.round(value / 24)).join(","))
+          .join("|"),
+      ),
+    );
+    expect(signatures.size).toBe(ribbons.length);
+
+    for (const ribbon of ribbons) {
+      const [x0, y0, x1, y1, x2, y2, x3, y3] = ribbon.curve;
+      const chordX = x3 - x0;
+      const chordY = y3 - y0;
+      const chordLength = Math.hypot(chordX, chordY) || 1;
+      const maxDeviation = Math.max(
+        ...ribbon.points.slice(1, -1).map((point) =>
+          Math.abs((point[0] - x0) * chordY - (point[1] - y0) * chordX) / chordLength,
+        ),
+      );
+      expect(maxDeviation).toBeGreaterThan(1);
+    }
+  });
+
+  it("cuts both edges of the band into a continuous scallop", () => {
+    const [ribbon] = buildFluidRibbons(900, 300, 3, 1);
+    const band = ribbonBandPath(ribbon);
+    expect(band.startsWith("M")).toBe(true);
+    expect(band.endsWith("Z")).toBe(true);
+
+    const outer = ribbonScallopPath(ribbon, 1);
+    const inner = ribbonScallopPath(ribbon, -1);
+    expect(outer.split("L").length).toBeGreaterThan(40);
+    expect((outer.match(/M/g) ?? []).length).toBeGreaterThan(20);
+    expect(outer).not.toBe(inner);
+    expect(ribbonScallopPath(ribbon, 1, 40)).not.toBe(outer);
+    const occluder = { ...ribbon, width: ribbon.width + 24 };
+    expect(ribbonScallopPath(ribbon, 1, 0, [occluder])).toBe("");
+    expect(ribbonLacePath(ribbon, [ribbon])).toBe("");
+
+    // The trim rides the band's own edge, so it cannot leave the ribbon's box
+    // by more than the scallop amplitude.
+    const xs = ribbon.points.map((point) => point[0]);
+    const ys = ribbon.points.map((point) => point[1]);
+    const margin = ribbon.width / 2 + Math.max(1.6, ribbon.width * 0.42) + 2;
+    const numbers = outer.match(/-?\d+(\.\d+)?/g)!.map(Number);
+    for (let index = 0; index < numbers.length; index += 2) {
+      expect(numbers[index]).toBeGreaterThanOrEqual(Math.min(...xs) - margin);
+      expect(numbers[index]).toBeLessThanOrEqual(Math.max(...xs) + margin);
+      expect(numbers[index + 1]).toBeGreaterThanOrEqual(Math.min(...ys) - margin);
+      expect(numbers[index + 1]).toBeLessThanOrEqual(Math.max(...ys) + margin);
+    }
+  });
+
+  it("draws leaf florets inside the ribbon", () => {
+    const [ribbon] = buildFluidRibbons(900, 300, 3, 1);
+    const lace = ribbonLacePath(ribbon);
+    expect(lace).toContain("C");
+    expect(lace).toContain("Z");
+    expect((lace.match(/M/g) ?? []).length).toBeGreaterThan(10);
+  });
+
 });
