@@ -33,9 +33,17 @@ tab: 接口
 | `width` | `string \| number` | 外观宽度 | 预留盒子的 CSS 长度或像素宽度 |
 | `height` | `string \| number` | 外观高度 | 预留盒子的 CSS 长度或像素高度 |
 | `fill` | `boolean` | `false` | 占满外层盒子，而不是使用外观固有尺寸 |
+| `immersive` | `boolean` | `false` | 在浮层内直接输入并搜索，不打开对话框 |
+| `showShortcut` | `boolean` | `true` | 显示停靠搜索框里的快捷键提示 |
+| `background` | `string` | 外观底色 | 搜索框表面的 CSS 颜色 |
+| `borderColor` | `string` | 外观边框 | 搜索框边框的 CSS 颜色 |
+| `shadow` | `boolean` | `true` | 是否保留浮起阴影；`false` 去掉 |
+| `elevation` | `number` | 外观层级 | 0 到 5 的 MD3 阴影层级；`0` 去掉阴影 |
 | `priority` | `number` | `0` | 同一页面有多个标签时优先使用 |
 
 `bar` 是顶栏搜索框，`pill` 是色调搜索框，`icon` 是圆形浮动按钮，`hero` 是大号色调入口。`width` 与 `height` 接受 CSS 长度（`"20rem"`、`"min(100%, 30rem)"`）或像素数字。不写时使用该外观的自然尺寸。加上 `fill` 会改为占满外层盒子（`width: 100%; height: 100%`）。外层需要有确定的宽高，显式 `width` / `height` 仍可单独覆盖某一轴。
+
+`immersive` 会把浮层变成输入框：点击后直接聚焦，并在旁边（空间允许时在上方或下方）展开紧凑的结果列表，不打开对话框；快捷键仍会打开完整搜索面板。`icon` 变体在此模式下会扩展为紧凑输入框。
 
 标签还接受默认插槽。插槽内容排在预留盒子里，位于搜索框后面。标签本身标记为 `aria-hidden`。真正打开搜索的是搜索框按钮。
 

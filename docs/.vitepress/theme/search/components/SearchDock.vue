@@ -33,6 +33,18 @@ const props = withDefaults(
      * `width` / `height` still override either axis.
      */
     fill?: boolean;
+    /** Search inline in the dock instead of opening the search dialog. */
+    immersive?: boolean;
+    /** Show the keyboard shortcut hint. Defaults to true. */
+    showShortcut?: boolean;
+    /** CSS color of the field surface; defaults to the variant's tone. */
+    background?: string;
+    /** CSS color of the field border; defaults to the variant's rule. */
+    borderColor?: string;
+    /** Keep the elevation shadow (default) or remove it. */
+    shadow?: boolean;
+    /** MD3 elevation level, 0 to 5; 0 removes the shadow. */
+    elevation?: number;
     /** Wins over other tags on the same page. */
     priority?: number;
   }>(),
@@ -41,6 +53,9 @@ const props = withDefaults(
     align: "start",
     priority: 0,
     fill: false,
+    immersive: false,
+    showShortcut: true,
+    shadow: true,
   },
 );
 
@@ -48,15 +63,32 @@ const dock = useAkariSearchDock();
 const root = ref<HTMLElement | null>(null);
 let unregister: (() => void) | null = null;
 
-const style = computed(() =>
-  searchDockSize(props.variant, props.width, props.height, props.fill),
-);
+const style = computed(() => {
+  // A 56px FAB cannot host an inline input; when immersive is on, open it
+  // into a compact field unless the page set its own width.
+  if (
+    props.immersive &&
+    props.variant === "icon" &&
+    props.width === undefined &&
+    !props.fill
+  ) {
+    return { width: "min(20rem, 100%)", height: "48px" };
+  }
+
+  return searchDockSize(props.variant, props.width, props.height, props.fill);
+});
 
 function options() {
   return {
     placeholder: props.placeholder,
     variant: props.variant,
     align: props.align,
+    immersive: props.immersive,
+    showShortcut: props.showShortcut,
+    background: props.background,
+    borderColor: props.borderColor,
+    shadow: props.shadow,
+    elevation: props.elevation,
     priority: props.priority,
   };
 }
@@ -71,6 +103,12 @@ watch(
     props.placeholder,
     props.variant,
     props.align,
+    props.immersive,
+    props.showShortcut,
+    props.background,
+    props.borderColor,
+    props.shadow,
+    props.elevation,
     props.priority,
     props.width,
     props.height,

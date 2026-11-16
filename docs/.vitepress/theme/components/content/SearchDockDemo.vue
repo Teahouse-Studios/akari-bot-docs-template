@@ -33,10 +33,27 @@ const align = ref<AkariSearchDockAlign>("center");
 const placeholder = ref(t("searchPlaceholder"));
 const tagVisible = ref(true);
 const fill = ref(false);
+const immersive = ref(false);
+const showShortcut = ref(true);
+const background = ref("");
+const borderColor = ref("");
+const shadow = ref(true);
+const elevation = ref("auto");
+const elevationLevel = computed(() =>
+  elevation.value === "auto" ? undefined : Number(elevation.value),
+);
 
 const snippet = computed(
   () =>
-    `<SearchDock variant="${variant.value}" align="${align.value}" placeholder="${placeholder.value}"${fill.value ? " fill" : ""} />`,
+    `<SearchDock variant="${variant.value}" align="${align.value}" placeholder="${placeholder.value}"${fill.value ? " fill" : ""}${immersive.value ? " immersive" : ""}${
+      showShortcut.value ? "" : ' :show-shortcut="false"'
+    }${
+      background.value ? ` background="${background.value}"` : ""
+    }${
+      borderColor.value ? ` border-color="${borderColor.value}"` : ""
+    }${shadow.value ? "" : ' :shadow="false"'}${
+      elevation.value === "auto" ? "" : ` :elevation="${elevation.value}"`
+    } />`,
 );
 
 function reload(): void {
@@ -82,6 +99,53 @@ function reload(): void {
       <button
         type="button"
         class="dock-demo__toggle"
+        :aria-pressed="immersive"
+        @click="immersive = !immersive"
+      >
+        {{ t("dockDemoImmersive") }}
+      </button>
+
+      <button
+        type="button"
+        class="dock-demo__toggle"
+        :aria-pressed="showShortcut"
+        @click="showShortcut = !showShortcut"
+      >
+        {{ t("dockDemoShortcut") }}
+      </button>
+
+      <label class="dock-demo__field">
+        <span>{{ t("dockDemoBackground") }}</span>
+        <input v-model="background" type="text" placeholder="#e8def8" />
+      </label>
+
+      <label class="dock-demo__field">
+        <span>{{ t("dockDemoBorder") }}</span>
+        <input v-model="borderColor" type="text" placeholder="#79747e" />
+      </label>
+
+      <button
+        type="button"
+        class="dock-demo__toggle"
+        :aria-pressed="shadow"
+        @click="shadow = !shadow"
+      >
+        {{ t("dockDemoShadow") }}
+      </button>
+
+      <label class="dock-demo__field">
+        <span>{{ t("dockDemoElevation") }}</span>
+        <select v-model="elevation">
+          <option value="auto">{{ t("dockDemoAuto") }}</option>
+          <option v-for="level in 6" :key="level" :value="String(level - 1)">
+            {{ level - 1 }}
+          </option>
+        </select>
+      </label>
+
+      <button
+        type="button"
+        class="dock-demo__toggle"
         :aria-pressed="tagVisible"
         @click="tagVisible = !tagVisible"
       >
@@ -102,6 +166,12 @@ function reload(): void {
           :align="align"
           :placeholder="placeholder"
           :fill="fill"
+          :immersive="immersive"
+          :show-shortcut="showShortcut"
+          :background="background || undefined"
+          :border-color="borderColor || undefined"
+          :shadow="shadow"
+          :elevation="elevationLevel"
         />
       </div>
     </div>

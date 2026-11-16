@@ -41,6 +41,12 @@ Placez `<SearchDock>` là où le champ de recherche doit atterrir. Le tag réser
 | `width` | `string \| number` | Largeur de la variante | Longueur CSS ou largeur en pixels du cadre réservé |
 | `height` | `string \| number` | Hauteur de la variante | Longueur CSS ou hauteur en pixels du cadre réservé |
 | `fill` | `boolean` | `false` | Remplir le cadre parent au lieu de la taille naturelle de la variante |
+| `immersive` | `boolean` | `false` | Saisir et rechercher directement dans le champ, sans ouvrir la boîte de dialogue |
+| `showShortcut` | `boolean` | `true` | Afficher l’indice de raccourci dans le champ ancré |
+| `background` | `string` | Fond de la variante | Couleur CSS de la surface du champ |
+| `borderColor` | `string` | Bordure de la variante | Couleur CSS de la bordure du champ |
+| `shadow` | `boolean` | `true` | Conserver l'ombre d'élévation ; `false` la retire |
+| `elevation` | `number` | Niveau de la variante | Niveau d'élévation MD3 de 0 à 5 ; `0` retire l'ombre |
 | `priority` | `number` | `0` | Prioritaire sur les autres tags de la même page |
 
 Le tag est enregistré globalement : la page n'a pas besoin de l'importer. Placez-le dans le flux, à l'endroit où le champ doit vivre ; la mise en page environnante décide de la position exacte.

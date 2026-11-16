@@ -33,9 +33,17 @@ tab: API
 | `width` | `string \| number` | Largeur de la variante | Longueur CSS ou largeur en pixels du cadre réservé |
 | `height` | `string \| number` | Hauteur de la variante | Longueur CSS ou hauteur en pixels du cadre réservé |
 | `fill` | `boolean` | `false` | Remplir le cadre parent au lieu de la taille naturelle de la variante |
+| `immersive` | `boolean` | `false` | Saisir et rechercher directement dans le champ, sans ouvrir la boîte de dialogue |
+| `showShortcut` | `boolean` | `true` | Afficher l’indice de raccourci dans le champ ancré |
+| `background` | `string` | Fond de la variante | Couleur CSS de la surface du champ |
+| `borderColor` | `string` | Bordure de la variante | Couleur CSS de la bordure du champ |
+| `shadow` | `boolean` | `true` | Conserver l'ombre d'élévation ; `false` la retire |
+| `elevation` | `number` | Niveau de la variante | Niveau d'élévation MD3 de 0 à 5 ; `0` retire l'ombre |
 | `priority` | `number` | `0` | Prioritaire sur les autres tags de la même page |
 
 `bar` est le champ de la barre supérieure, `pill` un champ tonal, `icon` un bouton flottant rond et `hero` un grand champ tonal. `width` et `height` acceptent une longueur CSS (`"20rem"`, `"min(100%, 30rem)"`) ou un nombre de pixels ; sans eux, le cadre naturel de la variante est utilisé. Ajoutez `fill` pour occuper le cadre parent (`width: 100%; height: 100%`) ; le parent doit avoir une largeur et une hauteur définies, et `width` / `height` explicites l'emportent encore sur un axe.
+
+`immersive` transforme le champ ancré en saisie : un clic le focalise et ouvre une liste de résultats compacte à côté (au-dessus ou en dessous selon la place), sans boîte de dialogue. Le raccourci ouvre toujours la recherche complète. La variante `icon` s'élargit en champ compact dans ce mode.
 
 Le tag accepte aussi le slot par défaut, placé dans le cadre réservé derrière le champ. Il est marqué `aria-hidden` ; c'est le champ lui-même qui ouvre la recherche.
 

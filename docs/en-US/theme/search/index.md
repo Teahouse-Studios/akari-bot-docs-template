@@ -41,11 +41,17 @@ Put `<SearchDock>` where the search field should land. The tag only reserves a b
 | `width` | `string \| number` | Variant width | CSS length or pixel width of the reserved box |
 | `height` | `string \| number` | Variant height | CSS length or pixel height of the reserved box |
 | `fill` | `boolean` | `false` | Fill the parent box instead of the variant's natural size |
+| `immersive` | `boolean` | `false` | Type and search inline in the dock instead of opening the dialog |
+| `showShortcut` | `boolean` | `true` | Show the keyboard shortcut hint in the docked field |
+| `background` | `string` | Variant surface | CSS color of the field surface |
+| `borderColor` | `string` | Variant border | CSS color of the field border |
+| `shadow` | `boolean` | `true` | Keep the elevation shadow; `false` removes it |
+| `elevation` | `number` | Variant level | MD3 elevation level from 0 to 5; `0` removes the shadow |
 | `priority` | `number` | `0` | Wins over other tags on the same page |
 
 The tag is globally registered, so a page does not import it. Put it in the flow where the field belongs; the surrounding layout decides the exact spot.
 
-Opening that page directly places the field in the box with no transition. Navigating in from another page flies it from the app bar or its previous dock; navigating to a page without a tag flies it home and fades it out. Changing a prop re-shapes or re-aligns the field in place. If a page has several tags, the highest `priority` wins and ties go to the first one rendered.
+Opening that page directly places the field in the box with no transition. Navigating in from another page flies it from the app bar or its previous dock; navigating to a page without a tag flies it home and fades it out. Changing a prop re-shapes or re-aligns the field in place. If a page has several tags, the highest `priority` wins and ties go to the first one rendered. Add `immersive` to type and see results in the field itself; the dialog stays closed.
 
 While the field is docked, the app bar's title and docked tabs take over the slot it left behind; the slot eases open again as the field flies home. A tag only receives the field when its box has room: it must sit inside the page area and the viewport, clear of the app bar and the tab strip. Otherwise the field stays in the app bar, and flies in later when scrolling brings the tag into a clear area. Scrolling while the field is in flight moves it with the tag instead of leaving it behind and snapping at the end; if a tag becomes usable again while the field is flying home, the flight turns around from its current position instead of restarting. On the way home, the field morphs back to the app-bar surface, type and padding during the flight instead of switching when it lands. Flight and fade use the theme's MD3 motion tokens, so they follow the Standard/Expressive setting and honor `prefers-reduced-motion`.
 

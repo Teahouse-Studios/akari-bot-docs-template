@@ -243,6 +243,18 @@ export interface AkariSearchDockAnchorOptions {
   placeholder?: string;
   variant?: AkariSearchDockVariant;
   align?: AkariSearchDockAlign;
+  /** Search inline in the dock instead of opening the dialog. */
+  immersive?: boolean;
+  /** Whether to show the keyboard shortcut hint. Defaults to true. */
+  showShortcut?: boolean;
+  /** CSS color for the field's surface; defaults to the variant's tone. */
+  background?: string;
+  /** CSS color for the field's border; defaults to the variant's rule. */
+  borderColor?: string;
+  /** Whether the floating field keeps its elevation shadow. */
+  shadow?: boolean;
+  /** MD3 elevation level, 0 to 5; 0 removes the shadow. */
+  elevation?: number;
   /** Higher wins when one page contains more than one dock tag. */
   priority?: number;
 }
@@ -251,6 +263,12 @@ export interface ResolvedAkariSearchDockAnchorOptions {
   placeholder?: string;
   variant: AkariSearchDockVariant;
   align: AkariSearchDockAlign;
+  immersive: boolean;
+  showShortcut: boolean;
+  background?: string;
+  borderColor?: string;
+  shadow: boolean;
+  elevation?: number;
   priority: number;
 }
 
@@ -425,6 +443,13 @@ export interface AkariMessages {
   dockDemoNatural: string;
   dockDemoHideTag: string;
   dockDemoShowTag: string;
+  dockDemoImmersive: string;
+  dockDemoShortcut: string;
+  dockDemoBackground: string;
+  dockDemoBorder: string;
+  dockDemoShadow: string;
+  dockDemoElevation: string;
+  dockDemoAuto: string;
   dockDemoReload: string;
   dockDemoCaption: string;
   dockDemoHint: string;

@@ -127,6 +127,12 @@ describe("search dock anchor", () => {
       placeholder: undefined,
       variant: "bar",
       align: "start",
+      immersive: false,
+      showShortcut: true,
+      background: undefined,
+      borderColor: undefined,
+      shadow: true,
+      elevation: undefined,
       priority: 0,
     });
   });
@@ -137,12 +143,24 @@ describe("search dock anchor", () => {
         placeholder: "  Search the docs  ",
         variant: "hero",
         align: "center",
+        immersive: true,
+        showShortcut: false,
+        background: "  #ff0000  ",
+        borderColor: " color-mix(in srgb, red 20%, transparent) ",
+        shadow: false,
+        elevation: 4,
         priority: 3,
       }),
     ).toEqual({
       placeholder: "Search the docs",
       variant: "hero",
       align: "center",
+      immersive: true,
+      showShortcut: false,
+      background: "#ff0000",
+      borderColor: "color-mix(in srgb, red 20%, transparent)",
+      shadow: false,
+      elevation: 4,
       priority: 3,
     });
   });
@@ -158,7 +176,28 @@ describe("search dock anchor", () => {
       placeholder: undefined,
       variant: "bar",
       align: "start",
+      immersive: false,
+      showShortcut: true,
+      background: undefined,
+      borderColor: undefined,
+      shadow: true,
+      elevation: undefined,
       priority: 0,
+    });
+  });
+
+  it("drops out-of-range elevation and blank colors", () => {
+    expect(
+      normalizeSearchDockAnchor({
+        elevation: 9,
+        background: "   ",
+        borderColor: "   ",
+      }),
+    ).toMatchObject({
+      background: undefined,
+      borderColor: undefined,
+      elevation: undefined,
+      shadow: true,
     });
   });
 

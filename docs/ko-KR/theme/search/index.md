@@ -41,6 +41,12 @@ parallel:
 | `width` | `string \| number` | 모양의 너비 | 예약 상자의 CSS 길이 또는 픽셀 너비 |
 | `height` | `string \| number` | 모양의 높이 | 예약 상자의 CSS 길이 또는 픽셀 높이 |
 | `fill` | `boolean` | `false` | 모양의 자연 크기 대신 부모 상자를 채움 |
+| `immersive` | `boolean` | `false` | 대화상자를 열지 않고 도킹된 필드에서 바로 입력하고 검색합니다 |
+| `showShortcut` | `boolean` | `true` | 도킹된 필드에 바로가기 힌트를 표시합니다 |
+| `background` | `string` | 변형 배경 | 검색 필드 표면의 CSS 색상 |
+| `borderColor` | `string` | 변형 테두리 | 검색 필드 테두리의 CSS 색상 |
+| `shadow` | `boolean` | `true` | 떠 있는 그림자를 유지합니다. `false`면 제거합니다 |
+| `elevation` | `number` | 변형 고도 | 0~5의 MD3 고도. `0`이면 그림자를 제거합니다 |
 | `priority` | `number` | `0` | 같은 페이지의 다른 태그보다 우선 |
 
 태그는 전역으로 등록되므로 페이지에서 import할 필요가 없습니다. 필드가 있어야 할 흐름에 두면 주변 레이아웃이 정확한 위치를 정합니다.
