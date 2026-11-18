@@ -5,13 +5,14 @@ import {
   normalizeVineSeed,
   readVinePopout,
   readVineSeed,
+  VINE_DEFAULT_SEED,
   VINE_POPOUT_EVENT,
   VINE_SEED_EVENT,
   writeVinePopout,
   writeVineSeed,
 } from "../../vine3d";
 
-const seed = ref(readVineSeed());
+const seed = ref(VINE_DEFAULT_SEED);
 // Read once mounted, so the server-rendered box and the hydrated one agree.
 const popout = ref(false);
 const draft = ref(String(seed.value));
@@ -43,6 +44,8 @@ function onPopoutChange(event: Event): void {
 }
 
 onMounted(() => {
+  seed.value = readVineSeed();
+  draft.value = String(seed.value);
   popout.value = readVinePopout();
   window.addEventListener(VINE_SEED_EVENT, onSeedChange);
   window.addEventListener(VINE_POPOUT_EVENT, onPopoutChange);
