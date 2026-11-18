@@ -33,9 +33,17 @@ tab: API
 | `width` | `string \| number` | Variant width | CSS length or pixel width of the reserved box |
 | `height` | `string \| number` | Variant height | CSS length or pixel height of the reserved box |
 | `fill` | `boolean` | `false` | Fill the parent box instead of the variant's natural size |
+| `immersive` | `boolean` | `false` | Type and search inline in the dock instead of opening the dialog |
+| `showShortcut` | `boolean` | `true` | Show the keyboard shortcut hint in the docked field |
+| `background` | `string` | Variant surface | CSS color of the field surface |
+| `borderColor` | `string` | Variant border | CSS color of the field border |
+| `shadow` | `boolean` | `true` | Keep the elevation shadow; `false` removes it |
+| `elevation` | `number` | Variant level | MD3 elevation level from 0 to 5; `0` removes the shadow |
 | `priority` | `number` | `0` | Wins over other tags on the same page |
 
 `bar` is the app-bar field, `pill` a tonal field, `icon` a round FAB, and `hero` a large tonal field. `width` and `height` accept a CSS length (`"20rem"`, `"min(100%, 30rem)"`) or a pixel number; without them the variant's natural box is used. Add `fill` to take the parent box instead (`width: 100%; height: 100%`); the parent needs a definite width and height, and explicit `width` / `height` still override either axis.
+
+`immersive` turns the docked field into an input: clicking it focuses the field and opens a compact result list next to it (above or below, whichever fits), and no dialog is opened. The shortcut still opens the full dialog. The `icon` variant expands to a compact field in this mode.
 
 The tag also takes the default slot, laid out inside the reserved box behind the field. It is marked `aria-hidden`; the field itself is the button that opens search.
 

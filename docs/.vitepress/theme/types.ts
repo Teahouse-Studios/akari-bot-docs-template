@@ -243,6 +243,18 @@ export interface AkariSearchDockAnchorOptions {
   placeholder?: string;
   variant?: AkariSearchDockVariant;
   align?: AkariSearchDockAlign;
+  /** Search inline in the dock instead of opening the dialog. */
+  immersive?: boolean;
+  /** Whether to show the keyboard shortcut hint. Defaults to true. */
+  showShortcut?: boolean;
+  /** CSS color for the field's surface; defaults to the variant's tone. */
+  background?: string;
+  /** CSS color for the field's border; defaults to the variant's rule. */
+  borderColor?: string;
+  /** Whether the floating field keeps its elevation shadow. */
+  shadow?: boolean;
+  /** MD3 elevation level, 0 to 5; 0 removes the shadow. */
+  elevation?: number;
   /** Higher wins when one page contains more than one dock tag. */
   priority?: number;
 }
@@ -251,6 +263,12 @@ export interface ResolvedAkariSearchDockAnchorOptions {
   placeholder?: string;
   variant: AkariSearchDockVariant;
   align: AkariSearchDockAlign;
+  immersive: boolean;
+  showShortcut: boolean;
+  background?: string;
+  borderColor?: string;
+  shadow: boolean;
+  elevation?: number;
   priority: number;
 }
 
@@ -425,9 +443,109 @@ export interface AkariMessages {
   dockDemoNatural: string;
   dockDemoHideTag: string;
   dockDemoShowTag: string;
+  dockDemoImmersive: string;
+  dockDemoShortcut: string;
+  dockDemoBackground: string;
+  dockDemoBorder: string;
+  dockDemoShadow: string;
+  dockDemoElevation: string;
+  dockDemoAuto: string;
   dockDemoReload: string;
   dockDemoCaption: string;
   dockDemoHint: string;
+  /** AkariFluidWall playground controls and labels. */
+  fluidDemoPreview: string;
+  fluidDemoVariant: string;
+  fluidDemoStructure: string;
+  fluidDemoTexture: string;
+  fluidDemoTextureAuto: string;
+  fluidDemoTextureTone: string;
+  fluidDemoTextureColor: string;
+  fluidDemoColorTone: string;
+  fluidDemoColorToken: string;
+  fluidDemoColorCustom: string;
+  fluidDemoColorPicker: string;
+  fluidDemoAlpha: string;
+  fluidDemoVineColors: string;
+  fluidDemoVinePart: string;
+  fluidDemoVineBase: string;
+  fluidDemoVineLeaf: string;
+  fluidDemoVineFlower: string;
+  fluidDemoVineFlowerStem: string;
+  fluidDemoVineBud: string;
+  fluidDemoVineFill: string;
+  fluidDemoVineTint: string;
+  fluidDemoVineHalo: string;
+  fluidDemoVineEdge: string;
+  fluidDemoVineFine: string;
+  fluidDemoVineResetPart: string;
+  fluidDemoVineBlend: string;
+  fluidDemoRipple: string;
+  fluidDemoRippleSpeed: string;
+  fluidDemoRippleSize: string;
+  fluidDemoRippleRings: string;
+  fluidDemoRippleSway: string;
+  fluidDemoVineGlow: string;
+  fluidDemoShadow: string;
+  fluidDemoShadowSize: string;
+  fluidDemoShadowColor: string;
+  fluidDemoShadowAngle: string;
+  fluidDemoShadowBlur: string;
+  fluidDemoWallShadow: string;
+  fluidDemoWallShadowSize: string;
+  fluidDemoWallShadowColor: string;
+  fluidDemoWallShadowAngle: string;
+  fluidDemoWallShadowBlur: string;
+  fluidDemoVineUnderlay: string;
+  fluidDemoVineUnderlayColor: string;
+  fluidDemoVineUnderlayBlend: string;
+  fluidDemoMote: string;
+  fluidDemoMoteColor: string;
+  fluidDemoMoteBlend: string;
+  fluidDemoPresets: string;
+  fluidDemoPresetName: string;
+  fluidDemoSavePreset: string;
+  fluidDemoLoadPreset: string;
+  fluidDemoDeletePreset: string;
+  fluidDemoVinePopoutBlend: string;
+  fluidDemoVinePopoutColors: string;
+  fluidDemoVinePopoutOutsideColors: string;
+  fluidDemoVinePopoutOutsideBlend: string;
+  fluidDemoBlendSame: string;
+  fluidDemoBlendNormal: string;
+  fluidDemoBlendMultiply: string;
+  fluidDemoBlendScreen: string;
+  fluidDemoBlendOverlay: string;
+  fluidDemoBlendSoftLight: string;
+  fluidDemoBlendDifference: string;
+  fluidDemoToneInk: string;
+  fluidDemoToneLight: string;
+  fluidDemoHeight: string;
+  fluidDemoFlow: string;
+  fluidDemoSpeed: string;
+  fluidDemoScale: string;
+  fluidDemoCurl: string;
+  fluidDemoWarp: string;
+  fluidDemoPetal: string;
+  fluidDemoTone: string;
+  fluidDemoLightGroup: string;
+  fluidDemoLight: string;
+  fluidDemoGlow: string;
+  fluidDemoOverlay: string;
+  fluidDemoGrid: string;
+  fluidDemoTextureSize: string;
+  fluidDemoTextureDensity: string;
+  fluidDemoTextureOpacity: string;
+  fluidDemoRandom: string;
+  fluidDemoReset: string;
+  fluidDemoCopy: string;
+  fluidDemoCopied: string;
+  fluidDemoHint: string;
+  fluidDemoPopout: string;
+  fluidDemoInward: string;
+  fluidDemoSafeZone: string;
+  fluidDemoOn: string;
+  fluidDemoOff: string;
 }
 
 /**

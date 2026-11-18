@@ -23,12 +23,20 @@ export type AkariSearchTriggerRole = "home" | "dock";
 
 export interface AkariSearchApi {
   isOpen: Ref<boolean>;
+  /** True while a docked field searches inline instead of opening the dialog. */
+  inlineActive: Readonly<Ref<boolean>>;
   query: Ref<string>;
   results: Ref<AkariSearchResult[]>;
   loading: Ref<boolean>;
   error: Readonly<Ref<string | null>>;
   activeIndex: Ref<number>;
   openSearch(): void;
+  /** Starts inline search for a docked field; no dialog is opened. */
+  openInline(): void;
+  /** Ends inline search and discards the current result list. */
+  closeInline(): void;
+  /** Runs the current inline query immediately. */
+  searchNow(): void;
   closeSearch(): void;
   finalizeClose(): void;
   setTrigger(element: HTMLElement | null, role?: AkariSearchTriggerRole): void;
@@ -82,6 +90,7 @@ export function provideAkariSearch(
   }
 
   const isOpen = ref(false);
+  const inlineActive = ref(false);
   const query = ref("");
   const results = ref<AkariSearchResult[]>([]);
   const loading = ref(false);
@@ -187,9 +196,33 @@ export function provideAkariSearch(
       !active.closest(".akari-search-dialog")
         ? active
         : null;
+    inlineActive.value = false;
     query.value = "";
     resetResults();
     isOpen.value = true;
+  }
+
+  function openInline(): void {
+    if (!config.value.search.enabled || isOpen.value) return;
+    inlineActive.value = true;
+  }
+
+  function closeInline(): void {
+    clearTimer();
+    abortRequest();
+    inlineActive.value = false;
+    resetResults();
+  }
+
+  function searchNow(): void {
+    clearTimer();
+    const value = query.value;
+    if (!value.trim()) {
+      abortRequest();
+      resetResults();
+      return;
+    }
+    void search(value);
   }
 
   function closeSearch(): void {
@@ -273,7 +306,8 @@ export function provideAkariSearch(
   }
 
   function selectResult(result: AkariSearchResult): void {
-    closeSearch();
+    if (inlineActive.value) closeInline();
+    else closeSearch();
     navigate(result);
   }
 
@@ -311,7 +345,8 @@ export function provideAkariSearch(
       }
       case "Escape":
         event.preventDefault();
-        closeSearch();
+        if (inlineActive.value) closeInline();
+        else closeSearch();
         break;
     }
   }
@@ -337,7 +372,7 @@ export function provideAkariSearch(
   watch(query, (value) => {
     clearTimer();
 
-    if (!isOpen.value) return;
+    if (!isOpen.value && !inlineActive.value) return;
 
     if (!value.trim()) {
       abortRequest();
@@ -353,7 +388,7 @@ export function provideAkariSearch(
 
     timer = setTimeout(() => {
       timer = undefined;
-      if (isOpen.value) void search(value);
+      if (isOpen.value || inlineActive.value) void search(value);
     }, debounce);
   });
 
@@ -366,12 +401,16 @@ export function provideAkariSearch(
 
   const api: AkariSearchApi = {
     isOpen,
+    inlineActive,
     query,
     results,
     loading,
     error,
     activeIndex,
     openSearch,
+    openInline,
+    closeInline,
+    searchNow,
     closeSearch,
     finalizeClose,
     setTrigger,

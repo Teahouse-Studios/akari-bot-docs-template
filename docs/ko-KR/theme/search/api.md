@@ -33,9 +33,17 @@ tab: API
 | `width` | `string \| number` | 모양의 너비 | 예약 상자의 CSS 길이 또는 픽셀 너비 |
 | `height` | `string \| number` | 모양의 높이 | 예약 상자의 CSS 길이 또는 픽셀 높이 |
 | `fill` | `boolean` | `false` | 모양의 자연 크기 대신 부모 상자를 채움 |
+| `immersive` | `boolean` | `false` | 대화상자를 열지 않고 도킹된 필드에서 바로 입력하고 검색합니다 |
+| `showShortcut` | `boolean` | `true` | 도킹된 필드에 바로가기 힌트를 표시합니다 |
+| `background` | `string` | 변형 배경 | 검색 필드 표면의 CSS 색상 |
+| `borderColor` | `string` | 변형 테두리 | 검색 필드 테두리의 CSS 색상 |
+| `shadow` | `boolean` | `true` | 떠 있는 그림자를 유지합니다. `false`면 제거합니다 |
+| `elevation` | `number` | 변형 고도 | 0~5의 MD3 고도. `0`이면 그림자를 제거합니다 |
 | `priority` | `number` | `0` | 같은 페이지의 다른 태그보다 우선 |
 
 `bar`는 앱 바 필드, `pill`은 톤 필드, `icon`은 둥근 FAB, `hero`는 큰 톤 필드입니다. `width`와 `height`는 CSS 길이(`"20rem"`, `"min(100%, 30rem)"`) 또는 픽셀 숫자를 받습니다. 생략하면 모양의 자연 상자를 씁니다. `fill`을 추가하면 부모 상자를 채우며(`width: 100%; height: 100%`) 부모에 확정된 너비와 높이가 필요합니다. 명시한 `width` / `height`는 어느 한 축을 덮어씁니다.
+
+`immersive`를 추가하면 도킹된 필드가 입력창이 됩니다. 클릭하면 포커스되고 옆(공간이 되면 위나 아래)에 간단한 결과 목록이 열리며, 대화상자는 열리지 않습니다. 단축키는 전체 검색 대화상자를 엽니다. `icon` 변형은 이 모드에서 컴팩트한 입력창으로 확장됩니다.
 
 태그는 기본 슬롯도 받아 필드 뒤의 예약 상자 안에 배치합니다. 태그 자체는 `aria-hidden`이고, 검색을 여는 것은 필드 버튼입니다.
 

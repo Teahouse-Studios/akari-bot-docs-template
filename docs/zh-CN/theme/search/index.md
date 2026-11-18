@@ -41,6 +41,12 @@ parallel:
 | `width` | `string \| number` | 外观宽度 | 预留盒子的 CSS 长度或像素宽度 |
 | `height` | `string \| number` | 外观高度 | 预留盒子的 CSS 长度或像素高度 |
 | `fill` | `boolean` | `false` | 占满外层盒子，而不是使用外观固有尺寸 |
+| `immersive` | `boolean` | `false` | 在浮层内直接输入并搜索，不打开对话框 |
+| `showShortcut` | `boolean` | `true` | 显示停靠搜索框里的快捷键提示 |
+| `background` | `string` | 外观底色 | 搜索框表面的 CSS 颜色 |
+| `borderColor` | `string` | 外观边框 | 搜索框边框的 CSS 颜色 |
+| `shadow` | `boolean` | `true` | 是否保留浮起阴影；`false` 去掉 |
+| `elevation` | `number` | 外观层级 | 0 到 5 的 MD3 阴影层级；`0` 去掉阴影 |
 | `priority` | `number` | `0` | 同一页面有多个标签时优先使用 |
 
 标签已全局注册，页面不需要导入。把它写进文档流，放在希望搜索框出现的位置。具体落点由周围的布局决定。

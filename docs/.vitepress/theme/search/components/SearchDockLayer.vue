@@ -1,11 +1,23 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
 import { useAkariSearchDock } from "../useSearchDock";
+import SearchDockField from "./SearchDockField.vue";
 import SearchTrigger from "./SearchTrigger.vue";
 
 const dock = useAkariSearchDock();
 const root = ref<HTMLElement | null>(null);
+
+const surface = computed(() => {
+  const style: Record<string, string> = {};
+  if (dock.background.value) {
+    style["--akari-search-dock-background"] = dock.background.value;
+  }
+  if (dock.borderColor.value) {
+    style["--akari-search-dock-border"] = dock.borderColor.value;
+  }
+  return style;
+});
 
 onMounted(() => dock.setDockElement(root.value));
 onUnmounted(() => dock.setDockElement(null));
@@ -18,12 +30,23 @@ onUnmounted(() => dock.setDockElement(null));
     :data-variant="dock.variant.value"
     :data-align="dock.align.value"
     :data-active="dock.active.value ? '' : undefined"
+    :data-immersive="dock.immersive.value ? '' : undefined"
+    :data-custom-background="dock.background.value ? '' : undefined"
+    :data-custom-border="dock.borderColor.value ? '' : undefined"
+    :data-shadow="dock.shadow.value ? undefined : 'off'"
+    :data-elevation="
+      dock.elevation.value === null ? undefined : String(dock.elevation.value)
+    "
+    :style="surface"
     :inert="!dock.active.value || dock.leaving.value"
     :aria-hidden="!dock.active.value || dock.leaving.value"
   >
+    <SearchDockField v-if="dock.active.value && dock.immersive.value" />
     <SearchTrigger
+      v-else
       role="dock"
       :placeholder="dock.placeholder.value ?? undefined"
+      :show-shortcut="dock.showShortcut.value"
     />
   </div>
 </template>
@@ -189,6 +212,46 @@ onUnmounted(() => dock.setDockElement(null));
   opacity: 0;
 }
 
+/*
+ * Immersive icon docks are fields, not FABs: the anchor widens so the input
+ * has room, and the surface falls back to the quiet app-bar field.
+ */
+.akari-search-dock[data-immersive][data-variant="icon"] :deep(.akari-search-field) {
+  justify-content: flex-start;
+  gap: 8px;
+  padding-inline: var(--md-sys-measurement-space150, 12px);
+  border-color: var(--md-sys-color-outline-variant);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  box-shadow: var(--akari-doc-elevation-level2);
+}
+
+.akari-search-dock[data-immersive][data-variant="icon"] :deep(.akari-search-field:hover) {
+  border-color: var(--md-sys-color-outline);
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.akari-search-dock[data-immersive][data-variant="icon"] :deep(.akari-search-field:focus-within) {
+  border-color: var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Match the compact variants: only bar and hero keep the shortcut hint. */
+.akari-search-dock[data-variant="pill"] :deep(.akari-search-field__kbd),
+.akari-search-dock[data-variant="icon"] :deep(.akari-search-field__kbd) {
+  display: none;
+}
+
+.akari-search-dock[data-align="center"] :deep(.akari-search-field__input) {
+  text-align: center;
+}
+
+.akari-search-dock[data-align="end"] :deep(.akari-search-field__input) {
+  text-align: end;
+}
+
 /* When leaving, drop the floating elevation so the hand-off to the flat
    app-bar button has no shadow pop on the last frame. */
 .akari-search-dock[data-leaving] :deep(.akari-search-trigger) {
@@ -283,6 +346,61 @@ onUnmounted(() => dock.setDockElement(null));
     border-width: 0;
     opacity: 0;
   }
+}
+
+/* Per-tag surface overrides. The attributes are only present when the
+   page set the matching prop, so the variant defaults above still apply. */
+.akari-search-dock[data-custom-background]:not([data-leaving])
+  :deep(.akari-search-trigger),
+.akari-search-dock[data-custom-background]:not([data-leaving])
+  :deep(.akari-search-trigger:hover),
+.akari-search-dock[data-custom-background]:not([data-leaving])
+  :deep(.akari-search-trigger:focus-within) {
+  background-color: var(--akari-search-dock-background);
+}
+
+.akari-search-dock[data-custom-border]:not([data-leaving])
+  :deep(.akari-search-trigger),
+.akari-search-dock[data-custom-border]:not([data-leaving])
+  :deep(.akari-search-trigger:hover),
+.akari-search-dock[data-custom-border]:not([data-leaving])
+  :deep(.akari-search-trigger:focus-within) {
+  border-color: var(--akari-search-dock-border);
+}
+
+.akari-search-dock[data-elevation="0"]:not([data-leaving])
+  :deep(.akari-search-trigger) {
+  box-shadow: none;
+}
+
+.akari-search-dock[data-elevation="1"]:not([data-leaving])
+  :deep(.akari-search-trigger) {
+  box-shadow: var(--akari-doc-elevation-level1);
+}
+
+.akari-search-dock[data-elevation="2"]:not([data-leaving])
+  :deep(.akari-search-trigger) {
+  box-shadow: var(--akari-doc-elevation-level2);
+}
+
+.akari-search-dock[data-elevation="3"]:not([data-leaving])
+  :deep(.akari-search-trigger) {
+  box-shadow: var(--akari-doc-elevation-level3);
+}
+
+.akari-search-dock[data-elevation="4"]:not([data-leaving])
+  :deep(.akari-search-trigger) {
+  box-shadow: var(--akari-doc-elevation-level4);
+}
+
+.akari-search-dock[data-elevation="5"]:not([data-leaving])
+  :deep(.akari-search-trigger) {
+  box-shadow: var(--akari-doc-elevation-level5);
+}
+
+.akari-search-dock[data-shadow="off"]:not([data-leaving])
+  :deep(.akari-search-trigger) {
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -18,5 +18,6 @@ Try it in four ways:
 - Leave this page (for example via **Overview**) and come back: it flies from the app bar to the box.
 - Change **Variant** or **Align**: the field re-shapes and re-aligns in place.
 - Turn on **Fill box**: the tag takes the whole outer box (`width: 100%; height: 100%`), so the field follows whatever size the surrounding layout gives it. Turn it off to return to the variant's natural size.
+- Turn on **Immersive**: click the field and type; results appear in a compact list under it, without the search dialog.
 
-The field stays interactive while docked: click it or press `⌘K` (`Ctrl K`), and the search panel grows from where it stands.
+The field stays interactive while docked: with `immersive` off, click it or press `⌘K` (`Ctrl K`) to open the search panel from where it stands. With `immersive` on, click and type directly; the shortcut still opens the full dialog.

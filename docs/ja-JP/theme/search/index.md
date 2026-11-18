@@ -41,6 +41,12 @@ parallel:
 | `width` | `string \| number` | 外観の幅 | 予約ボックスの CSS 長さまたはピクセル幅 |
 | `height` | `string \| number` | 外観の高さ | 予約ボックスの CSS 長さまたはピクセル高さ |
 | `fill` | `boolean` | `false` | 外観の自然なサイズではなく親ボックスを埋める |
+| `immersive` | `boolean` | `false` | ダイアログを開かず、その場で入力して検索します |
+| `showShortcut` | `boolean` | `true` | ドック内のフィールドにショートカットのヒントを表示します |
+| `background` | `string` | 外観の面色 | 検索面の CSS カラー |
+| `borderColor` | `string` | 外観の枠線 | 検索面の枠線の CSS カラー |
+| `shadow` | `boolean` | `true` | 浮遊影を残す。`false` で消す |
+| `elevation` | `number` | 外観の標高 | 0〜5 の MD3 標高。`0` で影を消す |
 | `priority` | `number` | `0` | 同じページの他のタグより優先する |
 
 タグはグローバルに登録されているので、ページで import する必要はありません。フィールドを置きたいフローの中に書き、正確な位置は周囲のレイアウトに任せます。

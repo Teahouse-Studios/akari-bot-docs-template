@@ -9,8 +9,12 @@ import {
 } from "../useSearch";
 
 const props = withDefaults(
-  defineProps<{ role?: AkariSearchTriggerRole; placeholder?: string }>(),
-  { role: "home" },
+  defineProps<{
+    role?: AkariSearchTriggerRole;
+    placeholder?: string;
+    showShortcut?: boolean;
+  }>(),
+  { role: "home", showShortcut: true },
 );
 
 const config = useAkariConfig();
@@ -66,7 +70,10 @@ onUnmounted(() => setTrigger(null, props.role));
     <span class="akari-search-trigger__label">
       {{ label }}
     </span>
-    <kbd v-if="config.search.shortcut" class="akari-search-trigger__kbd">
+    <kbd
+      v-if="props.showShortcut && config.search.shortcut"
+      class="akari-search-trigger__kbd"
+    >
       {{ shortcutLabel }}
     </kbd>
   </button>

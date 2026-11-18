@@ -32,6 +32,18 @@ export interface AkariSearchDockApi {
   align: Readonly<Ref<AkariSearchDockAlign>>;
   /** The current tag's placeholder, or null to use the theme's. */
   placeholder: Readonly<Ref<string | null>>;
+  /** Search inside the dock instead of opening the dialog. */
+  immersive: Readonly<Ref<boolean>>;
+  /** Whether the docked field shows the keyboard shortcut hint. */
+  showShortcut: Readonly<Ref<boolean>>;
+  /** Explicit field surface color, or null for the variant default. */
+  background: Readonly<Ref<string | null>>;
+  /** Explicit field border color, or null for the variant default. */
+  borderColor: Readonly<Ref<string | null>>;
+  /** Whether the floating field keeps its elevation shadow. */
+  shadow: Readonly<Ref<boolean>>;
+  /** Explicit MD3 elevation level, or null for the variant default. */
+  elevation: Readonly<Ref<number | null>>;
   /** True while the trigger flies home and fades. */
   leaving: Readonly<Ref<boolean>>;
   setDockElement(element: HTMLElement | null): void;
@@ -144,6 +156,12 @@ export function provideAkariSearchDock(
   const variant = ref<AkariSearchDockVariant>("bar");
   const align = ref<AkariSearchDockAlign>("start");
   const placeholder = ref<string | null>(null);
+  const immersive = ref(false);
+  const showShortcut = ref(true);
+  const background = ref<string | null>(null);
+  const borderColor = ref<string | null>(null);
+  const shadow = ref(true);
+  const elevation = ref<number | null>(null);
   const leaving = ref(false);
 
   const anchors = new Map<HTMLElement, AnchorRecord>();
@@ -244,6 +262,12 @@ export function provideAkariSearchDock(
     variant.value = options.variant;
     align.value = options.align;
     placeholder.value = options.placeholder ?? null;
+    immersive.value = options.immersive;
+    showShortcut.value = options.showShortcut;
+    background.value = options.background ?? null;
+    borderColor.value = options.borderColor ?? null;
+    shadow.value = options.shadow;
+    elevation.value = options.elevation ?? null;
   }
 
   function anchorHasRoom(rect: SearchDockRect): boolean {
@@ -408,7 +432,10 @@ export function provideAkariSearchDock(
       return;
     }
 
-    const elapsed = now - flightStarted;
+    // The first frame's timestamp can predate `flightStarted` because the
+    // flight is scheduled from inside that same frame; clamp it so the
+    // opening frame never runs the spring backwards.
+    const elapsed = Math.max(0, now - flightStarted);
     if (elapsed >= flightDuration) {
       writeRect(element, target);
       finishFlight();
@@ -440,6 +467,7 @@ export function provideAkariSearchDock(
     const from = rectOf(element) ?? { ...rect };
     if (sameRect(from, rect)) {
       writeRect(element, rect);
+      element.removeAttribute("data-morphing");
       done?.();
       return;
     }
@@ -471,6 +499,7 @@ export function provideAkariSearchDock(
 
     cancelFlight();
     writeRect(element, rect);
+    element.removeAttribute("data-morphing");
     // Commit a snap before the next style read, so no transition starts.
     void element.offsetWidth;
     done?.();
@@ -665,6 +694,12 @@ export function provideAkariSearchDock(
     variant.value = "bar";
     align.value = "start";
     placeholder.value = null;
+    immersive.value = false;
+    showShortcut.value = true;
+    background.value = null;
+    borderColor.value = null;
+    shadow.value = true;
+    elevation.value = null;
     // The bar's free space opens while the copy is still travelling, so the
     // title and tabs move over gradually instead of jumping at hand-off.
     // The spring lands exactly on the live home button; only then reveal
@@ -711,7 +746,13 @@ export function provideAkariSearchDock(
       currentElement !== anchor.element ||
       variant.value !== anchor.options.variant ||
       align.value !== anchor.options.align ||
-      placeholder.value !== (anchor.options.placeholder ?? null);
+      placeholder.value !== (anchor.options.placeholder ?? null) ||
+      immersive.value !== anchor.options.immersive ||
+      showShortcut.value !== anchor.options.showShortcut ||
+      background.value !== (anchor.options.background ?? null) ||
+      borderColor.value !== (anchor.options.borderColor ?? null) ||
+      shadow.value !== anchor.options.shadow ||
+      elevation.value !== (anchor.options.elevation ?? null);
 
     currentElement = anchor.element;
     if (changed && animate && !prefersReducedMotion()) {
@@ -838,6 +879,12 @@ export function provideAkariSearchDock(
     variant: readonly(variant),
     align: readonly(align),
     placeholder: readonly(placeholder),
+    immersive: readonly(immersive),
+    showShortcut: readonly(showShortcut),
+    background: readonly(background),
+    borderColor: readonly(borderColor),
+    shadow: readonly(shadow),
+    elevation: readonly(elevation),
     leaving: readonly(leaving),
     setDockElement(element: HTMLElement | null): void {
       dockElement = element;

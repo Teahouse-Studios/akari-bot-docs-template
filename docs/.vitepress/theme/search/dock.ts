@@ -37,6 +37,18 @@ function isAlign(value: unknown): value is AkariSearchDockAlign {
   return SEARCH_DOCK_ALIGNS.includes(value as AkariSearchDockAlign);
 }
 
+function cssColor(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
+function elevationLevel(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  const level = Math.round(value);
+  return level >= 0 && level <= 5 ? level : undefined;
+}
+
 function cssLength(value: string | number | undefined): string | undefined {
   if (typeof value === "number") {
     return Number.isFinite(value) && value > 0 ? `${value}px` : undefined;
@@ -56,6 +68,12 @@ export function normalizeSearchDockAnchor(
     placeholder: placeholder || undefined,
     variant: isVariant(options?.variant) ? options.variant : "bar",
     align: isAlign(options?.align) ? options.align : "start",
+    immersive: options?.immersive === true,
+    showShortcut: options?.showShortcut !== false,
+    background: cssColor(options?.background),
+    borderColor: cssColor(options?.borderColor),
+    shadow: options?.shadow !== false,
+    elevation: elevationLevel(options?.elevation),
     priority:
       typeof options?.priority === "number" && Number.isFinite(options.priority)
         ? options.priority
