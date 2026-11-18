@@ -108,7 +108,8 @@
 /* The copy that flies between the two; geometry is set inline. */
 .akari-page-tabs--flight {
   position: fixed;
-  z-index: 6;
+  /* Above the top bar (12) and the fade cap (10) during the flight. */
+  z-index: 13;
   pointer-events: none;
 }
 

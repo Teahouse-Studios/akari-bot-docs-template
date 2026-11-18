@@ -3,6 +3,7 @@ import type { Component } from "vue";
 import DefaultTheme from "vitepress/theme-without-fonts";
 
 import { provideAkariSiteData } from "./composables/useLocales";
+import { getAkariGpuTier } from "./gpu-tier";
 import AkariFluidWall from "./components/content/AkariFluidWall.vue";
 import ChatExample from "./components/content/ChatExample.vue";
 import CommandUsage from "./components/content/CommandUsage.vue";
@@ -46,7 +47,12 @@ export default {
     app.component("AkariImagePreview", ImagePreview);
     app.component("SearchDock", SearchDock);
     app.component("AkariSearchDock", SearchDock);
-    if (inBrowser) routeComponentLinks(router);
+    if (inBrowser) {
+      // Publish the tier on <html> before the first scroll; CSS uses it to
+      // choose the GPU topbar transition over the cheaper surface mask.
+      void getAkariGpuTier();
+      routeComponentLinks(router);
+    }
   },
 } satisfies Theme;
 

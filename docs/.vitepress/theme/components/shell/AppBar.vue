@@ -209,6 +209,12 @@ function setDockedBar(element: unknown): void {
 </template>
 
 <style scoped>
+/* Keep the bar and everything in it above the document content. */
+.akari-app-bar {
+  position: relative;
+  z-index: 11;
+}
+
 /*
  * Site name and article title share one cell. Swapping them is a vertical
  * shared-axis move clipped by the cell: the outgoing title rises and fades,

@@ -184,7 +184,8 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
 .akari-frame__bar {
   position: sticky;
   top: 0;
-  z-index: 4;
+  /* Above the fade cap and every layer the document draws. */
+  z-index: 12;
   grid-column: 2 / -1;
   grid-row: 1 / -1;
   align-self: start;
@@ -443,6 +444,80 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
     var(--akari-doc-edge-color) calc(var(--_r) - 0.25px),
     var(--akari-doc-page-background) calc(var(--_r) + 0.5px)
   );
+}
+
+/*
+ * With a usable GPU, the scroll mask is removed. The app bar's own background
+ * becomes a vertical transition from its original surface color to
+ * transparent, so content dissolves into the bar without a separate overlay.
+ * Without a usable GPU the base rounded mask above is the cheaper fallback.
+ */
+html[data-akari-gpu-tier="good"] m3e-app-bar {
+  --m3e-app-bar-container-color: transparent;
+  --m3e-app-bar-container-color-on-scroll: transparent;
+  background: linear-gradient(
+    to bottom,
+    var(--md-sys-color-surface-container-low, Canvas) 0%,
+    var(--md-sys-color-surface-container-low, Canvas) 40%,
+    color-mix(
+        in srgb,
+        var(--md-sys-color-surface-container-low, Canvas) 65%,
+        transparent
+      )
+      80%,
+    transparent 100%
+  );
+}
+
+html[data-akari-gpu-tier="good"] .akari-doc > .akari-surface-cap {
+  background: none;
+}
+
+html[data-akari-gpu-tier="good"] .akari-doc > .akari-surface-cap::before,
+html[data-akari-gpu-tier="good"] .akari-doc > .akari-surface-cap::after {
+  display: none;
+}
+
+/*
+ * A BAD GPU means software rendering: every spring and long transition is
+ * expensive. Collapse the design-token timings first, then catch the styles
+ * that hard-code a duration. Script-driven effects consult
+ * `prefersReducedMotion()` and skip their own animation loops.
+ */
+html[data-akari-gpu-tier="bad"] {
+  --md-sys-motion-duration-short-1: 0s;
+  --md-sys-motion-duration-short-2: 0s;
+  --md-sys-motion-duration-short-3: 0s;
+  --md-sys-motion-duration-short-4: 0s;
+  --md-sys-motion-duration-medium-1: 0s;
+  --md-sys-motion-duration-medium-2: 0s;
+  --md-sys-motion-duration-medium-3: 0s;
+  --md-sys-motion-duration-medium-4: 0s;
+  --md-sys-motion-duration-long-1: 0s;
+  --md-sys-motion-duration-long-2: 0s;
+  --md-sys-motion-duration-long-3: 0s;
+  --md-sys-motion-duration-long-4: 0s;
+  --md-sys-motion-duration-extra-long-1: 0s;
+  --md-sys-motion-duration-extra-long-2: 0s;
+  --md-sys-motion-duration-extra-long-3: 0s;
+  --md-sys-motion-duration-extra-long-4: 0s;
+  --md-sys-motion-spring-fast-spatial: 0s linear;
+  --md-sys-motion-spring-fast-effects: 0s linear;
+  --md-sys-motion-spring-default-spatial: 0s linear;
+  --md-sys-motion-spring-default-effects: 0s linear;
+  --md-sys-motion-spring-slow-spatial: 0s linear;
+  --md-sys-motion-spring-slow-effects: 0s linear;
+  scroll-behavior: auto;
+}
+
+html[data-akari-gpu-tier="bad"] *,
+html[data-akari-gpu-tier="bad"] *::before,
+html[data-akari-gpu-tier="bad"] *::after {
+  animation-delay: 0s !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-delay: 0s !important;
+  transition-duration: 0.01ms !important;
 }
 
 /*

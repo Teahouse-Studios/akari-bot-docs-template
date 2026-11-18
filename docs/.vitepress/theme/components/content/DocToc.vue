@@ -11,6 +11,7 @@ import { onContentUpdated, useData, useRoute } from "vitepress";
 
 import { useAkariConfig } from "../../composables/useAkariConfig";
 import { AKARI_CONTENT_ID } from "../../constants";
+import { prefersReducedMotion } from "../../search/animation";
 import {
   findActiveHeading,
   focusHeading,
@@ -151,7 +152,7 @@ function onItemClick(event: MouseEvent, index: number): void {
   cancelSettle?.();
   cancelSettle = onScrollSettled(resumeFollowing);
 
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduced = prefersReducedMotion();
   target.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   focusHeading(target);
   history.replaceState(history.state, "", `#${target.id}`);
