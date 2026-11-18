@@ -1162,6 +1162,14 @@ function leafLengthAt(vine: VineBuilder, generation: number, t: number): number 
 }
 
 /** Lays a shoot down as a strand, then grows its nodes and its end. */
+/** Fade the first few radii into the host so a shoot does not read as a cut stub. */
+function taperShootRoot(strand: VineStrand): void {
+  const count = Math.min(8, strand.radii.length);
+  for (let index = 0; index < count; index += 1) {
+    strand.radii[index]! *= 0.12 + (0.88 * index) / count;
+  }
+}
+
 function develop(vine: VineBuilder, shoot: Shoot): number {
   const { garden, plan, species } = vine;
   const { frame, random } = garden;
@@ -1351,7 +1359,7 @@ function placeNodes(
       if (!axillary && vine.blooms > 0 && t > 0.18 && t < 0.92 && random() < species.axillary) {
         if (planAxillaryBloom(vine, strandIndex, sample, side, shoot)) vine.blooms -= 1;
       }
-      if (random() < species.tendril) planTendril(vine, strandIndex, sample, -side, shoot.size);
+      if (random() < Math.min(0.82, species.tendril * 1.55)) planTendril(vine, strandIndex, sample, -side, shoot.size);
       bumps.push([arc, strand.radii[sample]!]);
     }
     let internode = leafLength * between(random, 0.85, 1.6);
@@ -1541,7 +1549,7 @@ function planTendril(vine: VineBuilder, parent: number, sample: number, side: nu
   const heading = Math.atan2(tangent.y, tangent.x);
   const style = weighted(random, TENDRIL_STYLES);
   const stretch = style === "hook" ? between(random, 1.3, 1.75) : style === "wave" ? between(random, 1.15, 1.6) : 1;
-  const length = frame.unit * between(random, 0.07, 0.15) * size * stretch;
+  const length = frame.unit * between(random, 0.09, 0.16) * size * stretch;
   const turn = side * between(random, 0.5, 1.15);
   const reach = length * (style === "hook" ? between(random, 0.62, 0.78) : style === "wave" ? 1 : between(random, 0.36, 0.52));
   const aim = heading + turn;
@@ -1573,10 +1581,10 @@ function planTendril(vine: VineBuilder, parent: number, sample: number, side: nu
   });
   const curlSide = random() < 0.6 ? side : -side;
   if (style === "spring" || style === "fork") {
-    curl(path, between(random, 1.3, 2.6), length * between(random, 0.12, 0.17), length * 0.035 + 0.4, curlSide, step, rise * 0.5);
+    curl(path, between(random, 1.4, 2.5), length * between(random, 0.14, 0.2), length * 0.035 + 0.4, curlSide, step, rise * 0.5);
   } else if (style === "hook") {
     // One open crook at the end, the way a feeler still searching for a hold looks.
-    curl(path, between(random, 0.55, 1.1), length * between(random, 0.07, 0.1), length * between(random, 0.035, 0.05) + 0.4, curlSide, step, rise * 0.5);
+    curl(path, between(random, 0.7, 1.3), length * between(random, 0.09, 0.14), length * between(random, 0.04, 0.06) + 0.4, curlSide, step, rise * 0.5);
   } else if (style === "coil") {
     const from = path.points.length - 1;
     extend(path, {
@@ -1593,8 +1601,9 @@ function planTendril(vine: VineBuilder, parent: number, sample: number, side: nu
       fork: null,
       z: { base: path.points[from]!.z, amp: 0, wave: 1, phase: 0, rise: rise * 0.5 },
     });
-    coil(path, from, length * between(random, 0.09, 0.13), between(random, 2, 3.2), between(random, 0.5, 0.9));
+    coil(path, from, length * between(random, 0.12, 0.18), between(random, 2, 3.2), between(random, 0.5, 0.9));
   }
+  if (frame.keep.length && path.points.some((point) => keepClearance(frame, point.x, point.y) < 0)) return false;
   const total = path.arcs[path.arcs.length - 1]!;
   const r0 = Math.min(strand.radii[sample]! * 0.7, clamp(strand.radii[sample]! * 0.32, 0.4, 1.3));
   const taper = wave ? 0.9 : 0.84;
@@ -1639,9 +1648,9 @@ function planTendrilFork(vine: VineBuilder, parent: number, main: Path, reach: n
 /* ------------------------------------------------------------------------ */
 
 /** Room the canvas leaves past each edge for 出屏 shoots, as a share of the unit. */
-const POP_BLEED = 0.46;
+const POP_BLEED = 0.3;
 /** How far a 出屏 shoot's stem may reach past the wall; its organs take the rest. */
-const POP_REACH = 0.3;
+const POP_REACH = 0.26;
 /** The canvas fades out over this many px at its rim; organs stay clear of it. */
 const POP_RIM = 8;
 /** How far a 出屏 shoot comes forward off the wall, as a share of the unit. */
@@ -1699,7 +1708,7 @@ function planPopShoots(garden: Garden, plans: readonly VinePlan[], edges: number
   };
   // The budget is for the whole rim, shared out by edge length, so it does not
   // depend on which edges are open either.
-  const total = clamp(1 + ((frame.width + frame.height) / frame.unit) * 0.7, 2, 6);
+  const total = clamp(3 + ((frame.width + frame.height) / frame.unit) * 1.25, 5, 10);
   const rim = (frame.width + frame.height) * 2;
   const pops: VinePlan[] = [];
   for (const edge of EDGES) {
@@ -1775,14 +1784,26 @@ function planEdgeShoots(
       }
     });
   }
+  {
+    for (const plan of plans) {
+      if (plan.depth < 0.4) continue;
+      plan.strands.forEach((strand, index) => {
+        if (strand.role !== "stem" && strand.role !== "branch") return;
+        const points = strand.points;
+        for (let sample = 4; sample < points.length - 4; sample += 6) {
+          seats.push({ plan, strand: index, sample, edge, facing: 1, angle: 0.6, score: 0 });
+        }
+      });
+    }
+  }
   seats.sort((a, b) => b.score - a.score);
   const pops: VinePlan[] = [];
   const bases: THREE.Vector3[] = [];
   let tries = 0;
   for (const seat of seats) {
-    if (pops.length >= want || tries >= want * 5) break;
+    if (pops.length >= want || tries >= want * 12) break;
     const base = seat.plan.strands[seat.strand]!.points[seat.sample]!;
-    if (bases.some((other) => Math.hypot(other.x - base.x, other.y - base.y) < frame.unit * 0.9)) continue;
+    if (bases.some((other) => Math.hypot(other.x - base.x, other.y - base.y) < frame.unit * 0.55)) continue;
     tries += 1;
     const pop = planPopShoot(outer, frame, seat);
     if (!pop) continue;
@@ -1797,11 +1818,15 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
   const { frame: wide, random } = garden;
   const host = seat.plan;
   const strand = host.strands[seat.strand]!;
-  const base = strand.points[seat.sample]!;
+  const seatBase = strand.points[seat.sample]!;
+  const hugging = true;
+  // Keep the root on the host vine; shifting it inward leaves a loose stub in the wall.
+  const base = seatBase;
   const tangent = tangentAt(strand.points, seat.sample);
   const heading = Math.atan2(tangent.y, tangent.x);
+  const edgeHeading = seat.edge % 2 === 0 ? Math.PI / 2 : 0;
   const species = SPECIES.find((kind) => kind.name === host.species) ?? SPECIES[0]!;
-  const size = (0.82 + host.depth * 0.36) * 0.94;
+  const size = (0.82 + host.depth * 0.36) * 0.94 * (hugging ? 0.78 : 1) * between(random, 0.86, 1.14);
   const plan: VinePlan = {
     depth: 1 + host.depth * 0.01,
     layer: 2,
@@ -1830,13 +1855,20 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
   const parentRadius = strand.radii[seat.sample]!;
   const r0 = parentRadius * between(random, 0.6, 0.72);
   const forkDistance = Math.max(parentRadius * 10, 12);
-  const start = heading + seat.facing * seat.angle;
+  const start = hugging
+    ? Math.atan2(-iy, -ix) + (random() < 0.5 ? -1 : 1) * between(random, 0.15, 0.42)
+    : heading + seat.facing * seat.angle;
   // Keep drifting the way it set off, so it arcs out instead of sticking straight out.
   const drift = ix !== 0 ? Math.sin(start) : Math.cos(start);
-  const turn = between(random, 0.12, 0.3) * (random() < 0.5 ? 1 : -1);
-  const wave = between(random, 0.7, 1.1);
+  const along = card.unit * between(random, hugging ? 0.32 : 0.14, hugging ? 0.9 : 0.5) * (random() < 0.5 ? 1 : -1);
+  const outward = card.unit * between(random, 0.015, 0.07);
+  const turn = between(random, 0.22, 0.52) * (random() < 0.5 ? 1 : -1) * (hugging ? 0.35 : 1);
+  const wave = between(random, 0.65, 1.05);
   const phase = random() * TAU;
-  const kinds = TERMINAL_FALLBACK[weighted(random, POP_TERMINALS)].filter((kind) => kind !== "tip");
+  // Some shoots run along the rim instead of straight out, then roll into a
+  // spiral at the tip so the edge reads as a curling decorative vine.
+  // Spiral edge runners end in a thin point: no leaf, bloom or bud at the tip.
+  const kinds = hugging ? (["tip"] as const) : TERMINAL_FALLBACK[weighted(random, POP_TERMINALS)].filter((kind) => kind !== "tip");
   const room = Math.ceil(card.unit * POP_BLEED) - POP_RIM;
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -1845,8 +1877,14 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
     const slide = drift * (inside + past) * between(random, 0.5, 1.1) + between(random, -0.06, 0.06) * card.unit;
     const target =
       ix !== 0
-        ? new THREE.Vector2(-ix * (card.hw + past), clamp(base.y + slide, -wide.hh + reach, wide.hh - reach))
-        : new THREE.Vector2(clamp(base.x + slide, -wide.hw + reach, wide.hw - reach), -iy * (card.hh + past));
+        ? new THREE.Vector2(
+            -ix * (card.hw + (hugging ? outward : past)),
+            clamp(base.y + (hugging ? along : slide), -wide.hh + reach, wide.hh - reach),
+          )
+        : new THREE.Vector2(
+            clamp(base.x + (hugging ? along : slide), -wide.hw + reach, wide.hw - reach),
+            -iy * (card.hh + (hugging ? outward : past)),
+          );
     const span = Math.hypot(target.x - base.x, target.y - base.y);
     if (span < card.unit * 0.1) continue;
     const path = beginPath(base, heading + seat.facing * seat.angle * 0.3);
@@ -1857,14 +1895,18 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
       steer: between(random, 2, 3) / span,
       steerRamp: Math.max(forkDistance * 1.5, span * 0.35),
       arrive: card.unit * 0.015,
-      wander: [[(turn * Math.PI) / (span * wave), span * wave, phase]],
+      wander: hugging
+        ? [[(turn * Math.PI) / (span * wave), span * wave, phase]]
+        : [[(turn * Math.PI) / (span * wave), span * wave, phase]],
       bias: 0,
-      maxCurvature: 1 / (card.unit * 0.035),
+      maxCurvature: 1 / (card.unit * 0.03),
       avoid: null,
-      fork: { angle: seat.facing * seat.angle * 0.7, distance: forkDistance },
+      fork: { angle: seat.facing * seat.angle * (hugging ? 0.2 : 0.7), distance: forkDistance },
       // Flat on the wall up to its portal; `liftShoot` raises the rest.
       z: { base: base.z, amp: 0, wave: card.unit, phase: 0, rise: 0 },
     });
+    const curlFrom = card.unit * between(random, 0.07, 0.13);
+    curl(path, between(random, 1.4, 2.8), curlFrom, curlFrom * 0.2, random() < 0.5 ? 1 : -1, card.step, 0);
     const points = path.points;
     const end = points[points.length - 1]!;
     if (points.length < 6 || edgeInside(card, end.x, end.y) > -reach * 0.06) continue;
@@ -1900,6 +1942,7 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
         rewindPlan(plan, garden, mark);
         continue;
       }
+      taperShootRoot(plan.strands[index]!);
       garden.wires.push(...wiresOf(plan.strands[index]!.points));
       return { ...plan, portal };
     }
@@ -1929,7 +1972,7 @@ function planInwardShoots(garden: Garden, plans: readonly VinePlan[], salt: numb
     trails: [...garden.trails],
     wires: [...garden.wires],
   };
-  const want = clamp(Math.round((Math.sqrt(frame.width * frame.height) / frame.unit) * 0.9), 1, 3);
+  const want = clamp(Math.round((Math.sqrt(frame.width * frame.height) / frame.unit) * 1.6), 2, 5);
   const deep = frame.unit * 0.24;
   const probe = frame.unit * 0.3;
   const seats: PopSeat[] = [];
@@ -2075,6 +2118,7 @@ function planInwardShoot(garden: Garden, seat: PopSeat): VinePlan | null {
         rewindPlan(plan, garden, mark);
         continue;
       }
+      taperShootRoot(plan.strands[index]!);
       garden.wires.push(...wiresOf(plan.strands[index]!.points));
       return { ...plan, portal };
     }
@@ -2225,10 +2269,10 @@ function planBranch(vine: VineBuilder, parent: number, sample: number, side: num
     return inwardness(start + bend * sweep * 0.5) + vine.droop * 0.8 * -Math.sin(finish) + random() * 0.6;
   };
   let bend = score(facing) >= score(-facing) ? facing : -facing;
-  const longWave = between(random, 0.8, 1.4);
-  const longTurn = between(random, 0.35, 0.8) * (random() < 0.5 ? 1 : -1);
-  const shortWave = between(random, 0.26, 0.42);
-  const shortTurn = between(random, 0.05, 0.16);
+  const longWave = between(random, 0.65, 1.25);
+  const longTurn = between(random, 0.5, 1.15) * (random() < 0.5 ? 1 : -1);
+  const shortWave = between(random, 0.24, 0.4);
+  const shortTurn = between(random, 0.08, 0.22);
   const phases = [random() * TAU, random() * TAU, random() * TAU] as const;
 
   for (let attempt = 0; attempt < 6; attempt += 1) {

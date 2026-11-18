@@ -268,6 +268,8 @@ const textureAlpha = computed(
   () => textureOpacity.value * FLUID_TEXTURE_WEIGHTS[overlay.value],
 );
 const rippleStrength = computed(() => fluidNumber(props.ripple, 0, 3, 1));
+/** The wall must not ripple before the vine has had time to fade in. */
+const liveRippleStrength = computed(() => rippleStrength.value * rippleGain.value);
 const rippleSpeed = computed(() => fluidNumber(props.rippleSpeed, 0, 4, 1) * VINE_RIPPLE_SPEED);
 const rippleSize = computed(() => fluidNumber(props.rippleSize, 0.25, 3, 1));
 const rippleRings = computed(() => fluidNumber(props.rippleRings, 0.5, 6, VINE_RIPPLE_RINGS));
@@ -379,6 +381,10 @@ function setRibbonPressLayer(element: unknown, index: number): void {
 const painted = ref(false);
 /** Set after the first vine frame, so the garden fades in as a whole. */
 const vineReady = ref(false);
+/** Ripple waits until the vine's 900 ms fade-in has finished. */
+const rippleReady = ref(false);
+/** Ramp from 0 to 1 once the vine is visible, so the ripple eases in instead of popping. */
+const rippleGain = ref(0);
 
 /** Shape fragments used by the generated overlays. */
 const LEAF_PATH =
@@ -1115,7 +1121,7 @@ function rebuildVineScene(plan?: VinePlanSize): void {
     // The texture colour's alpha belongs to the flat overlay; the vine has its own per-part alpha.
     colorAlpha: 1,
     colors: vinePalette.value,
-    rippleStrength: rippleStrength.value,
+    rippleStrength: liveRippleStrength.value,
     rippleSpeed: rippleSpeed.value,
     rippleSize: rippleSize.value,
     rippleRings: rippleRings.value,
@@ -1594,6 +1600,8 @@ let frame = 0;
 let drawnAt = 0;
 let elapsed = 0; /* seconds */
 let vineReadyTimer = 0;
+let rippleReadyTimer = 0;
+let rippleRampStart = -1;
 /** The pointer drags the field and the light a little, so the wall answers it. */
 const pointer = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
 /** The glow reads this raw position: easing it made the light trail the cursor. */
@@ -1982,7 +1990,7 @@ function draw(): void {
   setFloat("u_petal", spec.value.petal);
   setFloat("u_curtain", fluidCurtain(elapsed, spec.value.speed));
   setFloat("u_curtain_gain", scheme.value === "dark" ? 0.62 : 0.24);
-  setFloat("u_ripple_strength", rippleStrength.value);
+  setFloat("u_ripple_strength", liveRippleStrength.value);
   setFloat("u_ripple_speed", rippleSpeed.value);
   setFloat("u_ripple_size", rippleSize.value);
   setFloat("u_ripple_light", scheme.value === "dark" ? 0.45 : 1);
@@ -1998,6 +2006,9 @@ function draw(): void {
   if (cursorUniform) context.uniform2f(cursorUniform, cursor.x, 1 - cursor.y);
   setFloat("u_glow", glow * palette.glow * spec.value.glow);
 
+  for (const scene of [vineScene, vinePopOutsideScene]) {
+    scene?.setRipple(liveRippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
+  }
   uploadRipples();
   uploadPresses();
   updateTexturePressGlow();
@@ -2009,6 +2020,10 @@ function draw(): void {
     vineReadyTimer = window.setTimeout(() => {
       vineReady.value = true;
       vineReadyTimer = 0;
+      rippleReadyTimer = window.setTimeout(() => {
+        rippleReady.value = true;
+        rippleReadyTimer = 0;
+      }, 900);
     }, VINE_READY_DELAY);
   }
   if (!paintedFrame) {
@@ -2023,6 +2038,10 @@ function tick(now: number): void {
   const delta = drawnAt ? Math.min(now - drawnAt, 100) : FRAME_INTERVAL;
   drawnAt = now;
   elapsed += (delta / 1000) * spec.value.speed;
+  if (rippleReady.value) {
+    if (rippleRampStart < 0) rippleRampStart = elapsed;
+    rippleGain.value = Math.min(1, (elapsed - rippleRampStart) / 1.2);
+  }
   draw();
 }
 
@@ -2260,6 +2279,17 @@ watch(
   },
 );
 
+watch(overlay, (next) => {
+  if (next === "vine") {
+    void nextTick(() => rebuildVineScene());
+    return;
+  }
+  vineScene?.dispose();
+  vineScene = null;
+  vinePopOutsideScene?.dispose();
+  vinePopOutsideScene = null;
+});
+
 watch([vineSeed, () => props.safeZone], () => {
   if (overlay.value === "vine") void nextTick(() => rebuildVineScene());
 });
@@ -2291,7 +2321,14 @@ watch([() => props.vineBlend, () => props.vinePopoutBlend], () => {
 
 watch([rippleStrength, rippleSpeed, rippleSize, rippleRings, rippleSway], () => {
   for (const scene of [vineScene, vinePopOutsideScene]) {
-    scene?.setRipple(rippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
+    scene?.setRipple(liveRippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
+  }
+  if (!frame) draw();
+});
+
+watch([vineReady, rippleReady], () => {
+  for (const scene of [vineScene, vinePopOutsideScene]) {
+    scene?.setRipple(liveRippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
   }
   if (!frame) draw();
 });
@@ -2358,6 +2395,10 @@ onBeforeUnmount(() => {
   if (vineReadyTimer !== 0) {
     window.clearTimeout(vineReadyTimer);
     vineReadyTimer = 0;
+  }
+  if (rippleReadyTimer !== 0) {
+    window.clearTimeout(rippleReadyTimer);
+    rippleReadyTimer = 0;
   }
   cancelVineReplan();
   cancelLaceReplan();

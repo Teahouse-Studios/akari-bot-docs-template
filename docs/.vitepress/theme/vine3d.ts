@@ -1357,7 +1357,23 @@ export function createVine3d(
   let currentUnderlayColor: THREE.Color | null = options.underlayColor ? colorFromRgb(options.underlayColor) : null;
   let currentUnderlayOpacity = THREE.MathUtils.clamp(options.underlayOpacity ?? 0.18, 0, 1);
   let currentUnderlayBlend = options.underlayBlend ?? "additive";
-  const layers = LAYER_ALPHA.map((share) => layerMaterials(baseColor, alpha * share, hover, VineDepth.Wall, strongFill, share, partUniforms, false, false, false, currentUnderlayColor ?? new THREE.Color(0xffffff), currentUnderlayOpacity, currentUnderlayBlend));
+  const layers = LAYER_ALPHA.map((share) =>
+    layerMaterials(
+      baseColor,
+      alpha * share,
+      hover,
+      VineDepth.Wall,
+      strongFill,
+      share,
+      partUniforms,
+      false,
+      false,
+      false,
+      currentUnderlayColor ?? new THREE.Color(0xffffff),
+      currentUnderlayOpacity,
+      currentUnderlayBlend,
+    ),
+  );
   const keep = options.keep ?? [];
   const setKeep = (rects: readonly VineRect[]): void => {
     const count = Math.min(rects.length, VINE_MAX_KEEP);
