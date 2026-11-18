@@ -2136,7 +2136,16 @@ function onPointerDown(event: PointerEvent): void {
   const element = wall.value;
   if (!element) return;
   const target = event.target as Element | null;
-  if (target?.closest(".akari-fluid-wall__body")) return;
+  // Content fills the wall, so excluding the whole body would also swallow
+  // presses on its empty space. Only interactive descendants keep their own
+  // click behaviour.
+  if (
+    target?.closest(
+      "a, button, input, select, textarea, summary, label, [contenteditable='true'], [role='button'], [role='link'], [data-fluid-wall-no-press]",
+    )
+  ) {
+    return;
+  }
   const rect = element.getBoundingClientRect();
   if (rect.width < 1 || rect.height < 1) return;
   const x = (event.clientX - rect.left) / rect.width;
