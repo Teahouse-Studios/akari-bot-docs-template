@@ -1061,6 +1061,7 @@ function growVine(
     });
     const fault = pathFault(frame, path);
     if (fault >= 0.5) continue;
+    if (wireOverlap(path, garden.wires, frame.unit * 0.018) > 0.35) continue;
     const score = fault + crossings(null, garden, path, 0) * STEM_CROSSING_COST;
     if (!best || score < best.score) best = { path, score };
     if (score < 0.02) break;
@@ -1965,8 +1966,11 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
     if (points.some((point) => edgeInside(wide, point.x, point.y) < 2)) continue;
     if (card.keep.length && points.some((point) => keepClearance(card, point.x, point.y) < 0)) continue;
     // A shoot may leave the wall, curl back through it and come out again;
-    // only self-intersections and other vines make that read badly.
-    if (selfCrossings(path) > 0 || selfTooClose(path, card.unit * 0.015) || crossings(null, garden, path, forkDistance * 2) > (attempt < 2 ? 0 : 1)) continue;
+    // only self-intersections and near-parallel twins make that read badly.
+    if (selfCrossings(path) > 0 || selfTooClose(path, card.unit * 0.015)) continue;
+    if (strandTooClose(path, host.strands, card.unit * 0.025, 8)) continue;
+    if (wireOverlap(path, garden.wires, card.unit * 0.025) > 0.45) continue;
+    if (crossings(null, garden, path, forkDistance * 2) > (attempt < 2 ? 0 : 1)) continue;
     const portal = liftShoot(path, card, between(random, POP_LIFT[0], POP_LIFT[1]) * card.unit, random);
     // Hold out for the chosen organ first; a shorter reach may still fit it.
     for (const kind of attempt < 3 ? kinds.slice(0, 1) : kinds) {
@@ -2460,6 +2464,30 @@ function strandTooClose(path: Path, strands: readonly VineStrand[], minimum: num
     }
   }
   return false;
+}
+
+/** Share of a path's points that sit on top of an existing stem run. */
+function wireOverlap(path: Path, wires: readonly Wire[], minimum: number): number {
+  if (!wires.length) return 0;
+  const bound = minimum * minimum;
+  let close = 0;
+  for (const point of path.points) {
+    let found = false;
+    for (const wire of wires) {
+      if (point.x < wire.minX - minimum || point.x > wire.maxX + minimum) continue;
+      if (point.y < wire.minY - minimum || point.y > wire.maxY + minimum) continue;
+      for (let index = wire.from; index <= wire.to; index += 1) {
+        const other = wire.points[index]!;
+        if ((point.x - other.x) ** 2 + (point.y - other.y) ** 2 < bound) {
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+    if (found) close += 1;
+  }
+  return close / path.points.length;
 }
 
 /** Strict crossings between non-adjacent segments of one path. */
