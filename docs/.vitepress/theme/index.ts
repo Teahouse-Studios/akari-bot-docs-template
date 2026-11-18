@@ -1,10 +1,10 @@
 import { inBrowser, type Theme } from "vitepress";
+import type { Component } from "vue";
 import DefaultTheme from "vitepress/theme-without-fonts";
 
 import { provideAkariSiteData } from "./composables/useLocales";
 import AkariFluidWall from "./components/content/AkariFluidWall.vue";
 import ChatExample from "./components/content/ChatExample.vue";
-import DocsHome from "./components/content/DocsHome.vue";
 import CommandUsage from "./components/content/CommandUsage.vue";
 import ImagePreview from "./components/content/ImagePreview.vue";
 import ModuleAlias from "./components/content/ModuleAlias.vue";
@@ -17,6 +17,9 @@ import SearchDock from "./search/components/SearchDock.vue";
 import Layout from "./layouts/AkariLayout.vue";
 import { routeComponentLinks } from "./links";
 import "./styles/index.css";
+
+const homeModules = import.meta.glob<{ default: Component }>("./components/content/DocsHome.vue", { eager: true });
+const DocsHome = Object.values(homeModules)[0]?.default;
 
 if (!import.meta.env.SSR) {
   void import("./m3e").then(() => {
@@ -37,7 +40,7 @@ export default {
     app.component("ModuleConfig", ModuleConfig);
     app.component("ModuleData", ModuleData);
     app.component("ModuleAlias", ModuleAlias);
-    app.component("DocsHome", DocsHome);
+    if (DocsHome) app.component("DocsHome", DocsHome);
     app.component("AkariFluidWall", AkariFluidWall);
     app.component("VineSeedControl", VineSeedControl);
     app.component("AkariImagePreview", ImagePreview);
@@ -50,7 +53,6 @@ export default {
 export {
   AkariFluidWall,
   ChatExample,
-  DocsHome,
   ImagePreview,
   CommandUsage,
   ModuleAlias,

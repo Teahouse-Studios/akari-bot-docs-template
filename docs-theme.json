@@ -14,12 +14,15 @@
     "@material/material-color-utilities": "^0.4.0",
     "minisearch": "^7.2.0",
     "markdown-it-image-size": "^16.0.2",
-    "markdown-it": "^14.1.0"
+    "markdown-it": "^14.1.0",
+    "three": "^0.187.0"
   },
   "config": {
     "appearance": false,
     "clean_urls": true,
-    "custom_element_prefixes": ["m3e-"],
+    "custom_element_prefixes": [
+      "m3e-"
+    ],
     "head_module": "head.ts",
     "head_export": "akariHead",
     "markdown_module": "markdown.ts",
@@ -30,22 +33,15 @@
       "options": {
         "miniSearch": {
           "options": {
-            "storeFields": ["title", "titles", "text"]
+            "storeFields": [
+              "title",
+              "titles",
+              "text"
+            ]
           }
         }
       }
     },
-    "home_component": "DocsHome",
-    "public_assets": [
-      "home/akari.png",
-      "home/logo.png",
-      "home/development.webp",
-      "home/maimai.webp",
-      "home/minecraft.webp",
-      "home/misc.webp",
-      "home/modules.webp",
-      "home/setup.webp",
-      "home/weblate.svg"
-    ]
+    "home_component": "DocsHome"
   }
 }
