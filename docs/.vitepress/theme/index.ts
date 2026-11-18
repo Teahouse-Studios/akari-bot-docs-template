@@ -4,6 +4,7 @@ import DefaultTheme from "vitepress/theme-without-fonts";
 import { provideAkariSiteData } from "./composables/useLocales";
 import AkariFluidWall from "./components/content/AkariFluidWall.vue";
 import ChatExample from "./components/content/ChatExample.vue";
+import DocsHome from "./components/content/DocsHome.vue";
 import CommandUsage from "./components/content/CommandUsage.vue";
 import ImagePreview from "./components/content/ImagePreview.vue";
 import ModuleAlias from "./components/content/ModuleAlias.vue";
@@ -35,6 +36,7 @@ export default {
     app.component("ModuleConfig", ModuleConfig);
     app.component("ModuleData", ModuleData);
     app.component("ModuleAlias", ModuleAlias);
+    app.component("DocsHome", DocsHome);
     app.component("AkariFluidWall", AkariFluidWall);
     app.component("AkariImagePreview", ImagePreview);
     app.component("SearchDock", SearchDock);
@@ -46,6 +48,7 @@ export default {
 export {
   AkariFluidWall,
   ChatExample,
+  DocsHome,
   ImagePreview,
   CommandUsage,
   ModuleAlias,

@@ -34,6 +34,18 @@
           }
         }
       }
-    }
+    },
+    "home_component": "DocsHome",
+    "public_assets": [
+      "home/akari.png",
+      "home/logo.png",
+      "home/development.webp",
+      "home/maimai.webp",
+      "home/minecraft.webp",
+      "home/misc.webp",
+      "home/modules.webp",
+      "home/setup.webp",
+      "home/weblate.svg"
+    ]
   }
 }
