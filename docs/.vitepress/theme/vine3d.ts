@@ -266,13 +266,14 @@ export function normalizeVineSeed(value: unknown): number {
   return Math.min(0x7fffffff, Math.max(1, Math.trunc(parsed)));
 }
 
+let pageVineSeed: number | null = null;
+
 export function readVineSeed(): number {
   if (typeof window === "undefined") return VINE_DEFAULT_SEED;
-  try {
-    return normalizeVineSeed(window.localStorage.getItem(VINE_SEED_STORAGE_KEY));
-  } catch {
-    return VINE_DEFAULT_SEED;
+  if (pageVineSeed === null) {
+    pageVineSeed = normalizeVineSeed(Math.floor(Math.random() * 0x7fffffff));
   }
+  return pageVineSeed;
 }
 
 export function readVinePopout(): boolean {
@@ -299,11 +300,7 @@ export function writeVinePopout(value: boolean): boolean {
 export function writeVineSeed(value: unknown): number {
   const seed = normalizeVineSeed(value);
   if (typeof window === "undefined") return seed;
-  try {
-    window.localStorage.setItem(VINE_SEED_STORAGE_KEY, String(seed));
-  } catch {
-    return seed;
-  }
+  pageVineSeed = seed;
   window.dispatchEvent(new CustomEvent<number>(VINE_SEED_EVENT, { detail: seed }));
   return seed;
 }
@@ -438,6 +435,7 @@ if (u_vine_depth > 2.5) {
   float shadowAngle = radians(u_vine_shadow_angle);
   vec2 shadowDir = vec2(cos(shadowAngle), sin(shadowAngle));
   transformed.xy += shadowDir * (2.0 + u_vine_shadow_size * 2.0);
+  transformed.xy += u_vine_tilt * 2.0;
 } else if (u_vine_depth > 1.5) {
   // The shadow falls on the wall, away from the key light at the upper left.
   float vineShadowDistance = length(transformed.xy - vinePortalAt) / max(u_vine_card.w * 2.0, 1.0);
@@ -453,6 +451,9 @@ if (u_vine_depth > 2.5) {
   // and it leans away from the pointer as if the view tilted with it.
   transformed.xy = vinePortalAt + (transformed.xy - vinePortalAt) * vineEye / (vineEye - vineUp);
   transformed.xy -= u_vine_tilt * vineUp * ${VINE_POP_TILT.toFixed(3)};
+} else {
+  // Wall vines sway a little with the pointer, staying rooted to the board.
+  transformed.xy += u_vine_tilt * 2.0;
 }`,
       );
     shader.fragmentShader = shader.fragmentShader
@@ -1525,15 +1526,17 @@ void main() {
   float clock = u_time / period + aPhase;
   float cycle = floor(clock);
   float cycleSeed = fract(sin((cycle + aPhase * 7.0) * 53.7) * 43758.5453);
-  float activeWindow = aActive * (0.6 + 0.8 * cycleSeed);
-  float window = fract(clock + cycleSeed * 0.35);
+  // Keep the window continuous across cycles; the old per-cycle offset could
+  // restart a mote part-way through its path while it was still visible.
+  float activeWindow = clamp(aActive * (0.58 + 0.36 * cycleSeed), 0.2, 0.92);
+  float window = fract(clock);
   if (window > activeWindow) {
     vAlpha = 0.0;
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     gl_PointSize = 0.0;
     return;
   }
-  float t = window / activeWindow;
+  float t = clamp(window / activeWindow, 0.0, 1.0);
   float spin = (fract(sin((cycle + aPhase) * 91.7) * 43758.5453) - 0.5) * 1.4;
   vec3 dir = aDirection;
   float cosine = cos(spin);

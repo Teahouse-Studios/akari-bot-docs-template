@@ -377,6 +377,8 @@ function setRibbonPressLayer(element: unknown, index: number): void {
 }
 /** Set once a frame has been drawn, so the card is never shown empty. */
 const painted = ref(false);
+/** Set after the first vine frame, so the garden fades in as a whole. */
+const vineReady = ref(false);
 
 /** Shape fragments used by the generated overlays. */
 const LEAF_PATH =
@@ -2000,6 +2002,7 @@ function draw(): void {
   context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
   vineScene?.render(elapsed);
   vinePopOutsideScene?.render(elapsed);
+  if (!vineReady.value && vineScene) vineReady.value = true;
   if (!paintedFrame) {
     paintedFrame = true;
     painted.value = true;
@@ -2404,6 +2407,7 @@ onBeforeUnmount(() => {
       v-if="spec.texture === 'vine' && textureOpacity > 0"
       ref="vineCanvas"
       class="akari-fluid-wall__vine-canvas"
+      :class="{ 'is-vine-ready': vineReady }"
       :style="vineCanvasStyle"
       aria-hidden="true"
     ></canvas>
@@ -2413,6 +2417,7 @@ onBeforeUnmount(() => {
         v-show="vinePopSplit"
         ref="vinePopOutsideCanvas"
         class="akari-fluid-wall__vine-outside akari-fluid-wall__vine-outside--portal"
+        :class="{ 'is-vine-ready': vineReady }"
         :style="vinePopOutsideCanvasStyle"
         aria-hidden="true"
       ></canvas>
@@ -2679,6 +2684,27 @@ html.dark .akari-fluid-wall {
   inline-size: 100%;
   block-size: 100%;
   pointer-events: none;
+}
+
+.akari-fluid-wall__vine-canvas,
+.akari-fluid-wall__vine-outside--portal {
+  opacity: 0;
+  transition: opacity 900ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes akari-fluid-vine-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.akari-fluid-wall__vine-canvas.is-vine-ready,
+.akari-fluid-wall__vine-outside--portal.is-vine-ready {
+  opacity: 1;
+  animation: akari-fluid-vine-in 900ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 /* Holds the old plan's last frame while a new one fades in over it. */
