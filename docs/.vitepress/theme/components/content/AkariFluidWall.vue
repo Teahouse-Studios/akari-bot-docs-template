@@ -2665,7 +2665,8 @@ html.dark .akari-fluid-wall {
 
 .akari-fluid-wall__vine-outside--portal {
   position: absolute;
-  z-index: 2;
+  /* Above the article and its sticky tab shelf, below the fixed drawers. */
+  z-index: 6;
   display: block;
   pointer-events: none;
 }
