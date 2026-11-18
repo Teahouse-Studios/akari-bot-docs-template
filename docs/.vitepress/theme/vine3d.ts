@@ -538,7 +538,13 @@ float vineDistance = distance(
   vec2(u_vine_pointer.x * u_vine_resolution.x, (1.0 - u_vine_pointer.y) * u_vine_resolution.y)
 );
 float vineGlow = 1.0 - smoothstep(u_vine_radius * 0.18, u_vine_radius, vineDistance);
-diffuseColor.a *= 1.0 + vineGlow * u_vine_strength;
+if (u_vine_depth > 1.5) {
+  // The pointer glow lifts the vine; shadows must thin out instead of
+  // multiplying under the same light.
+  diffuseColor.a *= max(0.0, 1.0 - vineGlow * u_vine_strength * 0.65);
+} else {
+  diffuseColor.a *= 1.0 + vineGlow * u_vine_strength;
+}
 vec2 vineAt = gl_FragCoord.xy / u_vine_resolution * u_vine_canvas;
 vec2 vineCorner = abs(vineAt - u_vine_card.xy) - (u_vine_card.zw - u_vine_corner.x);
 float vineCard = length(max(vineCorner, 0.0)) + min(max(vineCorner.x, vineCorner.y), 0.0) - u_vine_corner.x;
