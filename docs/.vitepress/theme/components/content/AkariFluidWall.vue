@@ -1578,6 +1578,8 @@ const TOKEN_NAMES = [
 const FIELD_OFFSET: readonly [number, number] = [-1.0, -0.22];
 /** Frames are capped here: the flow reads the same at 30 as at 60. */
 const FRAME_INTERVAL = 1000 / 30;
+/** Let the page settle for a moment before the garden fades in on first load. */
+const VINE_READY_DELAY = 600;
 const LIGHT_POSITIONS = { start: 0.2, center: 0.5, end: 0.82 } as const;
 
 let context: WebGL2RenderingContext | null = null;
@@ -1591,6 +1593,7 @@ let palette: FluidPalette = fluidPalette(FLUID_FALLBACK_TOKENS.light, "light");
 let frame = 0;
 let drawnAt = 0;
 let elapsed = 0; /* seconds */
+let vineReadyTimer = 0;
 /** The pointer drags the field and the light a little, so the wall answers it. */
 const pointer = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
 /** The glow reads this raw position: easing it made the light trail the cursor. */
@@ -2002,7 +2005,12 @@ function draw(): void {
   context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
   vineScene?.render(elapsed);
   vinePopOutsideScene?.render(elapsed);
-  if (!vineReady.value && vineScene) vineReady.value = true;
+  if (!vineReady.value && vineScene && vineReadyTimer === 0) {
+    vineReadyTimer = window.setTimeout(() => {
+      vineReady.value = true;
+      vineReadyTimer = 0;
+    }, VINE_READY_DELAY);
+  }
   if (!paintedFrame) {
     paintedFrame = true;
     painted.value = true;
@@ -2347,6 +2355,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stop();
+  if (vineReadyTimer !== 0) {
+    window.clearTimeout(vineReadyTimer);
+    vineReadyTimer = 0;
+  }
   cancelVineReplan();
   cancelLaceReplan();
   cancelFieldReplan();
