@@ -60,7 +60,8 @@ onUnmounted(() => dock.setDockElement(null));
  */
 .akari-search-dock {
   position: fixed;
-  z-index: 7;
+  /* Above the top bar (12) and the fade cap (10) while it flies. */
+  z-index: 13;
   box-sizing: border-box;
   margin: 0;
   padding: 0;

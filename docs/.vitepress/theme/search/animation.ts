@@ -118,8 +118,10 @@ export function getSearchMotionPreset(
 }
 
 export function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  if (typeof window === "undefined") return false;
+
+  const root = typeof document !== "undefined" ? document.documentElement : null;
+  if (root?.dataset.akariGpuTier === "bad") return true;
+
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
