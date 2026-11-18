@@ -69,6 +69,36 @@ describe("parseEasing", () => {
       expect(parseEasing(easing)(0.3)).toBe(0.3);
     }
   });
+
+  it("reads the multi-stop linear() form used by the MD3 motion tokens", () => {
+    const ease = parseEasing("linear(0, 0.5 25%, 1)");
+    expect(ease(-1)).toBe(0);
+    expect(ease(0)).toBe(0);
+    expect(ease(0.125)).toBeCloseTo(0.25, 6);
+    expect(ease(0.25)).toBeCloseTo(0.5, 6);
+    expect(ease(0.625)).toBeCloseTo(0.75, 6);
+    expect(ease(1)).toBe(1);
+    expect(ease(2)).toBe(1);
+  });
+
+  it("spreads stops without a position evenly, like the browser does", () => {
+    const ease = parseEasing("linear(0, 0.2, 1)");
+    expect(ease(0.25)).toBeCloseTo(0.1, 6);
+    expect(ease(0.5)).toBeCloseTo(0.2, 6);
+    expect(ease(0.75)).toBeCloseTo(0.6, 6);
+  });
+
+  it("keeps the overshoot of the MD3 spatial spring", () => {
+    const ease = parseEasing(
+      "500ms linear(0, 0.0205 2.2%, 0.2394 9%, 0.551 16.8%, 0.8502 27.6%, 0.9953 41.5%, 1.0152 53.7%, 1.0029 79.4%, 1)",
+    );
+    let peak = 0;
+    for (let step = 0; step <= 100; step++) peak = Math.max(peak, ease(step / 100));
+    expect(peak).toBeGreaterThan(1.01);
+    expect(peak).toBeLessThan(1.02);
+    expect(ease(0.02)).toBeLessThan(0.03);
+    expect(ease(1)).toBeCloseTo(1, 6);
+  });
 });
 
 describe("parseColor", () => {

@@ -4,6 +4,7 @@ import type { FluidRgb } from "./fluid";
 import {
   planVineGarden,
   tangentAt,
+  vineRandom,
   VINE_POP_ALL,
   VINE_POP_TILT,
   vinePopBleed,
@@ -26,6 +27,17 @@ export const VINE_POPOUT_EVENT = "akari-vine-popout-change";
 /** How far the canvas reaches past each edge of the wall, in CSS pixels. */
 export type VineBleed = { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number };
 
+/** A surface layer of the vine whose colour can be set on its own. */
+export type VinePart = "fill" | "tint" | "halo" | "edge" | "fine";
+
+/** A botanical part of the vine, coloured independently from the other parts. */
+export type VineBotanicalPart = "leaf" | "flower" | "bud" | "flowerStem";
+
+export type VinePartColor = { readonly color: FluidRgb; readonly alpha?: number };
+
+/** Per-part colours; a part left out follows the base colour. `base` sets that base colour. */
+export type VinePalette = Partial<Record<VinePart | VineBotanicalPart, VinePartColor>> & { base?: VinePartColor };
+
 export type Vine3dOptions = {
   /**
    * 出屏: let a few shoots grow out past the wall. `true` opens every edge, a
@@ -41,6 +53,73 @@ export type Vine3dOptions = {
   keep?: readonly VineRect[];
   /** 出屏 inward too: a few shoots come up through the wall inside it and arch toward the viewer. */
   inward?: boolean;
+  /** Render the leaf fill at full strength instead of the faint default wash. */
+  strongFill?: boolean;
+  /** Alpha of the base colour, 0–1. */
+  colorAlpha?: number;
+  /** Per-part colours; a part left out follows the base colour. */
+  colors?: VinePalette;
+  /** Multiplier for the ripple the 出屏 portal leaves on the wall. */
+  rippleStrength?: number;
+  /** Multiplier for the ripple animation speed. */
+  rippleSpeed?: number;
+  /** Multiplier for the ripple radius around each 出屏 portal. */
+  rippleSize?: number;
+  /** Rings across one ripple's radius; higher values pack more waves into the same reach. */
+  rippleRings?: number;
+  /** Multiplier for how far a passing ripple pushes the vines. */
+  rippleSway?: number;
+  /** Multiplier for the pointer glow on the vines. 0 turns it off. */
+  glow?: number;
+  /** Opacity multiplier for the cast shadow of the 出屏 shoots. */
+  shadowStrength?: number;
+  /** Size multiplier for the cast shadow of the 出屏 shoots. */
+  shadowSize?: number;
+  /** Colour of the cast shadow. Defaults to a darkened vine fill. */
+  shadowColor?: FluidRgb;
+  /** Direction of the cast shadow, in degrees. 0 is +x, 90 is +y. */
+  shadowAngle?: number;
+  /** Direction offset of the shadow cast by vines that stay on the wall, in degrees. */
+  wallShadowAngle?: number;
+  /** Opacity multiplier for the shadow cast by vines that stay on the wall. */
+  wallShadowStrength?: number;
+  /** Size multiplier for the shadow cast by vines that stay on the wall. */
+  wallShadowSize?: number;
+  /** Colour of the shadow cast by vines that stay on the wall. Defaults to a darkened vine fill. */
+  wallShadowColor?: FluidRgb;
+  /** Blur radius of the wall shadow, in CSS pixels. */
+  wallShadowBlur?: number;
+  /** Blur radius of the cast shadow, in CSS pixels. 0 keeps the hard edge. */
+  shadowBlur?: number;
+  /** Whether the wall sits on a light page; light pages use normal-blended motes. */
+  lightWall?: boolean;
+  /** Colour of the additive wash beneath the vine fill. Defaults to white. */
+  underlayColor?: FluidRgb;
+  /** Opacity of the additive wash beneath the vine fill. Defaults to 0.18. */
+  underlayOpacity?: number;
+  /** Blend mode for the wash beneath the vine fill. Defaults to `additive`. */
+  underlayBlend?: VineUnderlayBlend;
+  /** Multiplier for the number of drifting motes. Defaults to 1. */
+  mote?: number;
+  /** Fixed mote colour. Defaults to a pink tint of the flower colour. */
+  moteColor?: FluidRgb;
+  /** Blend mode for the drifting motes. Defaults to normal on light walls, additive on dark. */
+  moteBlend?: VineMoteBlend;
+  /**
+   * Restrict this renderer to one half of the garden. A second canvas can then
+   * paint the 出屏 shoots with a different compositing mode from the wall vines.
+   */
+  paint?: "all" | "wall" | "pop";
+  /** With `paint: "all"`, cut the 出屏 shoots at the portal so a pop layer can paint them. */
+  popCut?: boolean;
+};
+
+/** One click travelling through the vines: x/y in 0–1, `t` in 0–1, reach in aspect units. */
+export type VinePressState = {
+  x: number;
+  y: number;
+  t: number;
+  reach: number;
 };
 
 export type Vine3dController = {
@@ -53,7 +132,41 @@ export type Vine3dController = {
   resize(width: number, height: number): void;
   /** `tilt` lets the lifted 出屏 shoots lean with the pointer; pass false under reduced motion. */
   setPointer(x: number, y: number, active: boolean, tilt?: boolean): void;
-  setColor(color: FluidRgb): void;
+  setColor(color: FluidRgb, emphasis?: boolean, alpha?: number): void;
+  /** Replace the per-part palette; parts left out follow the base colour. */
+  setColors(colors: VinePalette, emphasis?: boolean): void;
+  /** Scale the whole vine while keeping the per-part alpha ratios. */
+  setOpacity(alpha: number): void;
+  /** Colour and opacity of the additive wash beneath the vine fill. */
+  setUnderlay(color: FluidRgb | null, opacity?: number): void;
+  /** Blend mode of the wash beneath the vine fill. */
+  setUnderlayBlend(mode: VineUnderlayBlend): void;
+  /** Colour of the drifting motes. Pass null to derive it from the flower colour. */
+  setMoteColor(color: FluidRgb | null): void;
+  /** Blend mode of the drifting motes. */
+  setMoteBlend(mode: VineMoteBlend): void;
+  /** Light travelling outward through the vine from each click. */
+  setPresses(presses: readonly VinePressState[]): void;
+  /** Adjust the ripple at the 出屏 portals without rebuilding the garden. */
+  setRipple(strength: number, speed: number, size: number, rings?: number, sway?: number): void;
+  /** Adjust the pointer glow radius and strength without rebuilding the garden. */
+  setGlow(scale: number): void;
+  /** Adjust the cast shadow's opacity and size without rebuilding the garden. */
+  setShadow(strength: number, size: number): void;
+  /** Override the cast shadow's colour; null returns to the darkened fill. */
+  setShadowColor(color: FluidRgb | null): void;
+  /** Turn the cast shadow without rebuilding the garden. */
+  setShadowAngle(angle: number): void;
+  /** Blur the cast shadow without rebuilding the garden. */
+  setShadowBlur(blur: number): void;
+  /** Adjust the wall shadow's opacity and size without rebuilding the garden. */
+  setWallShadow(strength: number, size: number): void;
+  /** Override the wall shadow's colour; null returns to the darkened fill. */
+  setWallShadowColor(color: FluidRgb | null): void;
+  /** Turn the wall shadow without rebuilding the garden. */
+  setWallShadowAngle(angle: number): void;
+  /** Blur the wall shadow without rebuilding the garden. */
+  setWallShadowBlur(blur: number): void;
   /**
    * Where the 出屏 shoots come up through the wall, in plan px about its
    * centre (y up); the wall ripples there. Scale by the warp for the wall as it is now.
@@ -85,9 +198,25 @@ type VineHover = {
   warp: THREE.Vector2;
   /** Pointer offset from the wall's centre, -1…1 each way and eased, that lifted shoots lean away from. */
   tilt: THREE.Vector2;
+  /** The authored shadow angle, restored when the pointer leaves the wall. */
+  shadowAngleBase: { value: number };
+  /** Click pulses lit through the vine geometry. */
+  presses: THREE.Vector4[];
+  pressCount: { value: number };
   /** Ripples where shoots leave the wall: centre x, centre y, radius (plan px), phase. */
   ripples: THREE.Vector4[];
   rippleCount: { value: number };
+  rippleStrength: { value: number };
+  rippleSpeed: { value: number };
+  rippleSize: { value: number };
+  rippleRings: { value: number };
+  rippleSway: { value: number };
+  shadowStrength: { value: number };
+  shadowSize: { value: number };
+  shadowAngle: { value: number };
+  wallShadowStrength: { value: number };
+  wallShadowSize: { value: number };
+  shadowWallAngle: { value: number };
   time: { value: number };
   /** The safe zone: x0, y0, x1, y1 in wall px about its centre (y up). */
   keep: THREE.Vector4[];
@@ -96,6 +225,8 @@ type VineHover = {
 
 /** Most ripples one wall draws; one per 出屏 shoot, outward and inward. */
 export const VINE_MAX_RIPPLES = 12;
+/** Most click pulses the vine shader carries at once. */
+export const VINE_MAX_PRESSES = 6;
 /** Most safe-zone rects the shader fades vines out of. */
 export const VINE_MAX_KEEP = 6;
 /** How far inside a safe-zone rect a vine fades out over, px. */
@@ -110,7 +241,7 @@ export const VINE_RIPPLE_RINGS = 2.2;
 export const VINE_RIPPLE_SPEED = 0.16;
 
 /** How a material draws: on the wall, as a 出屏 shoot, or as a shoot's shadow on the wall. */
-const VineDepth = { Wall: 0, Pop: 1, Shadow: 2 } as const;
+const VineDepth = { Wall: 0, Pop: 1, Shadow: 2, WallShadow: 3 } as const;
 type VineDepth = (typeof VineDepth)[keyof typeof VineDepth];
 
 /** Per-vertex portal of a 出屏 shoot: x, y, z and the eye distance from `VinePortal`. */
@@ -124,6 +255,10 @@ const VINE_PORTAL = "vine_portal";
  * stretch with the wall while leaves and flowers keep their shape.
  */
 const VINE_ANCHOR = "vine_anchor";
+
+/** Per-vertex botanical part index: leaf, flower, bud, flowerStem, stem. */
+const VINE_PART = "vine_part";
+const VINE_PART_COUNT = 5;
 
 export function normalizeVineSeed(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number.parseInt(String(value), 10);
@@ -173,13 +308,32 @@ export function writeVineSeed(value: unknown): number {
   return seed;
 }
 
+type VinePartUniforms = {
+  readonly colors: THREE.Vector3[];
+  readonly alphas: number[];
+};
+
 /**
  * Hover glow, plus the wall's outline: vines on the wall are clipped to its
  * rounded rectangle, while 出屏 shoots (`pop`) are drawn over the page too and
  * only fade out where the canvas itself ends.
  */
-function attachHover(material: THREE.Material, hover: VineHover, depth: VineDepth): void {
-  const popUniform = { value: depth === VineDepth.Pop ? 1 : 0 };
+function attachHover(
+  material: THREE.Material,
+  hover: VineHover,
+  depth: VineDepth,
+  parts?: VinePartUniforms,
+  lighten = 0,
+  popLayer = false,
+  popFull = false,
+  popCut = false,
+  shadowAngle?: { value: number },
+  openClip = depth === VineDepth.Pop || depth === VineDepth.Shadow,
+  mask?: THREE.Texture | null,
+  shadowSize?: { value: number },
+): void {
+  // Shadows live outside the card too, so they use the open clip like pop-out shoots.
+  const popUniform = { value: openClip ? 1 : 0 };
   const depthUniform = { value: depth };
   material.onBeforeCompile = (shader) => {
     shader.uniforms.u_vine_pointer = { value: hover.pointer };
@@ -190,12 +344,34 @@ function attachHover(material: THREE.Material, hover: VineHover, depth: VineDept
     shader.uniforms.u_vine_card = { value: hover.card };
     shader.uniforms.u_vine_corner = { value: hover.corner };
     shader.uniforms.u_vine_pop = popUniform;
+    shader.uniforms.u_vine_pop_layer = { value: popLayer ? 1 : 0 };
+    shader.uniforms.u_vine_pop_full = { value: popFull ? 1 : 0 };
+    shader.uniforms.u_vine_pop_cut = { value: popCut ? 1 : 0 };
     shader.uniforms.u_vine_warp = { value: hover.warp };
     shader.uniforms.u_vine_depth = depthUniform;
     shader.uniforms.u_vine_tilt = { value: hover.tilt };
+
     shader.uniforms.u_vine_ripples = { value: hover.ripples };
     shader.uniforms.u_vine_ripple_count = hover.rippleCount;
+    shader.uniforms.u_vine_ripple_strength = hover.rippleStrength;
+    shader.uniforms.u_vine_ripple_speed = hover.rippleSpeed;
+    shader.uniforms.u_vine_ripple_size = hover.rippleSize;
+    shader.uniforms.u_vine_ripple_rings = hover.rippleRings;
+    shader.uniforms.u_vine_ripple_sway = hover.rippleSway;
+    shader.uniforms.u_vine_shadow_size = shadowSize ?? hover.shadowSize;
+    shader.uniforms.u_vine_shadow_angle = shadowAngle ?? hover.shadowAngle;
+    shader.uniforms.u_vine_mask = { value: mask ?? null };
+    shader.uniforms.u_vine_mask_on = { value: mask ? 1 : 0 };
+    shader.uniforms.u_vine_presses = { value: hover.presses };
+    shader.uniforms.u_vine_press_count = hover.pressCount;
     shader.uniforms.u_vine_time = hover.time;
+    shader.uniforms.u_vine_part_colors = { value: parts?.colors ?? Array.from({ length: VINE_PART_COUNT }, () => new THREE.Vector3()) };
+    shader.uniforms.u_vine_part_alphas = { value: parts?.alphas ?? Array.from({ length: VINE_PART_COUNT }, () => 1) };
+    shader.uniforms.u_vine_lighten = { value: lighten };
+    shader.uniforms.u_vine_use_parts = { value: parts ? 1 : 0 };
+    material.userData.vineLighten = shader.uniforms.u_vine_lighten;
+    material.userData.vineUseParts = shader.uniforms.u_vine_use_parts;
+    material.userData.vinePartColors = shader.uniforms.u_vine_part_colors;
     shader.uniforms.u_vine_keep = { value: hover.keep };
     shader.uniforms.u_vine_keep_count = hover.keepCount;
     shader.vertexShader = shader.vertexShader
@@ -204,24 +380,43 @@ function attachHover(material: THREE.Material, hover: VineHover, depth: VineDept
         `#include <common>
 attribute vec2 ${VINE_ANCHOR};
 attribute vec4 ${VINE_PORTAL};
+attribute float ${VINE_PART};
+attribute float aPopSide;
 uniform vec2 u_vine_warp;
 uniform float u_vine_depth;
 uniform vec2 u_vine_tilt;
 uniform vec4 u_vine_ripples[${VINE_MAX_RIPPLES}];
 uniform int u_vine_ripple_count;
 uniform float u_vine_time;
+uniform float u_vine_ripple_strength;
+uniform float u_vine_ripple_speed;
+uniform float u_vine_ripple_size;
+uniform float u_vine_ripple_rings;
+uniform float u_vine_ripple_sway;
+uniform float u_vine_shadow_size;
+uniform float u_vine_shadow_angle;
+uniform vec4 u_vine_card;
+uniform vec4 u_vine_presses[${VINE_MAX_PRESSES}];
+uniform int u_vine_press_count;
 varying float vVineLift;
-varying float vVineShade;`,
+varying float vVineShade;
+varying float vShadowFocus;
+varying float vVinePart;
+varying float vVinePopMix;
+varying float vVinePopSide;`,
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
+vVinePart = ${VINE_PART};
 transformed.xy += (u_vine_warp - 1.0) * ${VINE_ANCHOR};
 // 出屏 shoots rise off the wall past their portal; everything else lies on it.
 float vineEye = max(${VINE_PORTAL}.w, 1.0);
 float vineUp = u_vine_depth > 0.5 ? clamp(transformed.z - ${VINE_PORTAL}.z, 0.0, vineEye * 0.6) : 0.0;
 vVineLift = vineUp / (vineEye * 0.6);
 vVineShade = smoothstep(0.0, 12.0, vineUp);
+vVinePopMix = smoothstep(0.0, 0.015, vineUp);
+vVinePopSide = aPopSide;
 // What lies on the wall sways as the ripples where shoots leave it pass.
 float vineFlat = 1.0 - smoothstep(0.0, 6.0, vineUp);
 for (int i = 0; i < ${VINE_MAX_RIPPLES}; i++) {
@@ -229,17 +424,30 @@ for (int i = 0; i < ${VINE_MAX_RIPPLES}; i++) {
   vec4 vineRipple = u_vine_ripples[i];
   vec2 vineFrom = transformed.xy - vineRipple.xy * u_vine_warp;
   float vineDist = length(vineFrom);
-  float vineX = vineDist / vineRipple.z;
+  float vineX = vineDist / max(vineRipple.z * u_vine_ripple_size, 0.001);
   if (vineX < 1.0 && vineDist > 0.01) {
     float vineEnv = (1.0 - vineX) * (1.0 - vineX) * smoothstep(0.0, 0.2, vineX);
-    float vineWave = sin(PI2 * (vineX * ${VINE_RIPPLE_RINGS.toFixed(2)} - u_vine_time * ${VINE_RIPPLE_SPEED.toFixed(2)}) + vineRipple.w);
-    transformed.xy += vineFrom / vineDist * vineWave * vineEnv * vineFlat * ${VINE_RIPPLE_SWAY.toFixed(2)};
+    float vineWave = sin(PI2 * (vineX * u_vine_ripple_rings - u_vine_time * u_vine_ripple_speed) + vineRipple.w);
+    transformed.xy += vineFrom / vineDist * vineWave * vineEnv * vineFlat * u_vine_ripple_sway * u_vine_ripple_strength;
   }
 }
 vec2 vinePortalAt = ${VINE_PORTAL}.xy * u_vine_warp;
-if (u_vine_depth > 1.5) {
+vShadowFocus = 1.0;
+if (u_vine_depth > 2.5) {
+  // Vines pinned to the board cast a short shadow along their own refraction angle.
+  float shadowAngle = radians(u_vine_shadow_angle);
+  vec2 shadowDir = vec2(cos(shadowAngle), sin(shadowAngle));
+  transformed.xy += shadowDir * (2.0 + u_vine_shadow_size * 2.0);
+} else if (u_vine_depth > 1.5) {
   // The shadow falls on the wall, away from the key light at the upper left.
-  transformed.xy += vec2(0.55, -0.83) * vineUp * 0.34;
+  float vineShadowDistance = length(transformed.xy - vinePortalAt) / max(u_vine_card.w * 2.0, 1.0);
+  vShadowFocus = 1.0 - smoothstep(0.08, 0.65, vineShadowDistance);
+  float shadowScale = 1.0 + (u_vine_shadow_size - 1.0) * 0.12;
+  transformed.xy = vinePortalAt + (transformed.xy - vinePortalAt) * shadowScale;
+  float shadowAngle = radians(u_vine_shadow_angle);
+  vec2 shadowDir = vec2(cos(shadowAngle), sin(shadowAngle));
+  transformed.xy += shadowDir * vineUp * 0.5 * (0.9 + 0.1 * u_vine_shadow_size);
+  transformed.xy -= u_vine_tilt * vineUp * ${VINE_POP_TILT.toFixed(3)};
 } else if (u_vine_depth > 0.5) {
   // Seen from the eye in front of the portal, so what comes closer grows,
   // and it leans away from the pointer as if the view tilted with it.
@@ -248,6 +456,18 @@ if (u_vine_depth > 1.5) {
 }`,
       );
     shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+if (u_vine_mask_on > 0.5 && texture2D(u_vine_mask, gl_FragCoord.xy / u_vine_resolution).a > 0.02) discard;
+if (u_vine_pop_layer > 0.5 && vVinePopSide < 0.5) discard;
+if (u_vine_pop_cut > 0.5 && vVinePopSide > 0.5) discard;
+if (u_vine_use_parts > 0.5) {
+  int vinePart = int(vVinePart + 0.5);
+  diffuseColor.rgb = mix(u_vine_part_colors[vinePart], vec3(1.0), u_vine_lighten);
+  diffuseColor.a *= u_vine_part_alphas[vinePart];
+}`,
+      )
       .replace(
         "#include <common>",
         `#include <common>
@@ -260,14 +480,57 @@ uniform vec4 u_vine_card;
 uniform vec2 u_vine_corner;
 uniform float u_vine_pop;
 uniform float u_vine_depth;
+uniform sampler2D u_vine_mask;
+uniform float u_vine_mask_on;
 uniform vec4 u_vine_keep[${VINE_MAX_KEEP}];
 uniform int u_vine_keep_count;
+uniform vec4 u_vine_presses[${VINE_MAX_PRESSES}];
+uniform int u_vine_press_count;
+uniform vec3 u_vine_part_colors[${VINE_PART_COUNT}];
+uniform float u_vine_part_alphas[${VINE_PART_COUNT}];
+uniform float u_vine_lighten;
+uniform float u_vine_use_parts;
+uniform float u_vine_pop_layer;
+uniform float u_vine_pop_full;
+uniform float u_vine_pop_cut;
 varying float vVineLift;
-varying float vVineShade;`,
+varying float vVineShade;
+varying float vShadowFocus;
+varying float vVinePart;
+varying float vVinePopMix;
+varying float vVinePopSide;`,
+      )
+      .replace(
+        "#include <clipping_planes_fragment>",
+        `#include <clipping_planes_fragment>
+if (u_vine_pop_layer > 0.5 && vVinePopSide < 0.5) discard;
+if (u_vine_pop_cut > 0.5 && vVinePopSide > 0.5) discard;`,
       )
       .replace(
         "#include <opaque_fragment>",
-        `float vineDistance = distance(
+        `float vinePressLight = 0.0;
+for (int i = 0; i < ${VINE_MAX_PRESSES}; i++) {
+  if (i >= u_vine_press_count) break;
+  vec4 vinePress = u_vine_presses[i];
+  // The vine canvas includes the bleed around the wall, so both the click and
+  // the fragment are mapped through the card rectangle instead of the canvas.
+  vec2 vineCanvasPos = gl_FragCoord.xy / u_vine_resolution * u_vine_canvas;
+  vec2 vinePressAt = u_vine_card.xy + (vec2(vinePress.x, vinePress.y) - 0.5) * u_vine_card.zw * 2.0;
+  float vinePressDist = distance(vineCanvasPos, vinePressAt);
+  float vinePressT = clamp(vinePress.z, 0.0, 1.0);
+  float vinePressGrow = (1.0 - pow(1.0 - vinePressT, 2.0)) * 1.6;
+  float vinePressRadius = max(vinePress.w * u_vine_card.w * 2.0, 1.0) * 1.15 * (0.03 + 0.97 * vinePressGrow);
+  float vinePressWidth = max(0.22 * u_vine_card.w * 2.0 * (0.5 + 0.5 * vinePressGrow), 1.0);
+  float vinePressFade = pow(1.0 - vinePressT, 0.35);
+  vinePressLight += exp(-pow((vinePressDist - vinePressRadius) / vinePressWidth, 2.0)) * vinePressFade;
+}
+float vinePressAmount = clamp(vinePressLight, 0.0, 1.0);
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vinePressAmount * 0.55);
+diffuseColor.a = min(1.0, diffuseColor.a + vinePressAmount * 0.3);
+if (u_vine_depth > 1.5) {
+  diffuseColor.a *= mix(0.2, 1.0, vShadowFocus);
+}
+float vineDistance = distance(
   gl_FragCoord.xy,
   vec2(u_vine_pointer.x * u_vine_resolution.x, (1.0 - u_vine_pointer.y) * u_vine_resolution.y)
 );
@@ -279,7 +542,7 @@ float vineCard = length(max(vineCorner, 0.0)) + min(max(vineCorner.x, vineCorner
 float vineInside = 1.0 - smoothstep(-u_vine_corner.y, u_vine_corner.y, vineCard);
 vec2 vineRim = min(vineAt, u_vine_canvas - vineAt);
 float vineOpen = smoothstep(0.0, 6.0, min(vineRim.x, vineRim.y));
-diffuseColor.a *= mix(vineInside, vineOpen, u_vine_pop);
+diffuseColor.a *= mix(mix(vineInside, vineOpen, u_vine_pop), 1.0, u_vine_pop_full);
 // Nothing covers the safe zone, whatever depth it is drawn at.
 vec2 vineLocal = vineAt - u_vine_card.xy;
 float vineKeep = 1e5;
@@ -290,7 +553,7 @@ for (int i = 0; i < ${VINE_MAX_KEEP}; i++) {
   vineKeep = min(vineKeep, length(max(vineBox, 0.0)) + min(max(vineBox.x, vineBox.y), 0.0));
 }
 diffuseColor.a *= smoothstep(-${VINE_KEEP_FEATHER.toFixed(1)}, 0.0, vineKeep);
-if (u_vine_depth > 1.5) {
+if (u_vine_depth > 1.5 && u_vine_depth < 2.5) {
   // A shadow is only there once the shoot is off the wall, and blurs away as it rises.
   diffuseColor.a *= vVineShade * (1.0 - 0.6 * vVineLift);
 } else if (u_vine_depth > 0.5) {
@@ -300,7 +563,7 @@ if (u_vine_depth > 1.5) {
 #include <opaque_fragment>`,
       );
   };
-  material.customProgramCacheKey = () => "akari-vine-hover-clip-warp-depth-keep";
+  material.customProgramCacheKey = () => `akari-vine-hover-${popLayer ? 1 : 0}-${popFull ? 1 : 0}-${popCut ? 1 : 0}`;
   material.needsUpdate = true;
 }
 
@@ -323,6 +586,12 @@ class MeshSink {
   readonly anchors: number[] = [];
   /** The pin for the vertices that follow; `null` pins each vertex to itself. */
   anchor: THREE.Vector3 | null = null;
+  /** Botanical part index stamped onto each vertex. */
+  part = 0;
+  readonly parts: number[] = [];
+  /** 1 for vertices after the portal, 0 for wall-side vertices. */
+  side = 0;
+  readonly sides: number[] = [];
 
   get size(): number {
     return this.positions.length / 3;
@@ -332,6 +601,8 @@ class MeshSink {
     const pin = this.anchor ?? point;
     this.positions.push(point.x, point.y, point.z);
     this.anchors.push(pin.x, pin.y);
+    this.parts.push(this.part);
+    this.sides.push(this.side);
     return this.size - 1;
   }
 
@@ -352,6 +623,8 @@ class MeshSink {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.positions, 3));
     geometry.setAttribute(VINE_ANCHOR, new THREE.Float32BufferAttribute(this.anchors, 2));
+    geometry.setAttribute(VINE_PART, new THREE.Float32BufferAttribute(this.parts, 1));
+    geometry.setAttribute("aPopSide", new THREE.Float32BufferAttribute(this.sides, 1));
     geometry.setIndex(this.indices);
     geometry.computeVertexNormals();
     geometry.computeBoundingSphere();
@@ -363,13 +636,19 @@ class MeshSink {
 class LineSink {
   readonly positions: number[] = [];
   readonly anchors: number[] = [];
+  readonly parts: number[] = [];
+  readonly sides: number[] = [];
   anchor: THREE.Vector3 | null = null;
+  part = 0;
+  side = 0;
 
   segment(a: THREE.Vector3, b: THREE.Vector3): void {
     const pinA = this.anchor ?? a;
     const pinB = this.anchor ?? b;
     this.positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
     this.anchors.push(pinA.x, pinA.y, pinB.x, pinB.y);
+    this.parts.push(this.part, this.part);
+    this.sides.push(this.side, this.side);
   }
 
   polyline(points: readonly THREE.Vector3[], closed = false): void {
@@ -382,6 +661,8 @@ class LineSink {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.positions, 3));
     geometry.setAttribute(VINE_ANCHOR, new THREE.Float32BufferAttribute(this.anchors, 2));
+    geometry.setAttribute(VINE_PART, new THREE.Float32BufferAttribute(this.parts, 1));
+    geometry.setAttribute("aPopSide", new THREE.Float32BufferAttribute(this.sides, 1));
     geometry.computeBoundingSphere();
     return geometry;
   }
@@ -421,7 +702,7 @@ const HALO_PAD = 0.3;
  * so the surface never twists where the centre line turns, and the radius is
  * the strand's own at every ring, so tapers and swellings stay smooth.
  */
-function tube(sink: MeshSink, strand: VineStrand, scale: number, pad: number): void {
+function tube(sink: MeshSink, strand: VineStrand, scale: number, pad: number, portalFrom?: number): void {
   const { points, radii } = strand;
   const count = points.length;
   if (count < 2) return;
@@ -446,6 +727,7 @@ function tube(sink: MeshSink, strand: VineStrand, scale: number, pad: number): v
     const radius = radii[index]! * scale + pad;
     // Each ring rides on its own centre point, so a stretched stem keeps its girth.
     sink.anchor = points[index]!;
+    sink.side = portalFrom !== undefined && index >= portalFrom ? 1 : 0;
     for (let segment = 0; segment < segments; segment += 1) {
       const angle = (segment / segments) * TAU;
       vertex
@@ -732,21 +1014,41 @@ export function buildVineGeometry(plan: VinePlan): VineGeometry {
     edge: new LineSink(),
     fine: new LineSink(),
   };
+  const strandPart = (role: (typeof plan.strands)[number]["role"]): number =>
+    role === "pedicel" ? 3 : role === "petiole" ? 0 : 4;
+  const bladePart = (role: (typeof plan.blades)[number]["role"]): number => (role === "petal" || role === "sepal" ? 1 : 0);
+  const lathePart = (role: (typeof plan.lathes)[number]["role"]): number => (role === "bud" ? 2 : 1);
+  const setPart = (part: number): void => {
+    sinks.tube.part = sinks.organ.part = sinks.halo.part = part;
+    sinks.edge.part = sinks.fine.part = part;
+  };
+  const setSide = (side: number): void => {
+    sinks.tube.side = sinks.organ.side = sinks.halo.side = side;
+    sinks.edge.side = sinks.fine.side = side;
+  };
+  const portalFrom = plan.portal?.from;
   for (const strand of plan.strands) {
-    tube(sinks.tube, strand, 1, 0);
-    tube(sinks.halo, strand, HALO_SCALE, HALO_PAD);
+    setPart(strandPart(strand.role));
+    tube(sinks.tube, strand, 1, 0, portalFrom);
+    tube(sinks.halo, strand, HALO_SCALE, HALO_PAD, portalFrom);
   }
   // Leaves, flowers, tendrils and stamens are pinned whole at their base, so a
   // stretched wall moves them with their stem but never squashes them.
   for (const item of plan.blades) {
+    setPart(bladePart(item.role));
+    setSide(plan.portal ? 1 : 0);
     pin(sinks, item.origin);
     blade(sinks, item);
   }
   for (const item of plan.lathes) {
+    setPart(lathePart(item.role));
+    setSide(plan.portal ? 1 : 0);
     pin(sinks, item.origin);
     lathe(sinks, item);
   }
   for (const item of plan.strokes) {
+    setPart(1);
+    setSide(plan.portal ? 1 : 0);
     pin(sinks, item.points[0] ?? null);
     stroke(sinks, item);
   }
@@ -764,8 +1066,20 @@ export function buildVineGeometry(plan: VinePlan): VineGeometry {
 /* Scene                                                                     */
 /* ------------------------------------------------------------------------ */
 
+export type VineUnderlayBlend = "normal" | "additive" | "screen" | "multiply" | "subtractive";
+export type VineMoteBlend = VineUnderlayBlend;
+
+const UNDERLAY_BLENDING: Record<VineUnderlayBlend, THREE.Blending> = {
+  normal: THREE.NormalBlending,
+  additive: THREE.AdditiveBlending,
+  screen: THREE.AdditiveBlending,
+  multiply: THREE.MultiplyBlending,
+  subtractive: THREE.SubtractiveBlending,
+};
+
 type LayerMaterials = {
-  fill: THREE.MeshStandardMaterial;
+  underlay: THREE.MeshBasicMaterial;
+  fill: THREE.MeshBasicMaterial;
   tint: THREE.MeshBasicMaterial;
   halo: THREE.MeshBasicMaterial;
   edge: THREE.LineBasicMaterial;
@@ -783,38 +1097,67 @@ function layerMaterials(
   alpha: number,
   hover: VineHover,
   depth: VineDepth = VineDepth.Wall,
+  strongFill = false,
+  share = 1,
+  parts?: VinePartUniforms,
+  popLayer = false,
+  popFull = false,
+  popCut = false,
+  underlayColor: THREE.Color = new THREE.Color(0xffffff),
+  underlayOpacity = 0.18,
+  underlayBlend: VineUnderlayBlend = "additive",
 ): LayerMaterials {
-  const light = base.clone().lerp(new THREE.Color(0xffffff), 0.72);
   const common = { transparent: true, depthWrite: false, side: THREE.DoubleSide } as const;
   const materials: LayerMaterials = {
-    fill: new THREE.MeshStandardMaterial({
+    underlay: new THREE.MeshBasicMaterial({
       ...common,
-      color: light,
-      roughness: 0.52,
-      metalness: 0.03,
-      emissive: light.clone().multiplyScalar(0.04),
-      emissiveIntensity: 0.12,
-      opacity: 0.085 * alpha,
+      color: underlayColor.clone(),
+      opacity: underlayOpacity * alpha,
+      blending: UNDERLAY_BLENDING[underlayBlend] ?? THREE.AdditiveBlending,
     }),
-    tint: new THREE.MeshBasicMaterial({ ...common, color: base, opacity: 0.06 * alpha }),
-    halo: new THREE.MeshBasicMaterial({ ...common, color: base, opacity: 0.2 * alpha }),
-    edge: new THREE.LineBasicMaterial({ color: base, transparent: true, depthWrite: false, opacity: 0.3 * alpha }),
-    fine: new THREE.LineBasicMaterial({ color: base, transparent: true, depthWrite: false, opacity: 0.16 * alpha }),
+    fill: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? 0.95 : 0.085) * alpha }),
+    tint: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? 0.35 : 0.06) * alpha }),
+    halo: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: 0.2 * alpha }),
+    edge: new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.3 * alpha }),
+    fine: new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.16 * alpha }),
   };
-  for (const material of Object.values(materials)) attachHover(material, hover, depth);
+  materials.fill.userData.fillAlpha = alpha;
+  materials.tint.userData.tintAlpha = alpha;
+  materials.underlay.userData.underlayOpacity = underlayOpacity;
+  for (const [key, material] of Object.entries(materials)) {
+    material.userData.sceneAlpha = alpha;
+    material.userData.sceneShare = share;
+    attachHover(material, hover, depth, key === "underlay" ? undefined : parts, key === "fill" ? (strongFill ? 0.18 : 0.72) : 0, popLayer, popFull, popCut);
+  }
   return materials;
 }
 
-/** Shade a lifted shoot casts on the wall beneath it; drawn only where it has left the wall. */
-function shadowMaterial(alpha: number, hover: VineHover): THREE.MeshBasicMaterial {
+/** Shade a lifted shoot casts on the wall beneath it; the wall variant is a short board shadow. */
+function shadowMaterial(alpha: number, hover: VineHover, strongFill = false, popLayer = false, popCut = false, wall = false, shadowAngle?: { value: number }, mask?: THREE.Texture | null, shadowSize?: { value: number }): THREE.MeshBasicMaterial {
   const material = new THREE.MeshBasicMaterial({
     color: 0x12091c,
     transparent: true,
+    depthTest: false,
     depthWrite: false,
     side: THREE.DoubleSide,
-    opacity: 0.14 * alpha,
+    opacity: (wall ? (strongFill ? 0.38 : 0.46) : (strongFill ? 0.3 : 0.34)) * alpha,
   });
-  attachHover(material, hover, VineDepth.Shadow);
+  attachHover(
+    material,
+    hover,
+    wall ? VineDepth.WallShadow : VineDepth.Shadow,
+    undefined,
+    0,
+    wall ? false : popLayer,
+    wall ? false : popLayer,
+    wall ? false : popCut,
+    shadowAngle,
+    !wall,
+    mask,
+    shadowSize,
+  );
+  material.userData.shadowAlpha = alpha;
+  material.userData.shadowStrength = 1;
   return material;
 }
 
@@ -824,6 +1167,88 @@ function stampPortal(geometry: THREE.BufferGeometry, portal: VinePortal): void {
   const data = new Float32Array(count * 4);
   for (let index = 0; index < count; index += 1) data.set([portal.x, portal.y, portal.z, portal.eye], index * 4);
   geometry.setAttribute(VINE_PORTAL, new THREE.BufferAttribute(data, 4));
+}
+
+
+/** A drifting mote seeded around one botanical part. */
+type VineParticle = {
+  readonly position: THREE.Vector3;
+  readonly direction: THREE.Vector3;
+  readonly phase: number;
+  readonly life: number;
+  readonly gap: number;
+  readonly active: number;
+  readonly distance: number;
+  readonly blink: number;
+  readonly blinkSpeed: number;
+  readonly size: number;
+  readonly portal: VinePortal | null;
+};
+
+/**
+ * Seeds motes around each plan. Flowers are the primary source, leaves come
+ * second, and the rest of the shoots only contribute the occasional mote.
+ */
+function buildVineParticles(plans: readonly VinePlan[], density: number, seed: number, mote = 1): VineParticle[] {
+  const random = vineRandom((seed ^ 0x9e3779b9) >>> 0);
+  const motes: VineParticle[] = [];
+  const densityScale = THREE.MathUtils.clamp(density, 0.2, 3);
+  for (const plan of plans) {
+    const flowers = plan.lathes.filter((lathe) => lathe.role !== "bud");
+    const leaves = plan.blades.filter((blade) => blade.role === "leaf");
+    const count = Math.max(0, Math.round((1 + densityScale * 1.5) * mote)) + (flowers.length && mote > 0 ? 1 : 0);
+    for (let index = 0; index < count; index += 1) {
+      const roll = random();
+      let position: THREE.Vector3;
+      if (flowers.length && roll < 0.68) {
+        const flower = flowers[Math.floor(random() * flowers.length)]!;
+        const rim = flower.rows[flower.rows.length - 1]?.[1] ?? 14;
+        const radius = Math.max(9, Math.min(26, rim * 1.5));
+        position = flower.origin.clone().add(
+          new THREE.Vector3(
+            (random() - 0.5) * radius * 2,
+            (random() - 0.5) * radius * 1.6,
+            (random() - 0.5) * radius * 0.5,
+          ),
+        );
+      } else if (leaves.length && roll < 0.88) {
+        const blade = leaves[Math.floor(random() * leaves.length)]!;
+        const along = random() * blade.spec.length * 0.72;
+        const across = (random() - 0.5) * blade.spec.length * blade.spec.width * 0.7;
+        position = blade.origin.clone()
+          .addScaledVector(blade.x, along)
+          .addScaledVector(blade.y, across)
+          .addScaledVector(blade.n, (random() - 0.5) * 2);
+      } else {
+        const strand = plan.strands[Math.floor(random() * plan.strands.length)];
+        if (!strand || strand.points.length === 0) {
+          position = new THREE.Vector3();
+        } else {
+          const point = strand.points[Math.floor(random() * strand.points.length)]!;
+          position = point.clone().add(
+            new THREE.Vector3((random() - 0.5) * 8, (random() - 0.5) * 8, (random() - 0.5) * 3),
+          );
+        }
+      }
+      const direction = new THREE.Vector3(random() * 2 - 1, random() * 2 - 1, (random() - 0.5) * 0.6);
+      if (direction.lengthSq() < 1e-4) direction.set(1, 0, 0);
+      direction.normalize();
+      motes.push({
+        position,
+        direction,
+        phase: random(),
+        life: 3 + random() * 3,
+        gap: 0.1 + random() * 0.3,
+        active: 0.65 + random() * 0.3,
+        distance: 10 + random() * 28,
+        blink: random() * Math.PI * 2,
+        blinkSpeed: 0.8 + random() * 1.8,
+        size: 1.1 + random() * 0.8,
+        portal: plan.portal ?? null,
+      });
+    }
+  }
+  return motes;
 }
 
 export function createVine3d(
@@ -880,14 +1305,58 @@ export function createVine3d(
     corner: new THREE.Vector2(radius, 0.75),
     warp: new THREE.Vector2(1, 1),
     tilt: new THREE.Vector2(),
+    shadowAngleBase: { value: 303.5 },
+    presses: Array.from({ length: VINE_MAX_PRESSES }, () => new THREE.Vector4()),
+    pressCount: { value: 0 },
     ripples: Array.from({ length: VINE_MAX_RIPPLES }, () => new THREE.Vector4(0, 0, 1, 0)),
     rippleCount: { value: 0 },
+    rippleStrength: { value: 1 },
+    rippleSpeed: { value: VINE_RIPPLE_SPEED },
+    rippleSize: { value: 1 },
+    rippleRings: { value: VINE_RIPPLE_RINGS },
+    rippleSway: { value: VINE_RIPPLE_SWAY },
+    shadowStrength: { value: 1 },
+    shadowSize: { value: 1 },
+    shadowAngle: { value: 303.5 },
+    wallShadowStrength: { value: 1 },
+    wallShadowSize: { value: 1 },
+    shadowWallAngle: { value: 123.5 },
     time: { value: 0 },
     keep: Array.from({ length: VINE_MAX_KEEP }, () => new THREE.Vector4()),
     keepCount: { value: 0 },
   };
   const baseColor = colorFromRgb(color);
-  const layers = LAYER_ALPHA.map((share) => layerMaterials(baseColor, alpha * share, hover));
+  let currentBase = baseColor;
+  let baseAlpha = THREE.MathUtils.clamp(options.colorAlpha ?? 1, 0, 1);
+  let currentMoteColor = options.moteColor ?? null;
+  let currentMoteBlend = options.moteBlend ?? (options.lightWall ? "normal" : "additive");
+  const strongFill = options.strongFill ?? false;
+  let fillEmphasis = strongFill;
+  let currentPalette: VinePalette = options.colors ?? {};
+  const partColors = Array.from({ length: VINE_PART_COUNT }, () => new THREE.Vector3(1, 1, 1));
+  const partAlphas = Array.from({ length: VINE_PART_COUNT }, () => 1);
+  const partUniforms: VinePartUniforms = { colors: partColors, alphas: partAlphas };
+  hover.rippleStrength.value = options.rippleStrength ?? 1;
+  hover.rippleSpeed.value = options.rippleSpeed ?? VINE_RIPPLE_SPEED;
+  hover.rippleSize.value = options.rippleSize ?? 1;
+  hover.rippleRings.value = options.rippleRings ?? VINE_RIPPLE_RINGS;
+  hover.rippleSway.value = options.rippleSway ?? VINE_RIPPLE_SWAY;
+  hover.shadowStrength.value = options.shadowStrength ?? 1;
+  hover.shadowSize.value = options.shadowSize ?? 1;
+  hover.shadowAngle.value = options.shadowAngle ?? 303.5;
+  hover.shadowAngleBase.value = hover.shadowAngle.value;
+  hover.wallShadowStrength.value = options.wallShadowStrength ?? 1;
+  hover.wallShadowSize.value = options.wallShadowSize ?? 1;
+  hover.shadowWallAngle.value = options.wallShadowAngle ?? (options.shadowAngle ?? 303.5) + 180;
+  let currentShadowColor = options.shadowColor ?? null;
+  let currentWallShadowColor = options.wallShadowColor ?? null;
+  let shadowBlur = THREE.MathUtils.clamp(options.shadowBlur ?? 6, 0, 30);
+  let wallShadowBlur = THREE.MathUtils.clamp(options.wallShadowBlur ?? 6, 0, 30);
+  let glowScale = THREE.MathUtils.clamp(options.glow ?? 1, 0, 2);
+  let currentUnderlayColor: THREE.Color | null = options.underlayColor ? colorFromRgb(options.underlayColor) : null;
+  let currentUnderlayOpacity = THREE.MathUtils.clamp(options.underlayOpacity ?? 0.18, 0, 1);
+  let currentUnderlayBlend = options.underlayBlend ?? "additive";
+  const layers = LAYER_ALPHA.map((share) => layerMaterials(baseColor, alpha * share, hover, VineDepth.Wall, strongFill, share, partUniforms, false, false, false, currentUnderlayColor ?? new THREE.Color(0xffffff), currentUnderlayOpacity, currentUnderlayBlend));
   const keep = options.keep ?? [];
   const setKeep = (rects: readonly VineRect[]): void => {
     const count = Math.min(rects.length, VINE_MAX_KEEP);
@@ -898,12 +1367,306 @@ export function createVine3d(
     hover.keepCount.value = count;
   };
   setKeep(keep);
-  const plans = planVineGarden(width, height, seed, density, edges, { keep, inward: options.inward });
+  const garden = planVineGarden(width, height, seed, density, edges, { keep, inward: options.inward });
+  const plans = options.paint === "pop" ? garden.filter((plan) => plan.pop) : options.paint === "wall" ? garden.filter((plan) => !plan.pop) : garden;
   const popMaterials = plans.some((plan) => plan.pop)
-    ? layerMaterials(baseColor, Math.min(1.6, alpha * POP_ALPHA), hover, VineDepth.Pop)
+    ? layerMaterials(baseColor, Math.min(1.6, alpha * POP_ALPHA), hover, VineDepth.Pop, strongFill, POP_ALPHA, partUniforms, options.paint === 'pop', options.paint === 'pop', options.paint === 'all' && options.popCut === true, currentUnderlayColor ?? new THREE.Color(0xffffff), currentUnderlayOpacity, currentUnderlayBlend)
     : null;
-  const shadow = popMaterials ? shadowMaterial(alpha, hover) : null;
+  const maskTarget = plans.length
+    ? new THREE.WebGLRenderTarget(1, 1, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        format: THREE.RGBAFormat,
+        depthBuffer: false,
+        stencilBuffer: false,
+      })
+    : null;
+  const maskMaterial = maskTarget
+    ? new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, depthTest: false, depthWrite: false })
+    : null;
+  const shadow = popMaterials ? shadowMaterial(alpha, hover, strongFill, options.paint === 'pop', options.paint === 'all' && options.popCut === true, false, undefined, maskTarget?.texture) : null;
+  const wallShadow = options.paint !== "pop" ? shadowMaterial(alpha, hover, strongFill, false, false, true, hover.shadowWallAngle, maskTarget?.texture, hover.wallShadowSize) : null;
   const materialSets = popMaterials ? [...layers, popMaterials] : layers;
+  const shadowObjects: THREE.Object3D[] = [];
+  const wallShadowObjects: THREE.Object3D[] = [];
+  const paintedObjects: THREE.Object3D[] = [];
+  const createShadowTarget = () =>
+    new THREE.WebGLRenderTarget(1, 1, {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+      depthBuffer: false,
+      stencilBuffer: false,
+    });
+  const shadowTarget = shadow ? createShadowTarget() : null;
+  const wallShadowTarget = wallShadow ? createShadowTarget() : null;
+  const blurMaterial = (shadow || wallShadow)
+    ? new THREE.ShaderMaterial({
+        uniforms: {
+          u_shadow: { value: shadowTarget?.texture ?? wallShadowTarget!.texture },
+          u_texel: { value: new THREE.Vector2(1, 1) },
+          u_blur: { value: 1 },
+        },
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+        premultipliedAlpha: true,
+        vertexShader: `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position.xy, 0.0, 1.0);
+}`,
+        fragmentShader: `
+uniform sampler2D u_shadow;
+uniform vec2 u_texel;
+uniform float u_blur;
+varying vec2 vUv;
+void main() {
+  vec2 d = u_texel * u_blur;
+  vec4 sum = texture2D(u_shadow, vUv) * 0.2;
+  sum += texture2D(u_shadow, vUv + vec2(d.x, 0.0)) * 0.12;
+  sum += texture2D(u_shadow, vUv - vec2(d.x, 0.0)) * 0.12;
+  sum += texture2D(u_shadow, vUv + vec2(0.0, d.y)) * 0.12;
+  sum += texture2D(u_shadow, vUv - vec2(0.0, d.y)) * 0.12;
+  sum += texture2D(u_shadow, vUv + d) * 0.08;
+  sum += texture2D(u_shadow, vUv - d) * 0.08;
+  sum += texture2D(u_shadow, vUv + vec2(d.x, -d.y)) * 0.08;
+  sum += texture2D(u_shadow, vUv + vec2(-d.x, d.y)) * 0.08;
+  gl_FragColor = sum;
+}`,
+      })
+    : null;
+  const blurScene = (shadow || wallShadow) ? new THREE.Scene() : null;
+  const blurCamera = (shadow || wallShadow) ? new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1) : null;
+  if (blurScene && blurMaterial) {
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blurMaterial);
+    quad.frustumCulled = false;
+    blurScene.add(quad);
+  }
+
+  const motes = buildVineParticles(plans, density, seed, options.mote ?? 1);
+  let particleMaterial: THREE.ShaderMaterial | null = null;
+  let particlePoints: THREE.Points | null = null;
+  if (motes.length) {
+    const particleGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(motes.length * 3);
+    const directions = new Float32Array(motes.length * 3);
+    const phases = new Float32Array(motes.length);
+    const lives = new Float32Array(motes.length);
+    const gaps = new Float32Array(motes.length);
+    const actives = new Float32Array(motes.length);
+    const distances = new Float32Array(motes.length);
+    const blinks = new Float32Array(motes.length);
+    const blinkSpeeds = new Float32Array(motes.length);
+    const sizes = new Float32Array(motes.length);
+    const portals = new Float32Array(motes.length * 4);
+    motes.forEach((mote, index) => {
+      positions.set([mote.position.x, mote.position.y, mote.position.z], index * 3);
+      directions.set([mote.direction.x, mote.direction.y, mote.direction.z], index * 3);
+      phases[index] = mote.phase;
+      lives[index] = mote.life;
+      gaps[index] = mote.gap;
+      actives[index] = mote.active;
+      distances[index] = mote.distance;
+      blinks[index] = mote.blink;
+      blinkSpeeds[index] = mote.blinkSpeed;
+      sizes[index] = mote.size;
+      if (mote.portal) portals.set([mote.portal.x, mote.portal.y, mote.portal.z, mote.portal.eye], index * 4);
+    });
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute("aDirection", new THREE.BufferAttribute(directions, 3));
+    particleGeometry.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
+    particleGeometry.setAttribute("aLife", new THREE.BufferAttribute(lives, 1));
+    particleGeometry.setAttribute("aGap", new THREE.BufferAttribute(gaps, 1));
+    particleGeometry.setAttribute("aActive", new THREE.BufferAttribute(actives, 1));
+    particleGeometry.setAttribute("aDistance", new THREE.BufferAttribute(distances, 1));
+    particleGeometry.setAttribute("aBlink", new THREE.BufferAttribute(blinks, 1));
+    particleGeometry.setAttribute("aBlinkSpeed", new THREE.BufferAttribute(blinkSpeeds, 1));
+    particleGeometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+    particleGeometry.setAttribute("aPortal", new THREE.BufferAttribute(portals, 4));
+    particleMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+      blending: UNDERLAY_BLENDING[currentMoteBlend] ?? THREE.AdditiveBlending,
+      uniforms: {
+        u_time: hover.time,
+        u_pixel_ratio: { value: renderer.getPixelRatio() },
+        u_color: { value: new THREE.Color(1, 1, 1) },
+        u_opacity: { value: 0.85 },
+        u_card: { value: hover.card },
+        u_canvas: { value: hover.canvas },
+        u_resolution: { value: hover.resolution },
+        u_warp: { value: hover.warp },
+        u_tilt: { value: hover.tilt },
+        u_pop: { value: options.paint === "pop" ? 1 : 0 },
+      },
+      vertexShader: `
+attribute vec3 aDirection;
+attribute float aPhase;
+attribute float aLife;
+attribute float aGap;
+attribute float aActive;
+attribute float aDistance;
+attribute float aBlink;
+attribute float aBlinkSpeed;
+attribute float aSize;
+attribute vec4 aPortal;
+uniform float u_time;
+uniform float u_pixel_ratio;
+uniform vec2 u_warp;
+uniform vec2 u_tilt;
+uniform float u_pop;
+varying float vAlpha;
+void main() {
+  float period = aLife * (1.0 + aGap);
+  float clock = u_time / period + aPhase;
+  float cycle = floor(clock);
+  float cycleSeed = fract(sin((cycle + aPhase * 7.0) * 53.7) * 43758.5453);
+  float activeWindow = aActive * (0.6 + 0.8 * cycleSeed);
+  float window = fract(clock + cycleSeed * 0.35);
+  if (window > activeWindow) {
+    vAlpha = 0.0;
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    gl_PointSize = 0.0;
+    return;
+  }
+  float t = window / activeWindow;
+  float spin = (fract(sin((cycle + aPhase) * 91.7) * 43758.5453) - 0.5) * 1.4;
+  vec3 dir = aDirection;
+  float cosine = cos(spin);
+  float sine = sin(spin);
+  dir.xy = mat2(cosine, -sine, sine, cosine) * dir.xy;
+  vec3 p = position + dir * aDistance * (1.0 - pow(1.0 - t, 2.2));
+  p.y += t * t * 3.0;
+  float blink = 0.5 + 0.5 * sin(t * 3.14159 * (1.5 + aBlinkSpeed) + aBlink);
+  float fade = smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.7, 1.0, t));
+  vAlpha = fade * (0.6 + 0.4 * blink * blink);
+  if (u_pop > 0.5) {
+    float eye = max(aPortal.w, 1.0);
+    float lift = clamp(p.z - aPortal.z, 0.0, eye * 0.6);
+    vec2 portalAt = aPortal.xy * u_warp;
+    p.xy = portalAt + (p.xy - portalAt) * eye / max(eye - lift, 0.001);
+    p.xy -= u_tilt * lift * 0.06;
+  }
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  gl_PointSize = aSize * u_pixel_ratio * (1.8 + 1.0 * vAlpha);
+}`,
+      fragmentShader: `
+uniform vec3 u_color;
+uniform float u_opacity;
+uniform vec4 u_card;
+uniform vec2 u_canvas;
+uniform vec2 u_resolution;
+uniform float u_pop;
+varying float vAlpha;
+void main() {
+  if (u_pop < 0.5) {
+    vec2 at = gl_FragCoord.xy / u_resolution * u_canvas;
+    if (abs(at.x - u_card.x) > u_card.z || abs(at.y - u_card.y) > u_card.w) discard;
+  }
+  vec2 point = gl_PointCoord - 0.5;
+  float radius = length(point);
+  if (radius > 0.5) discard;
+  float alpha = smoothstep(0.5, 0.0, radius);
+  gl_FragColor = vec4(u_color, alpha * vAlpha * u_opacity);
+}`,
+    });
+    particlePoints = new THREE.Points(particleGeometry, particleMaterial);
+    particlePoints.frustumCulled = false;
+    particlePoints.renderOrder = 10000;
+    scene.add(particlePoints);
+    paintedObjects.push(particlePoints);
+  }
+
+  const applyPalette = (): void => {
+    const basePart = currentPalette.base;
+    const seedPart =
+      basePart ??
+      currentPalette.fill ??
+      currentPalette.tint ??
+      currentPalette.edge ??
+      currentPalette.halo ??
+      currentPalette.fine;
+    const paletteBase = seedPart ? colorFromRgb(seedPart.color) : currentBase;
+    const paletteAlpha = baseAlpha * (basePart?.alpha ?? 1);
+    const partKeys = ["leaf", "flower", "bud", "flowerStem", "stem"] as const;
+    for (let index = 0; index < VINE_PART_COUNT; index += 1) {
+      const key = partKeys[index]!;
+      const part = key === "stem" ? undefined : currentPalette[key as VineBotanicalPart];
+      const entry = part ?? currentPalette.fill;
+      const color = entry ? colorFromRgb(entry.color) : paletteBase;
+      partColors[index]!.set(color.r, color.g, color.b);
+      partAlphas[index] = entry?.alpha ?? 1;
+    }
+    const sceneAlpha = (material: THREE.Material): number => (material.userData.sceneAlpha as number | undefined) ?? 1;
+    const setOpacity = (
+      material: THREE.MeshBasicMaterial | THREE.LineBasicMaterial,
+      factor: number,
+    ): void => {
+      material.opacity = factor * sceneAlpha(material) * paletteAlpha;
+    };
+    for (const materials of materialSets) {
+      for (const [key, material] of Object.entries(materials)) {
+        if (key === "underlay") {
+          const wash = material as THREE.MeshBasicMaterial;
+          wash.color.copy(currentUnderlayColor ?? new THREE.Color(0xffffff));
+          wash.opacity = currentUnderlayOpacity * sceneAlpha(wash) * paletteAlpha;
+          continue;
+        }
+        const factor =
+          key === "fill" ? (fillEmphasis ? 0.95 : 0.085) :
+          key === "tint" ? (fillEmphasis ? 0.35 : 0.06) :
+          key === "halo" ? (fillEmphasis ? 0.3 : 0.2) :
+          key === "edge" ? (fillEmphasis ? 0.78 : 0.3) :
+          fillEmphasis ? 0.52 : 0.16;
+        setOpacity(material as THREE.MeshBasicMaterial | THREE.LineBasicMaterial, factor);
+        if (key === "fill") {
+          const uniform = material.userData.vineLighten as { value: number } | undefined;
+          if (uniform) uniform.value = fillEmphasis ? 0.18 : 0.72;
+        }
+        if (key === "edge" || key === "fine" || key === "halo") {
+          (material as THREE.LineBasicMaterial | THREE.MeshBasicMaterial).color.copy(paletteBase);
+        }
+      }
+    }
+    if (particleMaterial) {
+      const lightWall = options.lightWall ?? currentBase.r + currentBase.g + currentBase.b < 1.5;
+      if (currentMoteColor) {
+        particleMaterial.uniforms.u_color.value.copy(colorFromRgb(currentMoteColor));
+      } else {
+        particleMaterial.uniforms.u_color.value.setRGB(
+          lightWall ? 1 : 1,
+          lightWall ? 0.24 : 0.62,
+          lightWall ? 0.52 : 0.8,
+        );
+      }
+      particleMaterial.uniforms.u_opacity.value = (fillEmphasis ? 0.95 : lightWall ? 0.95 : 0.95) * paletteAlpha;
+      const blending = UNDERLAY_BLENDING[currentMoteBlend] ?? (lightWall ? THREE.NormalBlending : THREE.AdditiveBlending);
+      if (particleMaterial.blending !== blending) {
+        particleMaterial.blending = blending;
+        particleMaterial.needsUpdate = true;
+      }
+    }
+    const shadowBase = currentPalette.fill ? colorFromRgb(currentPalette.fill.color) : paletteBase;
+    for (const shade of [shadow, wallShadow]) {
+      if (!shade) continue;
+      const wall = shade === wallShadow;
+      const customColor = wall ? currentWallShadowColor : currentShadowColor;
+      if (customColor) shade.color.copy(colorFromRgb(customColor));
+      else shade.color.copy(shadowBase).multiplyScalar(0.35);
+      const baseOpacity = wall ? (fillEmphasis ? 0.38 : 0.46) : (fillEmphasis ? 0.24 : 0.28);
+      const strength = wall ? hover.wallShadowStrength.value : (shade.userData.shadowStrength ?? 1);
+      shade.opacity =
+        baseOpacity *
+        (shade.userData.shadowAlpha ?? 1) *
+        strength *
+        paletteAlpha;
+    }
+  };
+  applyPalette();
   const portals = plans.flatMap((plan) => (plan.pop && plan.portal ? [plan.portal] : [])).slice(0, VINE_MAX_RIPPLES);
   portals.forEach((portal, index) => hover.ripples[index]!.set(portal.x, portal.y, portal.ripple, portal.phase));
   hover.rippleCount.value = portals.length;
@@ -912,18 +1675,24 @@ export function createVine3d(
     const geometry = buildVineGeometry(plan);
     // Shoots that come off the wall are drawn after all that lies on it.
     const order = (plan.pop ? plans.length + index : index) * 10;
-    const add = (object: THREE.Object3D, offset: number) => {
+    const add = (object: THREE.Object3D, offset: number, asShadow = false) => {
       object.renderOrder = order + offset;
       // Bounds are those of the plan; the shader stretches it past them.
       object.frustumCulled = false;
+      if (asShadow) shadowObjects.push(object);
+      else paintedObjects.push(object);
       scene.add(object);
     };
     if (geometry.halo) add(new THREE.Mesh(geometry.halo, materials.halo), 0);
     if (geometry.organ) {
+      add(new THREE.Mesh(geometry.organ, materials.underlay), 0.5);
       add(new THREE.Mesh(geometry.organ, materials.tint), 1);
       add(new THREE.Mesh(geometry.organ, materials.fill), 2);
     }
-    if (geometry.tube) add(new THREE.Mesh(geometry.tube, materials.fill), 3);
+    if (geometry.tube) {
+      add(new THREE.Mesh(geometry.tube, materials.underlay), 2.5);
+      add(new THREE.Mesh(geometry.tube, materials.fill), 3);
+    }
     if (geometry.fine) add(new THREE.LineSegments(geometry.fine, materials.fine), 4);
     if (geometry.edge) add(new THREE.LineSegments(geometry.edge, materials.edge), 5);
     if (plan.pop && plan.portal) {
@@ -931,13 +1700,35 @@ export function createVine3d(
         if (part) stampPortal(part, plan.portal);
       }
       if (shadow) {
-        if (geometry.organ) add(new THREE.Mesh(geometry.organ, shadow), -2);
-        if (geometry.tube) add(new THREE.Mesh(geometry.tube, shadow), -1);
+        if (geometry.organ) add(new THREE.Mesh(geometry.organ, shadow), -2, true);
+        if (geometry.tube) add(new THREE.Mesh(geometry.tube, shadow), -1, true);
       }
+    }
+    if (!plan.pop && wallShadow) {
+      const addWallShadow = (object: THREE.Object3D, offset: number) => {
+        object.renderOrder = order + offset;
+        object.frustumCulled = false;
+        wallShadowObjects.push(object);
+        scene.add(object);
+      };
+      if (geometry.organ) addWallShadow(new THREE.Mesh(geometry.organ, wallShadow), 6);
+      if (geometry.tube) addWallShadow(new THREE.Mesh(geometry.tube, wallShadow), 7);
     }
   });
   const pointerTarget = new THREE.Vector3();
+  const pointerLast = new THREE.Vector3();
+  let lastPointerMoveAt = -1;
   const pointer = new THREE.Vector3();
+  const shadowPointer = new THREE.Vector3();
+  const shadowHistory: { x: number; y: number; t: number }[] = [];
+  const SHADOW_TRAIL_SECONDS = 5;
+  const SHADOW_SAMPLE_SECONDS = 0.2;
+  const SHADOW_SPEED = 0.8;
+  let shadowSampleClock = -1;
+  let shadowClock = -1;
+  let lastShadowFrameTime = -1;
+  let shadowPointerReady = false;
+  let pointerWasActive = false;
   const pointerUvTarget = new THREE.Vector2(0.5, 0.5);
   const tiltTarget = new THREE.Vector2();
   let pointerActive = 0;
@@ -945,6 +1736,76 @@ export function createVine3d(
   const lift = Math.max(40, Math.min(width, height) * 0.2);
   let cardWidth = width;
   let cardHeight = height;
+  const setRipple = (
+    strength: number,
+    speed: number,
+    size: number,
+    rings = hover.rippleRings.value,
+    sway = hover.rippleSway.value,
+  ): void => {
+    hover.rippleStrength.value = strength;
+    hover.rippleSpeed.value = speed;
+    hover.rippleSize.value = size;
+    hover.rippleRings.value = rings;
+    hover.rippleSway.value = sway;
+  };
+
+  const glowRadiusFor = (widthNow: number, heightNow: number): number =>
+    Math.max(96, Math.min(160, Math.max(widthNow, heightNow) * 0.48)) * glowScale;
+
+  const setGlow = (scale: number): void => {
+    glowScale = THREE.MathUtils.clamp(scale, 0, 2);
+    const glowRadius = glowRadiusFor(cardWidth, cardHeight);
+    hover.radius.value = glowRadius * renderer.getPixelRatio();
+    pointerLight.distance = glowRadius * 1.45;
+  };
+
+  const setShadow = (strength: number, size: number): void => {
+    hover.shadowStrength.value = strength;
+    hover.shadowSize.value = size;
+    if (shadow) {
+      shadow.userData.shadowStrength = strength;
+      applyPalette();
+    }
+  };
+
+  const setShadowColor = (color: FluidRgb | null): void => {
+    currentShadowColor = color;
+    applyPalette();
+  };
+
+  const setShadowAngle = (angle: number): void => {
+    hover.shadowAngleBase.value = angle;
+  };
+
+  const setShadowBlur = (blur: number): void => {
+    shadowBlur = THREE.MathUtils.clamp(blur, 0, 30);
+  };
+
+  const setWallShadow = (strength: number, size: number): void => {
+    hover.wallShadowStrength.value = strength;
+    hover.wallShadowSize.value = size;
+    if (wallShadow) {
+      wallShadow.userData.shadowStrength = strength;
+      applyPalette();
+    }
+  };
+
+  const setWallShadowColor = (color: FluidRgb | null): void => {
+    currentWallShadowColor = color;
+    applyPalette();
+  };
+
+  let wallShadowAngleOffset = options.wallShadowAngle ?? 180;
+
+  const setWallShadowAngle = (angle: number): void => {
+    wallShadowAngleOffset = angle;
+  };
+
+  const setWallShadowBlur = (blur: number): void => {
+    wallShadowBlur = THREE.MathUtils.clamp(blur, 0, 30);
+  };
+
   const resize = (nextWidth: number, nextHeight: number) => {
     cardWidth = nextWidth;
     cardHeight = nextHeight;
@@ -963,10 +1824,15 @@ export function createVine3d(
     const drawingBuffer = new THREE.Vector2();
     renderer.getDrawingBufferSize(drawingBuffer);
     hover.resolution.copy(drawingBuffer);
+    if (particleMaterial) particleMaterial.uniforms.u_pixel_ratio.value = renderer.getPixelRatio();
+    if (shadowTarget) shadowTarget.setSize(drawingBuffer.x, drawingBuffer.y);
+    if (wallShadowTarget) wallShadowTarget.setSize(drawingBuffer.x, drawingBuffer.y);
+    if (blurMaterial) blurMaterial.uniforms.u_texel.value.set(1 / drawingBuffer.x, 1 / drawingBuffer.y);
+    maskTarget?.setSize(drawingBuffer.x, drawingBuffer.y);
     hover.canvas.set(canvasWidth, canvasHeight);
     hover.card.set(bleed.left + nextWidth / 2, bleed.bottom + nextHeight / 2, nextWidth / 2, nextHeight / 2);
     hover.corner.x = Math.min(radius, nextWidth / 2, nextHeight / 2);
-    const glowRadius = Math.max(96, Math.min(160, Math.max(nextWidth, nextHeight) * 0.48));
+    const glowRadius = glowRadiusFor(nextWidth, nextHeight);
     hover.radius.value = glowRadius * renderer.getPixelRatio();
     pointerLight.distance = glowRadius * 1.45;
   };
@@ -987,17 +1853,65 @@ export function createVine3d(
       if (tilt) tiltTarget.set(THREE.MathUtils.clamp(x * 2 - 1, -1, 1), THREE.MathUtils.clamp(1 - y * 2, -1, 1));
       else tiltTarget.set(0, 0);
     },
-    setColor(nextColor) {
-      const next = colorFromRgb(nextColor);
-      const light = next.clone().lerp(new THREE.Color(0xffffff), 0.72);
+    setColor(nextColor, emphasis = fillEmphasis, nextAlpha = baseAlpha) {
+      fillEmphasis = emphasis;
+      baseAlpha = THREE.MathUtils.clamp(nextAlpha, 0, 1);
+      currentBase = colorFromRgb(nextColor);
+      applyPalette();
+    },
+    setColors(colors, emphasis = fillEmphasis) {
+      fillEmphasis = emphasis;
+      currentPalette = colors;
+      applyPalette();
+    },
+    setRipple,
+    setGlow,
+    setShadow,
+    setShadowColor,
+    setShadowAngle,
+    setShadowBlur,
+    setWallShadow,
+    setWallShadowColor,
+    setWallShadowAngle,
+    setWallShadowBlur,
+    setUnderlay(color, opacity = currentUnderlayOpacity) {
+      currentUnderlayColor = color ? colorFromRgb(color) : null;
+      currentUnderlayOpacity = THREE.MathUtils.clamp(opacity, 0, 1);
+      applyPalette();
+    },
+    setUnderlayBlend(mode) {
+      currentUnderlayBlend = mode;
       for (const materials of materialSets) {
-        materials.fill.color.copy(light);
-        materials.fill.emissive.copy(light).multiplyScalar(0.04);
-        materials.tint.color.copy(next);
-        materials.halo.color.copy(next);
-        materials.edge.color.copy(next);
-        materials.fine.color.copy(next);
+        materials.underlay.blending = UNDERLAY_BLENDING[mode] ?? THREE.AdditiveBlending;
+        materials.underlay.needsUpdate = true;
       }
+    },
+    setMoteColor(color) {
+      currentMoteColor = color;
+      applyPalette();
+    },
+    setMoteBlend(mode) {
+      currentMoteBlend = mode;
+      applyPalette();
+    },
+    setOpacity(nextAlpha) {
+      const value = THREE.MathUtils.clamp(nextAlpha, 0, 1);
+      for (const materials of materialSets) {
+        for (const material of Object.values(materials)) {
+          material.userData.sceneAlpha = value * ((material.userData.sceneShare as number | undefined) ?? 1);
+        }
+      }
+      if (shadow) shadow.userData.shadowAlpha = value;
+      if (wallShadow) wallShadow.userData.shadowAlpha = value;
+      applyPalette();
+    },
+    setPresses(nextPresses) {
+      const count = Math.min(nextPresses.length, VINE_MAX_PRESSES);
+      for (let index = 0; index < count; index += 1) {
+        const press = nextPresses[index]!;
+        hover.presses[index]!.set(press.x, press.y, press.t, press.reach);
+      }
+      hover.pressCount.value = count;
     },
     portals,
     setKeep,
@@ -1007,10 +1921,144 @@ export function createVine3d(
       pointer.lerp(pointerTarget, 0.16);
       hover.pointer.lerp(pointerUvTarget, 0.16);
       pointerLight.position.copy(pointer);
-      pointerLight.intensity += (pointerActive * 1.3 - pointerLight.intensity) * 0.12;
+      pointerLight.intensity += (pointerActive * 1.3 * glowScale - pointerLight.intensity) * 0.12;
       hoverLevel += (pointerActive - hoverLevel) * (pointerActive > hoverLevel ? 0.18 : 0.08);
-      hover.strength.value = hoverLevel * 2.8;
+      hover.strength.value = hoverLevel * 2.8 * glowScale;
+      // The light has a physical trail: it follows a delayed position, not a
+      // shortest angular path. When the pointer leaves, that trail slides back
+      // to the position that represents the authored `shadow-angle`.
+      const homeRadius = Math.max(cardWidth, cardHeight) * 0.32;
+      const baseRadians = hover.shadowAngleBase.value * (Math.PI / 180);
+      const homeX = -Math.cos(baseRadians) * homeRadius;
+      const homeY = -Math.sin(baseRadians) * homeRadius;
+      const shadowTargetX = pointerActive ? pointerTarget.x : homeX;
+      const shadowTargetY = pointerActive ? pointerTarget.y : homeY;
+      // A stationary hover produces a long run of identical samples; when the
+      // pointer finally moves again, restart the trail from that point so the
+      // old stationary tail cannot delay the visible path.
+      const pointerTravel = Math.hypot(pointerTarget.x - pointerLast.x, pointerTarget.y - pointerLast.y);
+      if (pointerActive && pointerTravel > 0.01) {
+        if (lastPointerMoveAt >= 0 && hover.time.value - lastPointerMoveAt > 0.25) {
+          shadowHistory.length = 0;
+          shadowHistory.push({ x: pointerTarget.x, y: pointerTarget.y, t: hover.time.value });
+          shadowSampleClock = hover.time.value;
+          shadowClock = hover.time.value;
+          shadowPointerReady = true;
+        }
+        lastPointerMoveAt = hover.time.value;
+        pointerLast.copy(pointerTarget);
+      }
+      const pointerNowActive = pointerActive > 0.5;
+      if (pointerNowActive && !pointerWasActive) {
+        shadowHistory.length = 0;
+        shadowHistory.push({ x: shadowTargetX, y: shadowTargetY, t: hover.time.value });
+        shadowSampleClock = hover.time.value;
+        shadowClock = hover.time.value;
+        lastPointerMoveAt = hover.time.value;
+        pointerLast.copy(pointerTarget);
+        shadowPointerReady = true;
+      }
+      pointerWasActive = pointerNowActive;
+      if (!shadowPointerReady) {
+        shadowHistory.push({ x: shadowTargetX, y: shadowTargetY, t: hover.time.value });
+        shadowSampleClock = hover.time.value;
+        shadowClock = hover.time.value;
+        shadowPointerReady = true;
+      }
+      // The shadow cursor runs at 0.8x real time from the pointer entry point,
+      // so it starts moving immediately and lags by one second once the
+      // five-second buffer is full.
+      const shadowFrameDelta = lastShadowFrameTime < 0 ? 0 : Math.min(0.25, Math.max(0, hover.time.value - lastShadowFrameTime));
+      lastShadowFrameTime = hover.time.value;
+      shadowClock = Math.min(hover.time.value, shadowClock + shadowFrameDelta * SHADOW_SPEED);
+      // Sample at 0.2s. A five-second buffer is short enough to keep as a
+      // plain path; averaging positions here would collapse the circle
+      // toward its centre and make the direction jump when old samples leave.
+      if (hover.time.value - shadowSampleClock >= SHADOW_SAMPLE_SECONDS) {
+        shadowHistory.push({ x: shadowTargetX, y: shadowTargetY, t: hover.time.value });
+        shadowSampleClock = hover.time.value;
+        while (shadowHistory.length > 1 && shadowHistory[0]!.t < hover.time.value - SHADOW_TRAIL_SECONDS) {
+          shadowHistory.shift();
+        }
+      }
+      let shadowPrevious = shadowHistory[0]!;
+      let shadowNext = shadowHistory[shadowHistory.length - 1]!;
+      for (const sample of shadowHistory) {
+        if (sample.t <= shadowClock) shadowPrevious = sample;
+        else { shadowNext = sample; break; }
+      }
+      const shadowSegment = shadowNext.t - shadowPrevious.t;
+      const shadowMix = shadowSegment > 0
+        ? Math.max(0, Math.min(1, (shadowClock - shadowPrevious.t) / shadowSegment))
+        : 0;
+      shadowPointer.set(
+        shadowPrevious.x + (shadowNext.x - shadowPrevious.x) * shadowMix,
+        shadowPrevious.y + (shadowNext.y - shadowPrevious.y) * shadowMix,
+        0,
+      );
+      const shadowRadius = Math.hypot(shadowPointer.x, shadowPointer.y);
+      const pointerAngle = shadowRadius > Math.max(cardWidth, cardHeight) * 0.06
+        ? Math.atan2(-shadowPointer.y, -shadowPointer.x) * (180 / Math.PI)
+        : hover.shadowAngleBase.value;
+      const angleDelta = ((pointerAngle - hover.shadowAngle.value + 540) % 360) - 180;
+      const angleStep = Math.max(-2.5, Math.min(2.5, angleDelta * 0.08));
+      hover.shadowAngle.value = ((hover.shadowAngle.value + angleStep) % 360 + 360) % 360;
+      hover.shadowWallAngle.value = ((hover.shadowAngle.value + wallShadowAngleOffset) % 360 + 360) % 360;
+      if (maskTarget && maskMaterial) {
+        const particles = particlePoints;
+        for (const object of shadowObjects) object.visible = false;
+        for (const object of wallShadowObjects) object.visible = false;
+        if (particles) particles.visible = false;
+        scene.overrideMaterial = maskMaterial;
+        renderer.setRenderTarget(maskTarget);
+        renderer.setClearColor(0x000000, 0);
+        renderer.clear();
+        renderer.render(scene, camera);
+        scene.overrideMaterial = null;
+        renderer.setRenderTarget(null);
+        for (const object of wallShadowObjects) object.visible = true;
+        if (particles) particles.visible = true;
+      }
+      const renderShadowPass = (
+        objects: THREE.Object3D[],
+        target: THREE.WebGLRenderTarget,
+        blur: number,
+      ) => {
+        if (!blurMaterial || !blurScene || !blurCamera) return false;
+        for (const object of paintedObjects) object.visible = false;
+        for (const object of shadowObjects) object.visible = false;
+        for (const object of wallShadowObjects) object.visible = false;
+        if (particlePoints) particlePoints.visible = false;
+        for (const object of objects) object.visible = true;
+        renderer.setRenderTarget(target);
+        renderer.setClearColor(0x000000, 0);
+        renderer.clear();
+        renderer.render(scene, camera);
+        renderer.setRenderTarget(null);
+        for (const object of objects) object.visible = false;
+        return true;
+      };
+      const compositeShadow = (target: THREE.WebGLRenderTarget, blur: number) => {
+        if (!blurMaterial || !blurScene || !blurCamera) return;
+        blurMaterial.uniforms.u_shadow.value = target.texture;
+        blurMaterial.uniforms.u_blur.value = blur * renderer.getPixelRatio() * 0.55;
+        renderer.autoClear = false;
+        renderer.render(blurScene, blurCamera);
+        renderer.autoClear = true;
+      };
+      let wallShadowDrawn = false;
+      let shadowDrawn = false;
+      if (wallShadow && wallShadowObjects.length && wallShadowTarget) {
+        wallShadowDrawn = renderShadowPass(wallShadowObjects, wallShadowTarget, wallShadowBlur);
+      }
+      if (shadow && shadowTarget) {
+        shadowDrawn = renderShadowPass(shadowObjects, shadowTarget, shadowBlur);
+      }
+      for (const object of paintedObjects) object.visible = true;
+      if (particlePoints) particlePoints.visible = true;
       renderer.render(scene, camera);
+      if (wallShadowDrawn && wallShadowTarget) compositeShadow(wallShadowTarget, wallShadowBlur);
+      if (shadowDrawn && shadowTarget) compositeShadow(shadowTarget, shadowBlur);
     },
     dispose() {
       const geometries = new Set<THREE.BufferGeometry>();
@@ -1021,6 +2069,17 @@ export function createVine3d(
       geometries.forEach((geometry) => geometry.dispose());
       for (const materials of materialSets) for (const material of Object.values(materials)) material.dispose();
       shadow?.dispose();
+      wallShadow?.dispose();
+      particleMaterial?.dispose();
+      shadowTarget?.dispose();
+      wallShadowTarget?.dispose();
+      maskTarget?.dispose();
+      maskMaterial?.dispose();
+      blurMaterial?.dispose();
+      blurScene?.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (mesh.geometry) mesh.geometry.dispose();
+      });
       renderer.dispose();
     },
   };

@@ -149,6 +149,8 @@ export interface VinePortal {
   readonly y: number;
   readonly z: number;
   readonly eye: number;
+  /** Index of the first point past the portal on its strand. */
+  readonly from: number;
   /** How far the ripple it raises on the wall spreads, px. */
   readonly ripple: number;
   /** Where the ripple starts in its swell, so neighbours do not beat together. */
@@ -2107,6 +2109,7 @@ function liftShoot(path: Path, card: Frame, lift: number, random: VineRandom, at
     y: origin.y,
     z: origin.z,
     eye: card.unit * POP_EYE,
+    from,
     ripple: card.unit * between(random, 0.22, 0.3),
     phase: random() * TAU,
   };

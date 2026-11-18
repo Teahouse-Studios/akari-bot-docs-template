@@ -58,6 +58,7 @@ export {
   VineSeedControl,
 };
 export * from "./types";
+export * from "./fluid";
 export { defineAkariConfig, defineAkariThemeConfig } from "./config";
 export { defineAkariLanguage } from "./define";
 export { AKARI_LANGUAGES, resolveLanguage } from "./i18n";

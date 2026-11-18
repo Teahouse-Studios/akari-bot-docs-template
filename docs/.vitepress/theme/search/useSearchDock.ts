@@ -432,7 +432,10 @@ export function provideAkariSearchDock(
       return;
     }
 
-    const elapsed = now - flightStarted;
+    // The first frame's timestamp can predate `flightStarted` because the
+    // flight is scheduled from inside that same frame; clamp it so the
+    // opening frame never runs the spring backwards.
+    const elapsed = Math.max(0, now - flightStarted);
     if (elapsed >= flightDuration) {
       writeRect(element, target);
       finishFlight();

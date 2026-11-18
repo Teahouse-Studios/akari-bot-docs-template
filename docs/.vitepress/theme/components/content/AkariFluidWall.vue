@@ -6,6 +6,7 @@ import {
   FLUID_FALLBACK_TOKENS,
   FLUID_TEXTURE_SIZES,
   FLUID_TEXTURE_WEIGHTS,
+  fluidBlendMode,
   fluidCurtain,
   fluidLoopOffsets,
   fluidNumber,
@@ -17,6 +18,7 @@ import {
   ribbonLacePath,
   ribbonScallopAmplitude,
   ribbonScallopPath,
+  type FluidBlendMode,
   type FluidPalette,
   type FluidRgb,
   type FluidScheme,
@@ -35,9 +37,15 @@ import {
   VINE_RIPPLE_SPEED,
   VINE_SEED_EVENT,
   type Vine3dController,
+  type VineBotanicalPart,
+  type VinePalette,
+  type VinePart,
+  type VineUnderlayBlend,
+  type VineMoteBlend,
   VINE_MAX_KEEP,
 } from "../../vine3d";
 import { VINE_POP_ALL, vinePopBleed, type VineRect } from "../../vinePlan";
+import { hasAkariGpu } from "../../gpu-tier";
 
 /** Every overlay except the empty one, which is drawn by nothing at all. */
 type OverlayKind = Exclude<FluidTexture, "none">;
@@ -82,6 +90,60 @@ const props = withDefaults(
     textureOpacity?: number | string;
     /** Whether the overlay is drawn as ink or as light; `auto` follows the scheme. */
     textureTone?: "auto" | "ink" | "light";
+    /** Colour of the overlay and the vine, as any CSS colour; overrides `textureTone`. */
+    textureColor?: string;
+    /** Per-part vine colours; any part left out follows `textureColor`. */
+    vineColors?: Partial<Record<VinePart | VineBotanicalPart | "base", string>>;
+    /** How the vine layer composites with the flow, as CSS `mix-blend-mode`. */
+    vineBlend?: FluidBlendMode;
+    /** Blend mode for the 出屏 shoots beyond their portal; defaults to `vineBlend`. */
+    vinePopoutBlend?: FluidBlendMode;
+    /** Per-part colours of the 出屏 shoots beyond their portal. */
+    vinePopoutColors?: Partial<Record<VinePart | VineBotanicalPart | "base", string>>;
+    /** Strength of the ripple at each 出屏 portal; 0 turns it off. */
+    ripple?: number | string;
+    /** Animation speed multiplier of that ripple; 1 keeps the default. */
+    rippleSpeed?: number | string;
+    /** Radius multiplier of that ripple. */
+    rippleSize?: number | string;
+    /** Rings across one ripple's radius; higher values pack more waves into the same reach. */
+    rippleRings?: number | string;
+    /** How far a passing ripple pushes the vines; 1 keeps the designed sway. */
+    rippleSway?: number | string;
+    /** Strength of the pointer glow on the vines; 0 turns it off. */
+    vineGlow?: number | string;
+    /** Opacity multiplier for the cast shadow of the 出屏 shoots. */
+    shadow?: number | string;
+    /** Size multiplier for the cast shadow of the 出屏 shoots. */
+    shadowSize?: number | string;
+    /** Colour of the cast shadow; derived from the vine fill when omitted. */
+    shadowColor?: string;
+    /** Direction of the cast shadow in degrees; 0 is +x, 90 is +y. */
+    shadowAngle?: number | string;
+    /** Blur radius of the cast shadow, in CSS pixels. */
+    shadowBlur?: number | string;
+    /** Opacity multiplier for the shadow cast by vines that stay on the wall. */
+    wallShadow?: number | string;
+    /** Size multiplier for the shadow cast by vines that stay on the wall. */
+    wallShadowSize?: number | string;
+    /** Colour of the shadow cast by vines that stay on the wall. */
+    wallShadowColor?: string;
+    /** Direction offset of the wall shadow, in degrees. */
+    wallShadowAngle?: number | string;
+    /** Blur radius of the wall shadow, in CSS pixels. */
+    wallShadowBlur?: number | string;
+    /** Colour of the additive wash beneath the vine fill. */
+    underlayColor?: string;
+    /** Opacity of the additive wash beneath the vine fill. */
+    underlayOpacity?: number | string;
+    /** Blend mode of the wash beneath the vine fill. */
+    underlayBlend?: string;
+    /** Multiplier for the number of drifting motes. */
+    mote?: number | string;
+    /** Colour of the drifting motes. */
+    moteColor?: string;
+    /** Blend mode of the drifting motes: auto, normal, additive, screen, multiply or subtractive. */
+    moteBlend?: string;
     /** Where the slotted content sits across the wall. */
     placement?: "start" | "center" | "end";
     /**
@@ -120,6 +182,30 @@ const props = withDefaults(
     textureDensity: undefined,
     textureOpacity: undefined,
     textureTone: "auto",
+    textureColor: undefined,
+    vineColors: undefined,
+    vineBlend: "normal",
+    vinePopoutBlend: undefined,
+    vinePopoutColors: undefined,
+    ripple: undefined,
+    rippleSpeed: undefined,
+    rippleSize: undefined,
+    shadow: undefined,
+    shadowSize: undefined,
+    shadowColor: undefined,
+    shadowAngle: undefined,
+    shadowBlur: undefined,
+    wallShadow: undefined,
+    wallShadowSize: undefined,
+    wallShadowColor: undefined,
+    wallShadowAngle: undefined,
+    wallShadowBlur: undefined,
+    underlayColor: undefined,
+    underlayOpacity: undefined,
+    underlayBlend: undefined,
+    mote: undefined,
+    moteColor: undefined,
+    moteBlend: "auto",
     placement: "start",
     popout: "auto",
     inward: "auto",
@@ -149,6 +235,21 @@ const spec = computed(() =>
 const gridSize = computed(() => Math.round(spec.value.grid));
 /** The overlay the wall draws, once the variant and the tag are merged. */
 const overlay = computed(() => spec.value.texture);
+const vineBlendMode = computed(() => fluidBlendMode(props.vineBlend));
+const vinePopoutBlendMode = computed(() =>
+  props.vinePopoutBlend ? fluidBlendMode(props.vinePopoutBlend) : vineBlendMode.value,
+);
+
+function paletteHasColors(source?: Partial<Record<VinePart | VineBotanicalPart | "base", string>>): boolean {
+  return Boolean(source && Object.values(source).some((value) => Boolean(value?.trim())));
+}
+
+const vinePopSplit = computed(
+  () =>
+    vinePopEdges.value > 0 &&
+    (props.vinePopoutBlend !== undefined ||
+      paletteHasColors(props.vinePopoutColors)),
+);
 const overlayKind = computed<OverlayKind>(() =>
   overlay.value === "none" ? "sakura" : overlay.value,
 );
@@ -166,17 +267,114 @@ const textureDensity = computed(() =>
 const textureAlpha = computed(
   () => textureOpacity.value * FLUID_TEXTURE_WEIGHTS[overlay.value],
 );
+const rippleStrength = computed(() => fluidNumber(props.ripple, 0, 3, 1));
+const rippleSpeed = computed(() => fluidNumber(props.rippleSpeed, 0, 4, 1) * VINE_RIPPLE_SPEED);
+const rippleSize = computed(() => fluidNumber(props.rippleSize, 0.25, 3, 1));
+const rippleRings = computed(() => fluidNumber(props.rippleRings, 0.5, 6, VINE_RIPPLE_RINGS));
+const rippleSway = computed(() => fluidNumber(props.rippleSway, 0, 3, 1));
+const vineGlow = computed(() => fluidNumber(props.vineGlow, 0, 2, 1));
+const shadowStrength = computed(() => fluidNumber(props.shadow, 0, 3, 1));
+const shadowSize = computed(() => fluidNumber(props.shadowSize, 0.3, 3, 1));
+const shadowBlur = computed(() => fluidNumber(props.shadowBlur, 0, 24, 6));
+const shadowAngle = computed(() => fluidNumber(props.shadowAngle, 0, 360, 303.5));
+const shadowColorRgb = computed<FluidRgb | null>(() => {
+  const custom = props.shadowColor?.trim();
+  if (!custom) return null;
+  const parsed = readColor(custom);
+  return parsed ? [parsed[0], parsed[1], parsed[2]] : null;
+});
+const wallShadowStrength = computed(() => fluidNumber(props.wallShadow, 0, 3, 1));
+const wallShadowSize = computed(() => fluidNumber(props.wallShadowSize, 0.3, 3, 1));
+const wallShadowBlur = computed(() => fluidNumber(props.wallShadowBlur, 0, 24, 6));
+const wallShadowAngle = computed(() => fluidNumber(props.wallShadowAngle, 0, 360, 180));
+const wallShadowColorRgb = computed<FluidRgb | null>(() => {
+  const custom = props.wallShadowColor?.trim();
+  if (!custom) return null;
+  const parsed = readColor(custom);
+  return parsed ? [parsed[0], parsed[1], parsed[2]] : null;
+});
+const underlayColorRgb = computed<FluidRgb | null>(() => {
+  const custom = props.underlayColor?.trim();
+  if (!custom) return [1, 1, 1];
+  const parsed = readColor(custom);
+  return parsed ? [parsed[0], parsed[1], parsed[2]] : [1, 1, 1];
+});
+const underlayOpacity = computed(() => fluidNumber(props.underlayOpacity, 0, 1, 0.18));
+const mote = computed(() => fluidNumber(props.mote, 0, 3, 1));
+const moteColorRgb = computed(() => {
+  void probeVersion.value;
+  const value = props.moteColor?.trim();
+  if (!value) return null;
+  const parsed = readColor(value);
+  return parsed ? ([parsed[0], parsed[1], parsed[2]] as FluidRgb) : null;
+});
+const moteBlend = computed<VineMoteBlend>(() => {
+  const value = props.moteBlend?.trim();
+  if (value && value !== "auto") return value as VineMoteBlend;
+  return scheme.value === "light" ? "normal" : "additive";
+});
+const underlayBlend = computed<VineUnderlayBlend>(() => {
+  const value = props.underlayBlend?.trim();
+  return value === "normal" || value === "screen" || value === "multiply" || value === "subtractive" ? value : "additive";
+});
 const scheme = ref<FluidScheme>("light");
+const probeVersion = ref(0);
 const textureTone = computed(() => fluidTextureTone(props.textureTone, scheme.value));
+const textureInk = computed(() => {
+  const custom = props.textureColor?.trim();
+  if (custom) return custom;
+  if (textureTone.value === "light") return "#ffffff";
+  if (textureTone.value === "ink") return "#1d1b20";
+  return "var(--md-sys-color-on-surface, #1d1b20)";
+});
+const VINE_PARTS = ["fill", "tint", "halo", "edge", "fine"] as const;
+const VINE_BOTANICAL_PARTS = ["leaf", "flower", "bud", "flowerStem"] as const;
+const VINE_PALETTE_KEYS = [...VINE_PARTS, ...VINE_BOTANICAL_PARTS, "base"] as const;
+
+function resolveVinePalette(source?: Partial<Record<VinePart | VineBotanicalPart | "base", string>>): VinePalette {
+  void probeVersion.value;
+  const out: VinePalette = {};
+  if (!source) return out;
+  for (const part of VINE_PALETTE_KEYS) {
+    const raw = source[part]?.trim();
+    if (!raw) continue;
+    const rgba = readColor(raw);
+    if (rgba) out[part] = { color: [rgba[0], rgba[1], rgba[2]], alpha: rgba[3] };
+  }
+  return out;
+}
+
+const vinePalette = computed<VinePalette>(() => resolveVinePalette(props.vineColors));
+const vinePopoutPalette = computed<VinePalette>(() => resolveVinePalette(props.vinePopoutColors));
+const textureEmphasis = computed(
+  () =>
+    Boolean(props.textureColor?.trim()) ||
+    props.textureTone !== "auto" ||
+    (overlay.value === "vine" &&
+      (paletteHasColors(props.vineColors) ||
+        paletteHasColors(props.vinePopoutColors))),
+);
+/** A coloured vine has to read as that colour, not as a tint over the wall. */
+const vineOpacity = computed(() =>
+  textureEmphasis.value ? Math.max(textureOpacity.value, 0.9) : textureOpacity.value,
+);
 
 const wall = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const vineCanvas = ref<HTMLCanvasElement | null>(null);
+const vinePopOutsideCanvas = ref<HTMLCanvasElement | null>(null);
 const vineGhost = ref<HTMLCanvasElement | null>(null);
 const litGrid = ref<HTMLElement | null>(null);
 const litTexture = ref<HTMLElement | null>(null);
+const texturePressLayers = ref<HTMLElement[]>([]);
+const vineHalo = ref<HTMLElement | null>(null);
 const litRibbons = ref<SVGElement | null>(null);
+const ribbonPressLayers = ref<SVGElement[]>([]);
 const ribbonSvg = ref<SVGElement | null>(null);
+
+function setRibbonPressLayer(element: unknown, index: number): void {
+  if (element instanceof SVGElement) ribbonPressLayers.value[index] = element;
+}
 /** Set once a frame has been drawn, so the card is never shown empty. */
 const painted = ref(false);
 
@@ -430,9 +628,13 @@ const vinePopoutSwitch = ref(readVinePopout());
 /** Edges a 出屏 shoot may leave by, as `1 << edge` bits; 0 keeps the vines inside. */
 const vinePopEdges = ref(0);
 const vineBleed = ref({ left: 0, top: 0, right: 0, bottom: 0 });
-const vinePopout = computed(() =>
-  props.popout === "auto" ? vinePopoutSwitch.value : props.popout !== false,
-);
+const vinePopout = computed(() => {
+  if (props.popout !== "auto") return props.popout !== false;
+  // Configuring the pop-out palette is an explicit request for the split view,
+  // even if the stored playground toggle is still off.
+  if (props.vinePopoutBlend !== undefined || paletteHasColors(props.vinePopoutColors)) return true;
+  return vinePopoutSwitch.value;
+});
 const vineInward = computed(() => (props.inward === "auto" ? vinePopout.value : props.inward !== false));
 /** The safe zone the vines were planned around, in plan px about the centre (y up). */
 let vinePlannedKeep: VineRect[] = [];
@@ -446,6 +648,80 @@ const vineCanvasStyle = computed(() => {
     height: `calc(100% + ${top + bottom}px)`,
   };
 });
+
+const vinePopPortal = ref<{
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  wallWidth: number;
+  wallHeight: number;
+  radius: number;
+  bleedLeft: number;
+  bleedTop: number;
+} | null>(null);
+
+/**
+ * The pop-out shoots are painted on a body-level canvas so their blend mode can
+ * see the page behind it. Its position is kept in document coordinates and
+ * refreshed on scroll while the wall is sticky in the playground.
+ */
+function updateVinePopPortal(): void {
+  const element = wall.value;
+  if (!element) {
+    vinePopPortal.value = null;
+    return;
+  }
+  const rect = element.getBoundingClientRect();
+  const { left, top, right, bottom } = vineBleed.value;
+  vinePopPortal.value = {
+    left: rect.left + window.scrollX - left,
+    top: rect.top + window.scrollY - top,
+    width: rect.width + left + right,
+    height: rect.height + top + bottom,
+    wallWidth: rect.width,
+    wallHeight: rect.height,
+    radius: Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0,
+    bleedLeft: left,
+    bleedTop: top,
+  };
+}
+
+function roundedRectPath(x: number, y: number, width: number, height: number, radius: number): string {
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+  return [
+    `M${x + r} ${y}`,
+    `H${x + width - r}`,
+    `A${r} ${r} 0 0 1 ${x + width} ${y + r}`,
+    `V${y + height - r}`,
+    `A${r} ${r} 0 0 1 ${x + width - r} ${y + height}`,
+    `H${x + r}`,
+    `A${r} ${r} 0 0 1 ${x} ${y + height - r}`,
+    `V${y + r}`,
+    `A${r} ${r} 0 0 1 ${x + r} ${y}`,
+    "Z",
+  ].join(" ");
+}
+
+/** Keep the body-level pop-out canvas aligned while a sticky preview scrolls. */
+function onPageScroll(): void {
+  if (overlay.value === "vine") updateVinePopPortal();
+}
+
+/** The pop-out canvas sits above the page, so its hole matches the wall exactly. */
+const vinePopOutsideCanvasStyle = computed(() => {
+  const portal = vinePopPortal.value;
+  if (!portal) return undefined;
+  return {
+    left: `${portal.left}px`,
+    top: `${portal.top}px`,
+    width: `${portal.width}px`,
+    height: `${portal.height}px`,
+    mixBlendMode: vinePopoutBlendMode.value,
+  };
+});
+
+
 
 const ribbons = computed<FluidRibbon[]>(() =>
   overlay.value === "lace" && ribbonSize.value.width > 0
@@ -470,6 +746,7 @@ function measureVinePopEdges(): number {
   let edges = VINE_POP_ALL;
   if (rect.left - reach < 0) edges &= ~0b0001;
   if (rect.right + reach > viewport) edges &= ~0b0100;
+  updateVinePopPortal();
   return edges;
 }
 
@@ -593,6 +870,7 @@ function syncVineKeep(): boolean {
   if (!vineScene) return false;
   const keep = measureVineKeep();
   vineScene.setKeep(keep);
+  vinePopOutsideScene?.setKeep(keep);
   const { width, height } = ribbonSize.value;
   if (!(width > 0 && height > 0)) return false;
   const planned = scaleVineKeep(keep, vineScene.planWidth / width, vineScene.planHeight / height);
@@ -811,9 +1089,12 @@ interface VinePlanSize {
 }
 
 function rebuildVineScene(plan?: VinePlanSize): void {
+  if (!gpuEnabled) return;
   cancelVineReplan();
   vineScene?.dispose();
   vineScene = null;
+  vinePopOutsideScene?.dispose();
+  vinePopOutsideScene = null;
   vinePopEdges.value = measureVinePopEdges();
   vineBleed.value = { left: 0, top: 0, right: 0, bottom: 0 };
   const { width, height } = ribbonSize.value;
@@ -825,26 +1106,70 @@ function rebuildVineScene(plan?: VinePlanSize): void {
   const keep = measureVineKeep();
   vinePlannedKeep = plan?.keep ? [...plan.keep] : scaleVineKeep(keep, planWidth / width, planHeight / height);
   vineKeepDrifted = false;
+  const sharedOptions = {
+    popout: vinePopEdges.value,
+    inward: vineInward.value,
+    strongFill: textureEmphasis.value,
+    // The texture colour's alpha belongs to the flat overlay; the vine has its own per-part alpha.
+    colorAlpha: 1,
+    colors: vinePalette.value,
+    rippleStrength: rippleStrength.value,
+    rippleSpeed: rippleSpeed.value,
+    rippleSize: rippleSize.value,
+    rippleRings: rippleRings.value,
+    rippleSway: rippleSway.value,
+    glow: vineGlow.value,
+    shadowStrength: shadowStrength.value,
+    shadowSize: shadowSize.value,
+    shadowColor: shadowColorRgb.value ?? undefined,
+    shadowAngle: shadowAngle.value,
+    shadowBlur: shadowBlur.value,
+    wallShadowStrength: wallShadowStrength.value,
+    wallShadowSize: wallShadowSize.value,
+    wallShadowColor: wallShadowColorRgb.value ?? undefined,
+    wallShadowAngle: wallShadowAngle.value,
+    wallShadowBlur: wallShadowBlur.value,
+    underlayColor: underlayColorRgb.value ?? undefined,
+    underlayOpacity: underlayOpacity.value,
+    underlayBlend: underlayBlend.value,
+    mote: mote.value,
+    moteColor: moteColorRgb.value ?? undefined,
+    moteBlend: moteBlend.value,
+    lightWall: scheme.value === "light",
+    keep: vinePlannedKeep,
+    radius: wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0,
+  } as const;
   vineScene = createVine3d(
     vineCanvas.value,
     planWidth,
     planHeight,
     vineSeed.value,
     textureDensity.value,
-    readTokens(scheme.value).onSurface,
-    textureOpacity.value,
-    {
-      popout: vinePopEdges.value,
-      inward: vineInward.value,
-      keep: vinePlannedKeep,
-      radius: wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0,
-    },
+    textureInkRgb(),
+    vineOpacity.value,
+    { ...sharedOptions, paint: "all", popCut: vinePopSplit.value },
   );
+
+  if (vinePopSplit.value && vinePopOutsideCanvas.value) {
+    vinePopOutsideScene = createVine3d(
+      vinePopOutsideCanvas.value,
+      planWidth,
+      planHeight,
+      vineSeed.value,
+      textureDensity.value,
+      textureInkRgb(),
+      vineOpacity.value,
+      { ...sharedOptions, paint: "pop", colors: vinePopoutPalette.value },
+    );
+  }
   if (planWidth !== width || planHeight !== height || plan?.keep) {
     vineScene.resize(width, height);
     vineScene.setKeep(keep);
+    vinePopOutsideScene?.resize(width, height);
+    vinePopOutsideScene?.setKeep(keep);
   }
   vineBleed.value = { ...vineScene.bleed };
+  updateVinePopPortal();
   if (vineStretched()) scheduleVineReplan();
 }
 
@@ -918,8 +1243,17 @@ uniform float u_mote, u_curtain, u_curtain_amt, u_curtain_gain;
 // centre: x, y, radius, phase. The silk ripples there as if it were water.
 uniform vec4 u_ripples[${VINE_MAX_RIPPLES}];
 uniform int u_ripple_count;
+uniform float u_ripple_strength;
+uniform float u_ripple_speed;
+uniform float u_ripple_size;
 // A dark wall shows the same highlight far brighter, so it gets less of it.
 uniform float u_ripple_light;
+// Clicks: xy is the point in uv, z the age in seconds, w the strength. Each
+// one grows a ring of soft light and a quick central bloom.
+uniform int u_press_count;
+uniform vec4 u_press[6];
+uniform float u_press_reach[6];
+uniform float u_press_size, u_press_softness, u_press_gain;
 
 out vec4 fragColor;
 
@@ -1030,6 +1364,24 @@ vec2 petalSwirl(vec2 screen, float strength) {
 void main() {
   float aspect = u_resolution.x / u_resolution.y;
   vec2 uv = gl_FragCoord.xy / u_resolution;
+  float pressGlow = 0.0;
+  float pressRing = 0.0;
+  float pressWash = 0.0;
+  for (int i = 0; i < 6; i++) {
+    if (i >= u_press_count) break;
+    vec4 press = u_press[i];
+    vec2 from = (uv - press.xy) * vec2(aspect, 1.0);
+    float dist = length(from);
+    float t = clamp(press.z / 2.6, 0.0, 1.0);
+    float grow = (1.0 - pow(1.0 - t, 2.0)) * 1.6;
+    float fade = pow(1.0 - t, 1.25);
+    float radius = u_press_reach[i] * u_press_size * (0.03 + 0.97 * grow);
+    float washRadius = radius * 1.02;
+    float width = u_press_softness * (0.5 + 0.5 * grow);
+    pressGlow += exp(-dist * dist * 30.0) * pow(1.0 - t, 2.0) * press.w;
+    pressRing += exp(-pow((dist - radius) / max(width, 0.005), 2.0)) * fade * press.w;
+    pressWash += (1.0 - smoothstep(washRadius * 0.35, washRadius, dist)) * fade * fade * press.w;
+  }
   vec2 css = (uv - 0.5) * u_grain_resolution;
   // Rings running out from each portal: the field is pushed along them, and
   // their slope lit from the upper left like a water surface.
@@ -1041,15 +1393,15 @@ void main() {
     vec4 ripple = u_ripples[i];
     vec2 from = css - ripple.xy;
     float dist = length(from);
-    float x = dist / ripple.z;
+    float x = dist / max(ripple.z * u_ripple_size, 0.001);
     if (x >= 1.0) continue;
     vec2 dir = from / max(dist, 0.001);
     float env = (1.0 - x) * (1.0 - x) * smoothstep(0.0, 0.2, x);
-    float phase = 6.2831853 * (x * ${VINE_RIPPLE_RINGS.toFixed(2)} - u_time * ${VINE_RIPPLE_SPEED.toFixed(2)}) + ripple.w;
-    css += dir * sin(phase) * env * ${WALL_RIPPLE_SHIFT.toFixed(1)};
-    rippleSlope += cos(phase) * env * dot(dir, vec2(-0.55, 0.83));
-    rippleWell += 1.0 - smoothstep(0.0, 0.3, x);
-    rippleCrest += pow(0.5 + 0.5 * cos(phase), 3.0) * env;
+    float phase = 6.2831853 * (x * ${VINE_RIPPLE_RINGS.toFixed(2)} - u_time * u_ripple_speed) + ripple.w;
+    css += dir * sin(phase) * env * ${WALL_RIPPLE_SHIFT.toFixed(1)} * u_ripple_strength;
+    rippleSlope += cos(phase) * env * dot(dir, vec2(-0.55, 0.83)) * u_ripple_strength;
+    rippleWell += (1.0 - smoothstep(0.0, 0.3, x)) * u_ripple_strength;
+    rippleCrest += pow(0.5 + 0.5 * cos(phase), 3.0) * env * u_ripple_strength;
   }
   vec2 field = css / u_span + u_centre;
   vec2 suv = field * u_scale * u_stretch + u_offset;
@@ -1145,6 +1497,9 @@ void main() {
   col += u_core * u_ripple_light * (max(rippleSlope, 0.0) * 0.1 + rippleCrest * 0.035);
   col *= 1.0 - max(-rippleSlope, 0.0) * 0.05 - min(rippleWell, 1.0) * 0.035;
 
+  col += pressGlow * 0.38 * u_core * u_press_gain;
+  col += (pressRing * 0.5 + pressWash * 0.14) * u_halo * u_press_gain;
+
   col = mix(col * (1.0 - u_vignette), col, vig);
 
   fragColor = vec4(col, 1.0);
@@ -1190,7 +1545,16 @@ const UNIFORMS = [
   "u_curtain_gain",
   "u_ripples",
   "u_ripple_count",
+  "u_ripple_strength",
+  "u_ripple_speed",
+  "u_ripple_size",
   "u_ripple_light",
+  "u_press_count",
+  "u_press",
+  "u_press_reach",
+  "u_press_size",
+  "u_press_softness",
+  "u_press_gain",
 ] as const;
 
 type UniformName = (typeof UNIFORMS)[number];
@@ -1215,8 +1579,11 @@ const FRAME_INTERVAL = 1000 / 30;
 const LIGHT_POSITIONS = { start: 0.2, center: 0.5, end: 0.82 } as const;
 
 let context: WebGL2RenderingContext | null = null;
+/** The detector runs once; until it says yes, no WebGL work is started. */
+let gpuEnabled = false;
 let program: WebGLProgram | null = null;
 let vineScene: Vine3dController | null = null;
+let vinePopOutsideScene: Vine3dController | null = null;
 let locations = new Map<UniformName, WebGLUniformLocation | null>();
 let palette: FluidPalette = fluidPalette(FLUID_FALLBACK_TOKENS.light, "light");
 let frame = 0;
@@ -1226,6 +1593,13 @@ let elapsed = 0; /* seconds */
 const pointer = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
 /** The glow reads this raw position: easing it made the light trail the cursor. */
 const cursor = { x: 0.5, y: 0.5 };
+/** Clicks leave expanding rings of soft light on the wall. */
+const PRESS_MAX = 6;
+const PRESS_LIFE = 2.6;
+const PRESS_SIZE = 1.15;
+const presses: { x: number; y: number; at: number; strength: number; reach: number }[] = [];
+const pressData = new Float32Array(PRESS_MAX * 4);
+const pressReachData = new Float32Array(PRESS_MAX);
 /** The pointer light is eased in and out, so the wall never snaps. */
 let glow = 0;
 let glowTarget = 0;
@@ -1234,6 +1608,8 @@ let sample: CanvasRenderingContext2D | null = null;
 let paintedFrame = false;
 let reduced = false;
 let onScreen = false;
+/** Cleared until the wall has a measurable box, so a late layout never ends up blank. */
+let sized = false;
 let refreshFrame = 0;
 let themeObserver: MutationObserver | null = null;
 let resizeObserver: ResizeObserver | null = null;
@@ -1300,10 +1676,12 @@ function setFloat(name: UniformName, value: number): void {
   if (context && location) context.uniform1f(location, value);
 }
 
-/** Reads one token as a colour, through a hidden probe inside the wall. */
-function readToken(name: string): FluidRgb | null {
+/** Reads any CSS colour as RGBA, through a hidden probe inside the wall. */
+type ColorReadout = readonly [number, number, number, number];
+
+function readColor(input: string): ColorReadout | null {
   if (!probe || !sample) return null;
-  probe.style.color = `var(--md-sys-color-${name})`;
+  probe.style.color = input;
   const value = getComputedStyle(probe).color;
   if (!value || value === "rgba(0, 0, 0, 0)" || value === "transparent") return null;
   try {
@@ -1311,16 +1689,53 @@ function readToken(name: string): FluidRgb | null {
     sample.fillStyle = value;
     sample.fillRect(0, 0, 1, 1);
     const [r, g, b, a] = sample.getImageData(0, 0, 1, 1).data;
-    if (!a) return null;
-    return [r! / 255, g! / 255, b! / 255];
+    return [r! / 255, g! / 255, b! / 255, a! / 255];
   } catch {
     return null;
   }
 }
 
+/** Reads one token as a colour. */
+function readToken(name: string): FluidRgb | null {
+  const rgba = readColor(`var(--md-sys-color-${name})`);
+  return rgba ? [rgba[0], rgba[1], rgba[2]] : null;
+}
+
+/** Alpha of a CSS colour without touching the probe, for values painted as CSS. */
+function colourAlpha(input: string): number {
+  const value = input.trim();
+  const hex = /^#([0-9a-f]{8})$/i.exec(value);
+  if (hex) return Number.parseInt(hex[1]!.slice(6), 16) / 255;
+  const rgb = /^rgba?\(([^)]+)\)$/i.exec(value);
+  if (rgb) {
+    const parts = rgb[1]!.split(/[,/\s]+/).filter(Boolean);
+    if (parts.length >= 4) {
+      const alpha = Number.parseFloat(parts[3]!);
+      if (Number.isFinite(alpha)) return Math.min(1, Math.max(0, alpha));
+    }
+  }
+  return 1;
+}
+
 function currentScheme(): FluidScheme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
+
+/** The overlay colour as the vine renderer needs it: concrete RGB. */
+function textureInkRgb(): FluidRgb {
+  const custom = props.textureColor?.trim();
+  if (custom) {
+    const rgba = readColor(custom);
+    return rgba ? [rgba[0], rgba[1], rgba[2]] : readTokens(scheme.value).onSurface;
+  }
+  if (textureTone.value === "light") return [1, 1, 1];
+  if (textureTone.value === "ink") return [0x1d / 255, 0x1b / 255, 0x20 / 255];
+  return readTokens(scheme.value).onSurface;
+}
+
+/** Alpha carried by `texture-color`, so the picker can dim the whole overlay. */
+const textureInkAlpha = computed(() => colourAlpha(props.textureColor?.trim() ?? ""));
+const texturePaintAlpha = computed(() => textureAlpha.value * textureInkAlpha.value);
 
 function readTokens(scheme: FluidScheme): FluidTokens {
   const fallback = FLUID_FALLBACK_TOKENS[scheme];
@@ -1376,7 +1791,12 @@ function refresh(): void {
   scheme.value = currentScheme();
   const tokens = readTokens(scheme.value);
   palette = fluidPalette(tokens, scheme.value, spec.value.tone, spec.value.accent);
-  vineScene?.setColor(tokens.onSurface);
+  vineScene?.setColor(textureInkRgb(), textureEmphasis.value, 1);
+  vineScene?.setColors(vinePalette.value, textureEmphasis.value);
+  vineScene?.setOpacity(vineOpacity.value);
+  vinePopOutsideScene?.setColor(textureInkRgb(), textureEmphasis.value, 1);
+  vinePopOutsideScene?.setColors(vinePopoutPalette.value, textureEmphasis.value);
+  vinePopOutsideScene?.setOpacity(vineOpacity.value);
   applyPalette();
   if (!frame) draw();
 }
@@ -1399,6 +1819,7 @@ function resize(): boolean {
     element.width = size.width;
     element.height = size.height;
   }
+  sized = true;
   context.viewport(0, 0, size.width, size.height);
   const resolution = locations.get("u_resolution");
   const grain = locations.get("u_grain_resolution");
@@ -1419,6 +1840,8 @@ function resize(): boolean {
     else cancelLaceReplan();
     if (vineScene) {
       vineScene.resize(rect.width, rect.height);
+      vinePopOutsideScene?.resize(rect.width, rect.height);
+      updateVinePopPortal();
       vineKeepDrifted = syncVineKeep();
       if (vineNeedsReplan()) scheduleVineReplan();
       else cancelVineReplan();
@@ -1450,8 +1873,78 @@ function uploadRipples(): void {
   if (total) context.uniform1i(total, count);
 }
 
+function updateTexturePressGlow(): void {
+  const layers = texturePressLayers.value;
+  const height = wall.value?.clientHeight ?? 0;
+  for (let index = 0; index < layers.length; index += 1) {
+    const layer = layers[index];
+    if (!layer) continue;
+    const press = presses[index];
+    if (!press) {
+      layer.style.setProperty("--_press-alpha", "0");
+      continue;
+    }
+    const t = Math.min(Math.max((elapsed - press.at) / PRESS_LIFE, 0), 1);
+    const grow = (1 - Math.pow(1 - t, 2)) * 1.6;
+    const reach = press.reach * PRESS_SIZE * (0.03 + 0.97 * grow);
+    const alpha = Math.pow(1 - t, 1.25) * press.strength;
+    layer.style.setProperty("--_press-x", `${(press.x * 100).toFixed(2)}%`);
+    layer.style.setProperty("--_press-y", `${((1 - press.y) * 100).toFixed(2)}%`);
+    layer.style.setProperty("--_press-radius", `${(reach * height).toFixed(1)}px`);
+    layer.style.setProperty("--_press-alpha", String(alpha));
+  }
+  const ribbonLayers = ribbonPressLayers.value;
+  for (let index = 0; index < ribbonLayers.length; index += 1) {
+    const layer = ribbonLayers[index];
+    if (!layer) continue;
+    const item = presses[index];
+    if (!item) {
+      layer.style.setProperty("--_ribbon-press-alpha", "0");
+      continue;
+    }
+    const t = Math.min(Math.max((elapsed - item.at) / PRESS_LIFE, 0), 1);
+    const grow = (1 - Math.pow(1 - t, 2)) * 1.6;
+    const reach = item.reach * PRESS_SIZE * (0.03 + 0.97 * grow);
+    const alpha = Math.pow(1 - t, 1.25) * item.strength;
+    layer.style.setProperty("--_ribbon-press-x", `${(item.x * 100).toFixed(2)}%`);
+    layer.style.setProperty("--_ribbon-press-y", `${((1 - item.y) * 100).toFixed(2)}%`);
+    layer.style.setProperty("--_ribbon-press-radius", `${(reach * height).toFixed(1)}px`);
+    layer.style.setProperty("--_ribbon-press-alpha", String(alpha * 0.8));
+  }
+}
+
+function updateVinePresses(): void {
+  const list = presses.map((press) => ({
+    x: press.x,
+    y: press.y,
+    t: Math.min(Math.max((elapsed - press.at) / PRESS_LIFE, 0), 1),
+    reach: press.reach,
+  }));
+  vineScene?.setPresses(list);
+  vinePopOutsideScene?.setPresses(list);
+}
+
+function uploadPresses(): void {
+  if (!context) return;
+  for (let index = presses.length - 1; index >= 0; index -= 1) {
+    if (elapsed - presses[index]!.at >= PRESS_LIFE) presses.splice(index, 1);
+  }
+  const count = Math.min(presses.length, PRESS_MAX);
+  for (let index = 0; index < count; index += 1) {
+    const press = presses[index]!;
+    pressData.set([press.x, press.y, elapsed - press.at, press.strength], index * 4);
+    pressReachData[index] = press.reach;
+  }
+  const points = locations.get("u_press");
+  if (points && count) context.uniform4fv(points, pressData);
+  const reaches = locations.get("u_press_reach");
+  if (reaches && count) context.uniform1fv(reaches, pressReachData, 0, count);
+  const total = locations.get("u_press_count");
+  if (total) context.uniform1i(total, count);
+}
+
 function draw(): void {
-  if (!context || !program) return;
+  if (!context || !program || !sized) return;
   pointer.x += (pointer.targetX - pointer.x) * 0.14;
   pointer.y += (pointer.targetY - pointer.y) * 0.14;
 
@@ -1484,7 +1977,13 @@ function draw(): void {
   setFloat("u_petal", spec.value.petal);
   setFloat("u_curtain", fluidCurtain(elapsed, spec.value.speed));
   setFloat("u_curtain_gain", scheme.value === "dark" ? 0.62 : 0.24);
+  setFloat("u_ripple_strength", rippleStrength.value);
+  setFloat("u_ripple_speed", rippleSpeed.value);
+  setFloat("u_ripple_size", rippleSize.value);
   setFloat("u_ripple_light", scheme.value === "dark" ? 0.45 : 1);
+  setFloat("u_press_size", PRESS_SIZE);
+  setFloat("u_press_softness", 0.085);
+  setFloat("u_press_gain", scheme.value === "dark" ? 0.55 : 0.18);
   setFloat("u_petal_light", palette.petalLight);
   setFloat("u_petal_ink", palette.petalInk);
 
@@ -1495,8 +1994,12 @@ function draw(): void {
   setFloat("u_glow", glow * palette.glow * spec.value.glow);
 
   uploadRipples();
+  uploadPresses();
+  updateTexturePressGlow();
+  updateVinePresses();
   context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
   vineScene?.render(elapsed);
+  vinePopOutsideScene?.render(elapsed);
   if (!paintedFrame) {
     paintedFrame = true;
     painted.value = true;
@@ -1513,7 +2016,7 @@ function tick(now: number): void {
 }
 
 function start(): void {
-  if (frame || reduced || !context || !onScreen || document.hidden) return;
+  if (frame || reduced || !context || !onScreen || document.hidden || !sized) return;
   drawnAt = 0;
   frame = requestAnimationFrame(tick);
 }
@@ -1549,6 +2052,7 @@ function onPointerMove(event: PointerEvent): void {
     layer.style.setProperty("--_lit-alpha", alpha);
   }
   vineScene?.setPointer(x, y, true, !reduced);
+  vinePopOutsideScene?.setPointer(x, y, true, !reduced);
   if (litRibbons.value) {
     litRibbons.value.style.setProperty("--_ribbon-glow-x", `${(x * 100).toFixed(2)}%`);
     litRibbons.value.style.setProperty("--_ribbon-glow-y", `${(y * 100).toFixed(2)}%`);
@@ -1558,18 +2062,49 @@ function onPointerMove(event: PointerEvent): void {
     );
     litRibbons.value.style.setProperty("--_ribbon-lit-alpha", String(Number(alpha) * 0.62));
   }
+  if (vineHalo.value) {
+    vineHalo.value.style.setProperty("--_vine-halo-x", `${(x * 100).toFixed(2)}%`);
+    vineHalo.value.style.setProperty("--_vine-halo-y", `${(y * 100).toFixed(2)}%`);
+    vineHalo.value.style.setProperty("--_vine-halo-radius", `${(glowRadius * 1.2).toFixed(1)}px`);
+    vineHalo.value.style.setProperty("--_vine-halo-alpha", String(Math.min(1, spec.value.glow) * 0.38));
+  }
   glowTarget = 1;
   // With the loop stopped (reduced motion, or a still frame) the light still
   // answers the pointer, so the wall is not dead under the cursor.
   if (!frame) requestAnimationFrame(draw);
 }
 
+function onPointerDown(event: PointerEvent): void {
+  if (reduced) return;
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  const element = wall.value;
+  if (!element) return;
+  const target = event.target as Element | null;
+  if (target?.closest(".akari-fluid-wall__body")) return;
+  const rect = element.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  const x = (event.clientX - rect.left) / rect.width;
+  const y = 1 - (event.clientY - rect.top) / rect.height;
+  const aspect = rect.width / rect.height;
+  const reach = Math.max(
+    Math.hypot(x * aspect, y),
+    Math.hypot((x - 1) * aspect, y),
+    Math.hypot(x * aspect, y - 1),
+    Math.hypot((x - 1) * aspect, y - 1),
+  );
+  presses.push({ x, y, at: elapsed, strength: 1, reach });
+  if (presses.length > PRESS_MAX) presses.splice(0, presses.length - PRESS_MAX);
+  if (!frame) requestAnimationFrame(draw);
+}
+
 function onPointerLeave(): void {
   glowTarget = 0;
   vineScene?.setPointer(pointer.targetX, pointer.targetY, false);
+  vinePopOutsideScene?.setPointer(pointer.targetX, pointer.targetY, false);
   litGrid.value?.style.setProperty("--_lit-alpha", "0");
   litTexture.value?.style.setProperty("--_lit-alpha", "0");
   litRibbons.value?.style.setProperty("--_ribbon-lit-alpha", "0");
+  vineHalo.value?.style.setProperty("--_vine-halo-alpha", "0");
 }
 
 function onVisibilityChange(): void {
@@ -1581,6 +2116,8 @@ function onContextLost(event: Event): void {
   event.preventDefault();
   stop();
   program = null;
+  paintedFrame = false;
+  painted.value = false;
 }
 
 function onContextRestored(): void {
@@ -1602,10 +2139,12 @@ function onMotionChange(): void {
   }
 }
 
-function bootstrap(): void {
+async function bootstrap(): Promise<void> {
   const element = canvas.value;
   const host = wall.value;
   if (!element || !host || context) return;
+  if (!(await hasAkariGpu())) return;
+  gpuEnabled = true;
 
   context = element.getContext("webgl2", {
     alpha: false,
@@ -1615,7 +2154,10 @@ function bootstrap(): void {
     premultipliedAlpha: false,
     powerPreference: "low-power",
   });
-  if (!context) return;
+  if (!context) {
+    gpuEnabled = false;
+    return;
+  }
 
   // A probe the shader never sees: computed style resolves `var()` for us, and
   // a one-pixel canvas turns whatever colour space the token uses into sRGB.
@@ -1625,18 +2167,21 @@ function bootstrap(): void {
     "position:absolute;inline-size:0;block-size:0;overflow:hidden;visibility:hidden;pointer-events:none";
   host.appendChild(probe);
   sample = document.createElement("canvas").getContext("2d", { willReadFrequently: false });
+  probeVersion.value += 1;
 
   if (!createProgram()) {
     context = null;
     return;
   }
-  if (!resize()) return;
-  refresh();
-  draw();
+  if (resize()) {
+    refresh();
+    draw();
+  }
 
   element.addEventListener("webglcontextlost", onContextLost);
   element.addEventListener("webglcontextrestored", onContextRestored);
   host.addEventListener("pointermove", onPointerMove, { passive: true });
+  host.addEventListener("pointerdown", onPointerDown, { passive: true });
   host.addEventListener("pointerleave", onPointerLeave, { passive: true });
 
   // The token values live on whichever element carries them, so both the
@@ -1656,9 +2201,12 @@ function bootstrap(): void {
   window.addEventListener("akari-ready", scheduleRefresh);
 
   resizeObserver = new ResizeObserver(() => {
-    if (resize()) draw();
+    if (!resize()) return;
+    if (!paintedFrame) refresh();
+    draw();
   });
   resizeObserver.observe(element);
+  resizeObserver.observe(host);
 
   intersectionObserver = new IntersectionObserver((entries) => {
     onScreen = entries.some((entry) => entry.isIntersecting);
@@ -1705,8 +2253,84 @@ watch([vineSeed, () => props.safeZone], () => {
   if (overlay.value === "vine") void nextTick(() => rebuildVineScene());
 });
 
+watch([textureInk, textureInkAlpha, textureEmphasis, vineOpacity], () => {
+  vineScene?.setColor(textureInkRgb(), textureEmphasis.value, 1);
+  vineScene?.setOpacity(vineOpacity.value);
+  vinePopOutsideScene?.setColor(textureInkRgb(), textureEmphasis.value, 1);
+  vinePopOutsideScene?.setOpacity(vineOpacity.value);
+  if (!frame) draw();
+});
+
+watch(
+  [vinePalette, vinePopoutPalette],
+  () => {
+    vineScene?.setColors(vinePalette.value, textureEmphasis.value);
+    vineScene?.setOpacity(vineOpacity.value);
+    vinePopOutsideScene?.setColors(vinePopoutPalette.value, textureEmphasis.value);
+    vinePopOutsideScene?.setOpacity(vineOpacity.value);
+    if (!frame) draw();
+  },
+  { deep: true },
+);
+
 // Turning 出屏 on or off only adds or drops shoots; the wall stays as planned.
+watch([() => props.vineBlend, () => props.vinePopoutBlend], () => {
+  if (overlay.value === "vine") void nextTick(() => rebuildVineScene(currentVinePlan()));
+});
+
+watch([rippleStrength, rippleSpeed, rippleSize, rippleRings, rippleSway], () => {
+  for (const scene of [vineScene, vinePopOutsideScene]) {
+    scene?.setRipple(rippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
+  }
+  if (!frame) draw();
+});
+
+watch(vineGlow, () => {
+  for (const scene of [vineScene, vinePopOutsideScene]) scene?.setGlow(vineGlow.value);
+  if (!frame) draw();
+});
+
+watch([shadowStrength, shadowSize], () => {
+  vineScene?.setShadow(shadowStrength.value, shadowSize.value);
+  vinePopOutsideScene?.setShadow(shadowStrength.value, shadowSize.value);
+  if (!frame) draw();
+});
+watch([wallShadowStrength, wallShadowSize], () => {
+  vineScene?.setWallShadow(wallShadowStrength.value, wallShadowSize.value);
+  if (!frame) draw();
+});
+
+watch(mote, () => {
+  if (overlay.value === "vine") void nextTick(() => rebuildVineScene(currentVinePlan()));
+});
+watch([moteColorRgb, moteBlend], () => {
+  for (const scene of [vineScene, vinePopOutsideScene]) {
+    scene?.setMoteColor(moteColorRgb.value);
+    scene?.setMoteBlend(moteBlend.value);
+  }
+});
+watch([shadowColorRgb, shadowAngle, shadowBlur, underlayColorRgb, underlayOpacity, underlayBlend], () => {
+  for (const scene of [vineScene, vinePopOutsideScene]) {
+    scene?.setShadowColor(shadowColorRgb.value);
+    scene?.setShadowAngle(shadowAngle.value);
+    scene?.setShadowBlur(shadowBlur.value);
+    scene?.setUnderlay(underlayColorRgb.value, underlayOpacity.value);
+    scene?.setUnderlayBlend(underlayBlend.value);
+  }
+  if (!frame) draw();
+});
+watch([wallShadowColorRgb, wallShadowAngle, wallShadowBlur], () => {
+  vineScene?.setWallShadowColor(wallShadowColorRgb.value);
+  vineScene?.setWallShadowAngle(wallShadowAngle.value);
+  vineScene?.setWallShadowBlur(wallShadowBlur.value);
+  if (!frame) draw();
+});
+
 watch([vinePopout, vineInward], () => {
+  if (overlay.value === "vine") void nextTick(() => rebuildVineScene(currentVinePlan()));
+});
+
+watch(vinePopSplit, () => {
   if (overlay.value === "vine") void nextTick(() => rebuildVineScene(currentVinePlan()));
 });
 
@@ -1714,7 +2338,8 @@ onMounted(() => {
   window.addEventListener(VINE_SEED_EVENT, onVineSeedChange);
   window.addEventListener(VINE_POPOUT_EVENT, onVinePopoutChange);
   window.addEventListener("resize", checkVinePopEdges, { passive: true });
-  bootstrap();
+  window.addEventListener("scroll", onPageScroll, { passive: true });
+  void bootstrap();
 });
 
 onBeforeUnmount(() => {
@@ -1724,6 +2349,8 @@ onBeforeUnmount(() => {
   cancelFieldReplan();
   vineScene?.dispose();
   vineScene = null;
+  vinePopOutsideScene?.dispose();
+  vinePopOutsideScene = null;
   if (refreshFrame) cancelAnimationFrame(refreshFrame);
   themeObserver?.disconnect();
   resizeObserver?.disconnect();
@@ -1735,8 +2362,10 @@ onBeforeUnmount(() => {
   window.removeEventListener(VINE_SEED_EVENT, onVineSeedChange);
   window.removeEventListener(VINE_POPOUT_EVENT, onVinePopoutChange);
   window.removeEventListener("resize", checkVinePopEdges);
+  window.removeEventListener("scroll", onPageScroll);
   document.removeEventListener("visibilitychange", onVisibilityChange);
   wall.value?.removeEventListener("pointermove", onPointerMove);
+  wall.value?.removeEventListener("pointerdown", onPointerDown);
   wall.value?.removeEventListener("pointerleave", onPointerLeave);
   canvas.value?.removeEventListener("webglcontextlost", onContextLost);
   canvas.value?.removeEventListener("webglcontextrestored", onContextRestored);
@@ -1758,13 +2387,19 @@ onBeforeUnmount(() => {
   <div
     ref="wall"
     class="akari-fluid-wall"
-    :class="{ 'is-painted': painted, 'is-popout': vinePopEdges > 0 }"
-    :style="{ '--_wall-height': props.height }"
+    :class="{ 'is-painted': painted, 'is-popout': vinePopEdges > 0, 'is-vine-pop-split': vinePopSplit }"
+    :style="{ '--_wall-height': props.height, '--_vine-blend': vineBlendMode, '--_vine-pop-blend': vinePopoutBlendMode }"
     :data-placement="props.placement"
   >
     <div class="akari-fluid-wall__canvas" aria-hidden="true">
       <canvas ref="canvas"></canvas>
     </div>
+    <div
+      v-if="spec.texture === 'vine' && textureOpacity > 0"
+      ref="vineHalo"
+      class="akari-fluid-wall__vine-halo"
+      aria-hidden="true"
+    ></div>
     <canvas
       v-if="spec.texture === 'vine' && textureOpacity > 0"
       ref="vineCanvas"
@@ -1772,6 +2407,16 @@ onBeforeUnmount(() => {
       :style="vineCanvasStyle"
       aria-hidden="true"
     ></canvas>
+    <Teleport to="body">
+      <canvas
+        v-if="spec.texture === 'vine' && textureOpacity > 0"
+        v-show="vinePopSplit"
+        ref="vinePopOutsideCanvas"
+        class="akari-fluid-wall__vine-outside akari-fluid-wall__vine-outside--portal"
+        :style="vinePopOutsideCanvasStyle"
+        aria-hidden="true"
+      ></canvas>
+    </Teleport>
     <canvas
       v-if="spec.texture === 'vine' && textureOpacity > 0"
       ref="vineGhost"
@@ -1791,16 +2436,24 @@ onBeforeUnmount(() => {
     <div
       v-if="spec.texture !== 'none' && spec.texture !== 'lace' && spec.texture !== 'vine' && textureOpacity > 0"
       class="akari-fluid-wall__texture"
-      :class="`is-${textureTone}`"
+      :class="[`is-${textureTone}`, { 'has-tone': Boolean(props.textureColor?.trim()) || props.textureTone !== 'auto' }]"
       aria-hidden="true"
       :style="{
-        '--_texture-alpha': String(textureAlpha),
+        '--_texture-alpha': String(texturePaintAlpha),
+        '--_texture-ink': textureInk,
+        '--_texture-press-ink': 'color-mix(in srgb, var(--md-sys-color-primary, #6750a4) 62%, white)',
         '--_overlay': textureMask,
         '--_overlay-size': `${textureFrameWidth}px ${textureFrameHeight}px`,
       }"
     >
       <div class="akari-fluid-wall__texture-pattern"></div>
       <div ref="litTexture" class="akari-fluid-wall__texture-lit"></div>
+      <div
+        v-for="index in PRESS_MAX"
+        :key="`texture-press-${index}`"
+        ref="texturePressLayers"
+        class="akari-fluid-wall__texture-press"
+      ></div>
     </div>
     <svg
       v-if="ribbons.length > 0"
@@ -1860,6 +2513,40 @@ onBeforeUnmount(() => {
         <path
           v-for="side in [1, -1]"
           :key="`hover-scallop-${side}`"
+          class="akari-fluid-wall__ribbon-hover-scallop"
+          :d="ribbonScallopPath(ribbon, side as 1 | -1, 0, ribbonOccluders(ribbon))"
+        />
+      </g>
+    </svg>
+    <svg
+      v-for="index in ribbons.length > 0 ? PRESS_MAX : 0"
+      :key="`ribbon-press-${index}`"
+      :ref="(element) => setRibbonPressLayer(element, index - 1)"
+      class="akari-fluid-wall__ribbons-press"
+      :viewBox="`0 0 ${ribbonSize.width.toFixed(1)} ${ribbonSize.height.toFixed(1)}`"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      :style="{
+        '--_ribbon-hover-color':
+          scheme === 'dark'
+            ? 'var(--md-sys-color-on-surface, #e6e1e5)'
+            : 'var(--md-sys-color-on-surface, #1d1b20)',
+        '--_ribbon-hover-fill-alpha': scheme === 'dark' ? '0.18' : '0.12',
+        '--_ribbon-hover-stroke-alpha': scheme === 'dark' ? '0.42' : '0.28',
+      }"
+    >
+      <g v-for="(ribbon, ribbonIndex) in ribbons" :key="`ribbon-press-${index}-${ribbonIndex}`">
+        <path
+          class="akari-fluid-wall__ribbon-hover-fill"
+          :d="ribbonBandPath(ribbon, ribbonScallopAmplitude(ribbon))"
+        />
+        <path
+          class="akari-fluid-wall__ribbon-hover-lace"
+          :d="ribbonLacePath(ribbon, ribbonOccluders(ribbon))"
+        />
+        <path
+          v-for="side in [1, -1]"
+          :key="`press-scallop-${side}`"
           class="akari-fluid-wall__ribbon-hover-scallop"
           :d="ribbonScallopPath(ribbon, side as 1 | -1, 0, ribbonOccluders(ribbon))"
         />
@@ -1940,8 +2627,18 @@ html.dark .akari-fluid-wall {
   contain: none;
 }
 
+.akari-fluid-wall.is-vine-pop-split {
+  /* Let the pop-out layer blend against the page, not only the wall. */
+  isolation: auto;
+}
+
 .akari-fluid-wall.is-popout
-  > :not(.akari-fluid-wall__vine-canvas, .akari-fluid-wall__vine-ghost, .akari-fluid-wall__body) {
+  > :not(
+    .akari-fluid-wall__vine-canvas,
+    .akari-fluid-wall__vine-outside,
+    .akari-fluid-wall__vine-ghost,
+    .akari-fluid-wall__body
+  ) {
   clip-path: inset(0 round var(--_wall-radius));
 }
 
@@ -1957,7 +2654,24 @@ html.dark .akari-fluid-wall {
   opacity: 1;
 }
 
-.akari-fluid-wall__vine-canvas {
+.akari-fluid-wall__vine-canvas,
+.akari-fluid-wall__vine-ghost {
+  mix-blend-mode: var(--_vine-blend, normal);
+}
+
+.akari-fluid-wall__vine-outside {
+  mix-blend-mode: var(--_vine-pop-blend, normal);
+}
+
+.akari-fluid-wall__vine-outside--portal {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  pointer-events: none;
+}
+
+.akari-fluid-wall__vine-canvas,
+.akari-fluid-wall__vine-outside {
   position: absolute;
   inset: 0;
   display: block;
@@ -2060,7 +2774,8 @@ html.dark .akari-fluid-wall__grid {
 }
 
 .akari-fluid-wall__texture-pattern,
-.akari-fluid-wall__texture-lit {
+.akari-fluid-wall__texture-lit,
+.akari-fluid-wall__texture-press {
   position: absolute;
   inset: 0;
   -webkit-mask-image: var(--_overlay);
@@ -2074,7 +2789,7 @@ html.dark .akari-fluid-wall__grid {
 }
 
 .akari-fluid-wall__texture-pattern {
-  background-color: rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 1);
+  background-color: rgb(from var(--_texture-ink, var(--md-sys-color-on-surface, #1d1b20)) r g b / 1);
   opacity: calc(var(--_texture-alpha) * 0.105);
 }
 
@@ -2082,12 +2797,20 @@ html.dark .akari-fluid-wall__texture-pattern {
   opacity: calc(var(--_texture-alpha) * 0.145);
 }
 
+.akari-fluid-wall__texture.has-tone .akari-fluid-wall__texture-pattern {
+  opacity: calc(var(--_texture-alpha) * 0.42);
+}
+
+html.dark .akari-fluid-wall__texture.has-tone .akari-fluid-wall__texture-pattern {
+  opacity: calc(var(--_texture-alpha) * 0.55);
+}
+
 .akari-fluid-wall__texture.is-vine .akari-fluid-wall__texture-pattern {
   background: linear-gradient(
     135deg,
-    rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.72),
-    rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 1) 48%,
-    rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.68)
+    rgb(from var(--_texture-ink, var(--md-sys-color-on-surface, #1d1b20)) r g b / 0.72),
+    rgb(from var(--_texture-ink, var(--md-sys-color-on-surface, #1d1b20)) r g b / 1) 48%,
+    rgb(from var(--_texture-ink, var(--md-sys-color-on-surface, #1d1b20)) r g b / 0.68)
   );
 }
 
@@ -2101,12 +2824,33 @@ html.dark .akari-fluid-wall__texture-pattern {
   --_lit-alpha: 0;
   background: radial-gradient(
     circle var(--_glow-radius, 240px) at var(--_glow-x) var(--_glow-y),
-    rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.82) 0%,
-    rgb(from var(--md-sys-color-on-surface, #1d1b20) r g b / 0.45) 45%,
+    rgb(from var(--_texture-ink, var(--md-sys-color-on-surface, #1d1b20)) r g b / 0.82) 0%,
+    rgb(from var(--_texture-ink, var(--md-sys-color-on-surface, #1d1b20)) r g b / 0.45) 45%,
     transparent 72%
   );
   opacity: calc(var(--_lit-alpha) * var(--_texture-alpha) * 0.55);
   transition: opacity 460ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.akari-fluid-wall__texture-press {
+  --_press-x: 50%;
+  --_press-y: 50%;
+  --_press-radius: 0px;
+  --_press-alpha: 0;
+  background:
+    radial-gradient(
+      circle var(--_press-radius) at var(--_press-x) var(--_press-y),
+      transparent 52%,
+      rgb(from var(--_texture-press-ink, var(--md-sys-color-primary, #6750a4)) r g b / 0.9) 68%,
+      rgb(from var(--_texture-press-ink, var(--md-sys-color-primary, #6750a4)) r g b / 0.45) 74%,
+      transparent 84%
+    ),
+    radial-gradient(
+      circle var(--_press-radius) at var(--_press-x) var(--_press-y),
+      rgb(from var(--_texture-press-ink, var(--md-sys-color-primary, #6750a4)) r g b / 0.18) 0%,
+      transparent 70%
+    );
+  opacity: calc(var(--_press-alpha) * var(--_texture-alpha) * 0.55);
 }
 
 /*
@@ -2114,8 +2858,28 @@ html.dark .akari-fluid-wall__texture-pattern {
  * hosts a headline on the left must not wash out its right side, where the
  * flow is supposed to show.
  */
+.akari-fluid-wall__vine-halo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --_vine-halo-x: 50%;
+  --_vine-halo-y: 50%;
+  --_vine-halo-radius: 180px;
+  --_vine-halo-alpha: 0;
+  background: radial-gradient(
+    circle var(--_vine-halo-radius) at var(--_vine-halo-x) var(--_vine-halo-y),
+    color-mix(in srgb, var(--md-sys-color-primary, #6750a4) 48%, white) 0%,
+    color-mix(in srgb, var(--md-sys-color-primary, #6750a4) 22%, transparent) 42%,
+    transparent 72%
+  );
+  opacity: var(--_vine-halo-alpha);
+  mix-blend-mode: screen;
+  transition: opacity 420ms cubic-bezier(0.2, 0, 0, 1);
+}
+
 .akari-fluid-wall__ribbons,
-.akari-fluid-wall__ribbons-hover {
+.akari-fluid-wall__ribbons-hover,
+.akari-fluid-wall__ribbons-press {
   position: absolute;
   inset: 0;
   inline-size: 100%;
@@ -2155,6 +2919,21 @@ html.dark .akari-fluid-wall__texture-pattern {
     rgba(0, 0, 0, 0.72) 44%,
     rgba(0, 0, 0, 0.2) 70%,
     transparent 100%
+  );
+  transition: opacity 420ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.akari-fluid-wall__ribbons-press {
+  --_ribbon-press-x: 50%;
+  --_ribbon-press-y: 50%;
+  --_ribbon-press-radius: 0px;
+  --_ribbon-press-alpha: 0;
+  opacity: var(--_ribbon-press-alpha);
+  mask-image: radial-gradient(
+    circle var(--_ribbon-press-radius) at var(--_ribbon-press-x) var(--_ribbon-press-y),
+    #000 0%,
+    rgba(0, 0, 0, 0.75) 55%,
+    transparent 82%
   );
   transition: opacity 420ms cubic-bezier(0.2, 0, 0, 1);
 }

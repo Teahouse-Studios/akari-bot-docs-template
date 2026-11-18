@@ -288,6 +288,10 @@ export type FluidTexture = (typeof FLUID_TEXTURES)[number];
 /** Which way the sakura overlay is painted: dark strokes, or lit petals. */
 export const FLUID_TEXTURE_TONES = ["auto", "ink", "light"] as const;
 
+/** How the vine layer composites with the flow beneath it. Values match CSS `mix-blend-mode`. */
+export const FLUID_BLEND_MODES = ["normal", "multiply", "screen", "overlay", "soft-light", "difference"] as const;
+export type FluidBlendMode = (typeof FLUID_BLEND_MODES)[number];
+
 /**
  * Tile size each overlay is drawn at, in CSS px. They differ because a sparse
  * star field needs a wider cell than a lace border before the repeat shows.
@@ -491,6 +495,11 @@ export function fluidVariant(value: unknown): FluidVariant {
 /** A texture name that the wall knows, falling back to `none`. */
 export function fluidTexture(value: unknown): FluidTexture {
   return (FLUID_TEXTURES as readonly unknown[]).includes(value) ? (value as FluidTexture) : "none";
+}
+
+/** A blend mode the vine layer knows, falling back to `normal`. */
+export function fluidBlendMode(value: unknown): FluidBlendMode {
+  return (FLUID_BLEND_MODES as readonly unknown[]).includes(value) ? (value as FluidBlendMode) : "normal";
 }
 
 /**
