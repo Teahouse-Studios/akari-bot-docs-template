@@ -1667,6 +1667,14 @@ const POP_LIFT = [0.3, 0.46] as const;
 const POP_EYE = 2.4;
 const POP_TERMINALS: Readonly<Record<VineTerminalKind, number>> = { flower: 0.6, bud: 0.28, leaf: 0.12, tip: 0 };
 
+type PopForm = "runner" | "hook" | "spiral" | "bigSpiral";
+const POP_FORMS: Readonly<Record<PopForm, number>> = {
+  runner: 0.34,
+  hook: 0.26,
+  spiral: 0.22,
+  bigSpiral: 0.18,
+};
+
 /** Every edge open to 出屏 shoots; edge `e` is bit `1 << e` (left, top, right, bottom). */
 export const VINE_POP_ALL = 0b1111;
 
@@ -1837,6 +1845,7 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
   const strand = host.strands[seat.strand]!;
   const seatBase = strand.points[seat.sample]!;
   const hugging = true;
+  const form = weighted(random, POP_FORMS) as PopForm;
   // Keep the root on the host vine; shifting it inward leaves a loose stub in the wall.
   const base = seatBase;
   const tangent = tangentAt(strand.points, seat.sample);
@@ -1885,7 +1894,9 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
   // Some shoots run along the rim instead of straight out, then roll into a
   // spiral at the tip so the edge reads as a curling decorative vine.
   // Spiral edge runners end in a thin point: no leaf, bloom or bud at the tip.
-  const kinds = hugging ? (["tip"] as const) : TERMINAL_FALLBACK[weighted(random, POP_TERMINALS)].filter((kind) => kind !== "tip");
+  // Only a small spiral ends in a bare point: its eye is too tight for an organ.
+  // A large spiral or an open runner has room for a bloom, bud or leaf.
+  const kinds = form === "spiral" ? (["tip"] as const) : TERMINAL_FALLBACK[weighted(random, POP_TERMINALS)].filter((kind) => kind !== "tip");
   const room = Math.ceil(card.unit * POP_BLEED) - POP_RIM;
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -1922,22 +1933,25 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
       // Flat on the wall up to its portal; `liftShoot` raises the rest.
       z: { base: base.z, amp: 0, wave: card.unit, phase: 0, rise: 0 },
     });
-    const curlFrom = card.unit * between(random, 0.07, 0.13);
-    curl(path, between(random, 1.1, 1.9), curlFrom, curlFrom * 0.2, random() < 0.5 ? 1 : -1, card.step, 0);
+    const curlSide = random() < 0.5 ? 1 : -1;
+    if (form === "spiral") {
+      const curlFrom = card.unit * between(random, 0.055, 0.095);
+      curl(path, between(random, 1.15, 1.8), curlFrom, curlFrom * 0.2, curlSide, card.step, 0);
+    } else if (form === "bigSpiral") {
+      const curlFrom = card.unit * between(random, 0.12, 0.18);
+      curl(path, between(random, 1.0, 1.55), curlFrom, curlFrom * 0.2, curlSide, card.step, 0);
+    } else if (form === "hook") {
+      const curlFrom = card.unit * between(random, 0.08, 0.13);
+      curl(path, between(random, 0.65, 1.05), curlFrom, curlFrom * 0.24, curlSide, card.step, 0);
+    }
     const points = path.points;
     const end = points[points.length - 1]!;
-    if (points.length < 6 || edgeInside(card, end.x, end.y) > -reach * 0.06) continue;
+    if (points.length < 6) continue;
     if (points.some((point) => edgeInside(wide, point.x, point.y) < 2)) continue;
     if (card.keep.length && points.some((point) => keepClearance(card, point.x, point.y) < 0)) continue;
-    // Once out, it stays out.
-    let left = false;
-    let back = false;
-    for (const point of points) {
-      const at = edgeInside(card, point.x, point.y);
-      if (at < -2) left = true;
-      else if (left && at > 3) back = true;
-    }
-    if (selfCrossings(path) > 0 || selfTooClose(path, card.unit * 0.015) || back || crossings(null, garden, path, forkDistance * 2) > (attempt < 2 ? 0 : 1)) continue;
+    // A shoot may leave the wall, curl back through it and come out again;
+    // only self-intersections and other vines make that read badly.
+    if (selfCrossings(path) > 0 || selfTooClose(path, card.unit * 0.015) || crossings(null, garden, path, forkDistance * 2) > (attempt < 2 ? 0 : 1)) continue;
     const portal = liftShoot(path, card, between(random, POP_LIFT[0], POP_LIFT[1]) * card.unit, random);
     // Hold out for the chosen organ first; a shorter reach may still fit it.
     for (const kind of attempt < 3 ? kinds.slice(0, 1) : kinds) {
