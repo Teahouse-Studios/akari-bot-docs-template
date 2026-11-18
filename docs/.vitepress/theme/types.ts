@@ -470,6 +470,7 @@ export interface AkariMessages {
   fluidDemoVinePart: string;
   fluidDemoVineBase: string;
   fluidDemoVineLeaf: string;
+  fluidDemoVineLeafStem: string;
   fluidDemoVineFlower: string;
   fluidDemoVineFlowerStem: string;
   fluidDemoVineBud: string;
@@ -544,6 +545,7 @@ export interface AkariMessages {
   fluidDemoPopout: string;
   fluidDemoInward: string;
   fluidDemoSafeZone: string;
+  fluidDemoOutsideSafeZone: string;
   fluidDemoOn: string;
   fluidDemoOff: string;
 }

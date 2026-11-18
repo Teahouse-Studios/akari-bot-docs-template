@@ -20,10 +20,10 @@ tab: API
 | `texture-opacity` | `number \| string` | `variant`에 따름 | 0–1. 실제 투명도는 무늬별 가중치도 곱한다 |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | 선화인지 채움인지. `auto`는 밝기에 따른다 |
 | `texture-color` | `string` | — | 임의의 CSS 색상. `texture-tone`을 덮어쓰며 오버레이와 덩굴 모두에 적용됩니다. alpha는 오버레이에만 적용됩니다. |
-| `vine-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 덩굴 부위별 색상. 값에 alpha를 포함할 수 있습니다. `base`는 개별 지정이 없는 부위의 기본 색이며, 나머지 미지정 부위는 `texture-color`를 따릅니다. |
+| `vine-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 덩굴 부위별 색상. 값에 alpha를 포함할 수 있습니다. `base`는 개별 지정이 없는 부위의 기본 색이며, 나머지 미지정 부위는 `texture-color`를 따릅니다. |
 | `vine-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `"normal"` | 덩굴과 유체 배경의 혼합 모드(CSS `mix-blend-mode`). |
 | `vine-popout-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `vine-blend` | 돌출 덩굴 전용 혼합 모드. `vine-blend`와 다르게 설정했을 때만 별도 캔버스를 사용합니다. |
-| `vine-popout-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 출구점을 지난 돌출 부분의 부위 색상. |
+| `vine-popout-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 출구점을 지난 돌출 부분의 부위 색상. |
 | `speed` | `number \| string` | `variant`에 따름 | 흐름 속도 배율. 1이 변형 자체의 속도 |
 | `scale` | `number \| string` | `variant`에 따름 | 노이즈 축척. 클수록 주름이 잘다 |
 | `curl` | `number \| string` | `variant`에 따름 | 말림 강도. 0은 방향 없는 흐름 |
@@ -35,6 +35,7 @@ tab: API
 | `popout` | `boolean \| "auto"` | `"auto"` | 덩굴이 틀을 넘는지. `auto`는 페이지 설정을 따른다 |
 | `inward` | `boolean \| "auto"` | `"auto"` | 덩굴이 판 안을 아치로 오르는지. `auto`는 `popout`과 같다 |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 덩굴이 피하는 영역. `auto`는 벽 위 글을 피한다 |
+| `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | 벽 외부 안전 영역. 벽 밖으로 나가는 덩굴이 피할 사각형. `safe-zone`과 같은 지정 방식을 쓰며 음수 값은 벽 바깥까지 확장됩니다. |
 | `ripple` | `number` | `1` | 돌출 지점 파문의 강도. 0이면 끔. |
 | `ripple-speed` | `number` | `1` | 파문 속도 배율. |
 | `ripple-size` | `number` | `1` | 파문 반경 배율. |

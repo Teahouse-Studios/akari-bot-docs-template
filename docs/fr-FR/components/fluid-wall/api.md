@@ -20,10 +20,10 @@ tab: API
 | `texture-opacity` | `number \| string` | selon `variant` | 0–1 ; l'alpha final multiplie aussi le poids du motif |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | Trait ou plein ; `auto` suit le schéma |
 | `texture-color` | `string` | — | Toute couleur CSS ; remplace `texture-tone` et s'applique à la texture et à la vigne. L'alpha ne s'applique qu'à la texture. |
-| `vine-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Couleurs par partie de la vigne ; les valeurs peuvent inclure alpha. `base` définit la couleur des parties non définies ; les autres suivent `texture-color`. |
+| `vine-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Couleurs par partie de la vigne ; les valeurs peuvent inclure alpha. `base` définit la couleur des parties non définies ; les autres suivent `texture-color`. |
 | `vine-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `"normal"` | Mode de fusion entre la vigne et le flux (valeur CSS `mix-blend-mode`). |
 | `vine-popout-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `vine-blend` | Mode de fusion propre à la couche de lianes débordantes ; un canevas séparé n’est utilisé que si la valeur diffère de `vine-blend`. |
-| `vine-popout-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Couleurs par partie des pousses une fois sorties de la paroi. |
+| `vine-popout-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Couleurs par partie des pousses une fois sorties de la paroi. |
 | `speed` | `number \| string` | selon `variant` | Multiplicateur de vitesse ; 1 est la dérive de la variante |
 | `scale` | `number \| string` | selon `variant` | Échelle du bruit ; plus grand, plis plus fins |
 | `curl` | `number \| string` | selon `variant` | Force du bouclage ; 0 est un flux sans direction |
@@ -35,6 +35,7 @@ tab: API
 | `popout` | `boolean \| "auto"` | `"auto"` | Les lianes sortent-elles du cadre ; `auto` suit le réglage de la page |
 | `inward` | `boolean \| "auto"` | `"auto"` | Les lianes montent-elles en arc à l'intérieur ; `auto` comme `popout` |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | Zones évitées par les lianes ; `auto` évite le texte du mur |
+| `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | Zones de sécurité hors du mur : rectangles que les pousses sortantes évitent. Même syntaxe que `safe-zone` ; les valeurs négatives dépassent du mur. |
 | `ripple` | `number` | `1` | Intensité de l’onde à chaque point de sortie ; 0 la désactive. |
 | `ripple-speed` | `number` | `1` | Multiplicateur de vitesse de cette onde. |
 | `ripple-size` | `number` | `1` | Multiplicateur de rayon de cette onde. |

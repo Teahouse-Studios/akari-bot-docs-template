@@ -938,6 +938,8 @@ export function vineGardenStats(width: number, height: number): VineGardenStats 
 export interface VineGardenOptions {
   /** Safe zones, in plan px centred on the wall, y up: no vine grows over them. */
   readonly keep?: readonly VineRect[];
+  /** Safe zones outside the wall that 出屏 shoots keep out of. */
+  readonly popKeep?: readonly VineRect[];
   /** 朝内: a few shoots that come up through the wall inside it and rise towards the viewer. */
   readonly inward?: boolean;
 }
@@ -952,7 +954,8 @@ export function planVineGarden(
 ): VinePlan[] {
   if (!(width > 0) || !(height > 0) || !(density > 0)) return [];
   const random = vineRandom(seed);
-  const frame = makeFrame(width, height, options.keep ?? []);
+  const keep = options.keep ?? [];
+  const frame = makeFrame(width, height);
   const garden: Garden = { frame, random, occupied: [], targets: [], trails: [], wires: [] };
   // Fewer vines on a wall that is mostly safe zone, so the rest is not crammed.
   const count = vineCount(frame, density * Math.max(0.5, freeShare(frame)));
@@ -987,8 +990,8 @@ export function planVineGarden(
   const edges = popout === true ? VINE_POP_ALL : popout === false ? 0 : popout & VINE_POP_ALL;
   const salt = Math.floor(random() * 4294967296);
   const extra: VinePlan[] = [];
-  if (edges) extra.push(...planPopShoots(garden, plans, edges, salt));
-  if (options.inward) extra.push(...planInwardShoots(garden, plans, salt));
+  if (edges) extra.push(...planPopShoots(garden, plans, edges, salt, [...keep, ...(options.popKeep ?? [])]));
+  if (options.inward) extra.push(...planInwardShoots(garden, plans, salt, keep));
   plans.push(...extra);
   return plans.sort((a, b) => a.depth - b.depth);
 }
@@ -1558,7 +1561,6 @@ function planTendril(vine: VineBuilder, parent: number, sample: number, side: nu
   if (edgeInside(frame, cx, cy) < 0) return false;
   if (frame.keep.length && keepClearance(frame, cx, cy) < length * 0.3) return false;
   if (crowding(garden, cx, cy, length * 0.3) > 0.75) return false;
-  garden.occupied.push({ x: cx, y: cy, r: length * 0.22 });
   const step = Math.min(frame.step, 2);
   const path = beginPath(base, heading + turn * 0.3);
   const rise = between(random, 0.02, 0.08);
@@ -1581,10 +1583,10 @@ function planTendril(vine: VineBuilder, parent: number, sample: number, side: nu
   });
   const curlSide = random() < 0.6 ? side : -side;
   if (style === "spring" || style === "fork") {
-    curl(path, between(random, 1.4, 2.5), length * between(random, 0.14, 0.2), length * 0.035 + 0.4, curlSide, step, rise * 0.5);
+    curl(path, between(random, 0.9, 1.5), length * between(random, 0.14, 0.2), length * 0.035 + 0.4, curlSide, step, rise * 0.5);
   } else if (style === "hook") {
     // One open crook at the end, the way a feeler still searching for a hold looks.
-    curl(path, between(random, 0.7, 1.3), length * between(random, 0.09, 0.14), length * between(random, 0.04, 0.06) + 0.4, curlSide, step, rise * 0.5);
+    curl(path, between(random, 0.6, 1.0), length * between(random, 0.09, 0.14), length * between(random, 0.04, 0.06) + 0.4, curlSide, step, rise * 0.5);
   } else if (style === "coil") {
     const from = path.points.length - 1;
     extend(path, {
@@ -1601,14 +1603,19 @@ function planTendril(vine: VineBuilder, parent: number, sample: number, side: nu
       fork: null,
       z: { base: path.points[from]!.z, amp: 0, wave: 1, phase: 0, rise: rise * 0.5 },
     });
-    coil(path, from, length * between(random, 0.12, 0.18), between(random, 2, 3.2), between(random, 0.5, 0.9));
+    coil(path, from, length * between(random, 0.12, 0.18), between(random, 0.9, 1.5), between(random, 0.5, 0.9));
   }
+  if (selfCrossings(path) > 0 || selfTooClose(path, frame.unit * 0.015)) return false;
+  if (crossings(vine, garden, path, frame.unit * 0.03, parent, base) > 0) return false;
+  if (strandTooClose(path, vine.plan.strands, frame.unit * 0.015, 4)) return false;
   if (frame.keep.length && path.points.some((point) => keepClearance(frame, point.x, point.y) < 0)) return false;
   const total = path.arcs[path.arcs.length - 1]!;
   const r0 = Math.min(strand.radii[sample]! * 0.7, clamp(strand.radii[sample]! * 0.32, 0.4, 1.3));
   const taper = wave ? 0.9 : 0.84;
   const radii = path.arcs.map((arc) => r0 * (1 - taper * Math.pow(arc / total, 0.7)));
   const index = plan.strands.push({ role: "tendril", points: path.points, radii, parent, parentSample: sample, end: "point" }) - 1;
+  garden.occupied.push({ x: cx, y: cy, r: length * 0.22 });
+  garden.wires.push(...wiresOf(path.points));
   if (style === "fork") planTendrilFork(vine, index, path, reach, length, -curlSide, rise);
   return true;
 }
@@ -1636,7 +1643,8 @@ function planTendrilFork(vine: VineBuilder, parent: number, main: Path, reach: n
     fork: null,
     z: { base: origin.z, amp: 0, wave: 1, phase: 0, rise },
   });
-  curl(arm, between(random, 1, 2), length * between(random, 0.08, 0.12), length * 0.03 + 0.35, side, step, rise * 0.5);
+  curl(arm, between(random, 0.8, 1.4), length * between(random, 0.08, 0.12), length * 0.03 + 0.35, side, step, rise * 0.5);
+  if (selfCrossings(arm) > 0) return;
   const total = arm.arcs[arm.arcs.length - 1]!;
   const r0 = plan.strands[parent]!.radii[at]! * 0.85;
   const radii = arm.arcs.map((arc) => r0 * (1 - 0.84 * Math.pow(arc / total, 0.7)));
@@ -1693,7 +1701,13 @@ function nearestEdge(frame: Frame, x: number, y: number): VineEdge {
  * 出屏: a few side shoots leave front vines close to the wall's edge and grow
  * out past it, each ending in a bloom, bud or leaf that hangs over the page.
  */
-function planPopShoots(garden: Garden, plans: readonly VinePlan[], edges: number, salt: number): VinePlan[] {
+function planPopShoots(
+  garden: Garden,
+  plans: readonly VinePlan[],
+  edges: number,
+  salt: number,
+  popKeep: readonly VineRect[],
+): VinePlan[] {
   const { frame } = garden;
   // `salt`, drawn whichever edges are open, seeds each edge on its own.
   // Shutting an edge (the wall moved near the window's side) then takes only
@@ -1706,13 +1720,17 @@ function planPopShoots(garden: Garden, plans: readonly VinePlan[], edges: number
     hw: frame.hw + reach,
     hh: frame.hh + reach,
   };
-  // The budget is for the whole rim, shared out by edge length, so it does not
-  // depend on which edges are open either.
+  const card: Frame = popKeep.length ? { ...frame, keep: [...frame.keep, ...popKeep] } : frame;
+  // Spread the budget evenly over the open edges instead of following edge
+  // length: a wide wall otherwise stacks most of its shoots on the long sides.
+  const open = EDGES.filter((edge) => edges & (1 << edge));
+  if (!open.length) return [];
   const total = clamp(3 + ((frame.width + frame.height) / frame.unit) * 1.25, 5, 10);
-  const rim = (frame.width + frame.height) * 2;
+  const base = Math.floor(total / open.length);
+  const extra = total % open.length;
+  const order = [...open.slice(salt % open.length), ...open.slice(0, salt % open.length)];
   const pops: VinePlan[] = [];
-  for (const edge of EDGES) {
-    if (!(edges & (1 << edge))) continue;
+  for (const [index, edge] of order.entries()) {
     const random = vineRandom(salt ^ Math.imul(edge + 1, 0x9e3779b1));
     // Each edge grows into its own copy of the garden, so the others' shoots
     // do not steer it.
@@ -1724,9 +1742,8 @@ function planPopShoots(garden: Garden, plans: readonly VinePlan[], edges: number
       trails: [...garden.trails],
       wires: [...garden.wires],
     };
-    const length = edge % 2 ? frame.width : frame.height;
-    const want = Math.max(1, Math.round((total * length) / rim));
-    pops.push(...planEdgeShoots({ ...own, frame: wide }, frame, plans, edge, edges, want));
+    const want = base + (index < extra ? 1 : 0);
+    pops.push(...planEdgeShoots({ ...own, frame: wide }, card, plans, edge, edges, want));
   }
   return pops;
 }
@@ -1906,11 +1923,12 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
       z: { base: base.z, amp: 0, wave: card.unit, phase: 0, rise: 0 },
     });
     const curlFrom = card.unit * between(random, 0.07, 0.13);
-    curl(path, between(random, 1.4, 2.8), curlFrom, curlFrom * 0.2, random() < 0.5 ? 1 : -1, card.step, 0);
+    curl(path, between(random, 1.1, 1.9), curlFrom, curlFrom * 0.2, random() < 0.5 ? 1 : -1, card.step, 0);
     const points = path.points;
     const end = points[points.length - 1]!;
     if (points.length < 6 || edgeInside(card, end.x, end.y) > -reach * 0.06) continue;
     if (points.some((point) => edgeInside(wide, point.x, point.y) < 2)) continue;
+    if (card.keep.length && points.some((point) => keepClearance(card, point.x, point.y) < 0)) continue;
     // Once out, it stays out.
     let left = false;
     let back = false;
@@ -1919,7 +1937,7 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
       if (at < -2) left = true;
       else if (left && at > 3) back = true;
     }
-    if (back || crossings(null, garden, path, forkDistance * 2) > (attempt < 2 ? 0 : 1)) continue;
+    if (selfCrossings(path) > 0 || selfTooClose(path, card.unit * 0.015) || back || crossings(null, garden, path, forkDistance * 2) > (attempt < 2 ? 0 : 1)) continue;
     const portal = liftShoot(path, card, between(random, POP_LIFT[0], POP_LIFT[1]) * card.unit, random);
     // Hold out for the chosen organ first; a shorter reach may still fit it.
     for (const kind of attempt < 3 ? kinds.slice(0, 1) : kinds) {
@@ -1961,11 +1979,11 @@ const INWARD_PORTAL = [0.25, 0.4] as const;
  * and arch towards the viewer over the wall itself, staying inside its edges
  * and clear of the safe zones as drawn.
  */
-function planInwardShoots(garden: Garden, plans: readonly VinePlan[], salt: number): VinePlan[] {
+function planInwardShoots(garden: Garden, plans: readonly VinePlan[], salt: number, keep: readonly VineRect[]): VinePlan[] {
   const { frame } = garden;
   const random = vineRandom(salt ^ INWARD_SALT);
   const own: Garden = {
-    frame,
+    frame: keep.length ? { ...frame, keep } : frame,
     random,
     occupied: [...garden.occupied],
     targets: [...garden.targets],
@@ -2384,6 +2402,53 @@ function wiresOf(points: readonly THREE.Vector3[], from = 0, to = points.length 
 
 function turnOf(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3): number {
   return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+/** True when a path folds back close enough to read as a doubled line. */
+function selfTooClose(path: Path, minimum: number): boolean {
+  const points = path.points;
+  const bound = minimum * minimum;
+  for (let index = 0; index < points.length - 4; index += 1) {
+    const point = points[index]!;
+    for (let other = index + 4; other < points.length; other += 1) {
+      const next = points[other]!;
+      if ((point.x - next.x) * (point.x - next.x) + (point.y - next.y) * (point.y - next.y) < bound) return true;
+    }
+  }
+  return false;
+}
+
+/** True when a path runs too close to a strand already on the wall. */
+function strandTooClose(path: Path, strands: readonly VineStrand[], minimum: number, skip: number): boolean {
+  const bound = minimum * minimum;
+  for (let index = skip; index < path.points.length; index += 1) {
+    const point = path.points[index]!;
+    for (const strand of strands) {
+      if (strand.role !== "stem" && strand.role !== "branch" && strand.role !== "tendril") continue;
+      for (const other of strand.points) {
+        if ((point.x - other.x) * (point.x - other.x) + (point.y - other.y) * (point.y - other.y) < bound) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Strict crossings between non-adjacent segments of one path. */
+function selfCrossings(path: Path): number {
+  const points = path.points;
+  let count = 0;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const p = points[i]!;
+    const q = points[i + 1]!;
+    for (let j = i + 2; j < points.length - 1; j += 1) {
+      const r = points[j]!;
+      const s = points[j + 1]!;
+      if (Math.max(p.x, q.x) < Math.min(r.x, s.x) || Math.max(r.x, s.x) < Math.min(p.x, q.x)) continue;
+      if (Math.max(p.y, q.y) < Math.min(r.y, s.y) || Math.max(r.y, s.y) < Math.min(p.y, q.y)) continue;
+      if (turnOf(r, s, p) * turnOf(r, s, q) < 0 && turnOf(p, q, r) * turnOf(p, q, s) < 0) count += 1;
+    }
+  }
+  return count;
 }
 
 function wireCrossings(mine: readonly Wire[], others: readonly Wire[]): number {

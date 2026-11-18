@@ -128,6 +128,7 @@ export default {
 
     fluidDemoVineBase: "Base colour",
     fluidDemoVineLeaf: "Leaf",
+    fluidDemoVineLeafStem: "Leaf stem",
     fluidDemoVineFlower: "Flower",
     fluidDemoVineFlowerStem: "Flower stem",
     fluidDemoVineBud: "Bud",
@@ -216,6 +217,7 @@ export default {
     fluidDemoPopout: "Pop-out",
     fluidDemoInward: "Inward",
     fluidDemoSafeZone: "Safe zone",
+    fluidDemoOutsideSafeZone: "Outside safe zone",
     fluidDemoOn: "On",
     fluidDemoOff: "Off",
     loadingLabel: "Loading page",

@@ -149,6 +149,7 @@ export default {
 
     fluidDemoVineBase: "기본 색상",
     fluidDemoVineLeaf: "잎",
+    fluidDemoVineLeafStem: "잎자루",
     fluidDemoVineFlower: "꽃",
     fluidDemoVineFlowerStem: "꽃줄기",
     fluidDemoVineBud: "꽃봉오리",
@@ -237,6 +238,7 @@ export default {
     fluidDemoPopout: "화면 밖으로",
     fluidDemoInward: "안쪽으로",
     fluidDemoSafeZone: "안전 영역",
+    fluidDemoOutsideSafeZone: "벽 외부 안전 영역",
     fluidDemoOn: "켜기",
     fluidDemoOff: "끄기",
     loadingLabel: "페이지 로드 중",

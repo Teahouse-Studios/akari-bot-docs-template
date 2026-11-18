@@ -150,6 +150,7 @@ export default {
 
     fluidDemoVineBase: "اللون الأساسي",
     fluidDemoVineLeaf: "ورقة",
+    fluidDemoVineLeafStem: "ساق الورقة",
     fluidDemoVineFlower: "زهرة",
     fluidDemoVineFlowerStem: "ساق الزهرة",
     fluidDemoVineBud: "برعم",
@@ -238,6 +239,7 @@ export default {
     fluidDemoPopout: "البروز",
     fluidDemoInward: "إلى الداخل",
     fluidDemoSafeZone: "المنطقة الآمنة",
+    fluidDemoOutsideSafeZone: "منطقة آمنة خارج الجدار",
     fluidDemoOn: "تشغيل",
     fluidDemoOff: "إيقاف",
     loadingLabel: "جارٍ تحميل الصفحة",

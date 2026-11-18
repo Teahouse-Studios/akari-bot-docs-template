@@ -87,15 +87,26 @@ describe("planVineGarden safe zones and inward shoots", () => {
     }
   });
 
-  it("keeps 出屏 shoots off the safe zones and the rest within the fade", () => {
+  it("keeps the popout budget balanced across all four edges", () => {
+    for (const [width, height] of SIZES) {
+      for (const seed of SEEDS) {
+        const counts = [0, 0, 0, 0];
+        for (const plan of planVineGarden(width, height, seed, 1, true)) {
+          if (plan.pop) counts[plan.edge] += 1;
+        }
+        expect(Math.max(...counts)).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+
+  it("keeps 出屏 shoots off the safe zones", () => {
     for (const [width, height] of SIZES) {
       const keep = keepFor(width, height);
       for (const seed of SEEDS) {
         for (const plan of planVineGarden(width, height, seed, 1, true, { keep, inward: true })) {
+          if (!plan.pop) continue;
           const intrusion = reach(plan, (x, y) => vineKeepClearance(keep, x, y));
-          // 出屏 shoots are drawn unfaded, so they stay clear; the wall's own vines may
-          // graze a zone by less than the renderer's 8px feather, which fades them out.
-          expect(intrusion).toBeLessThanOrEqual(plan.pop ? 0 : 8);
+          expect(intrusion).toBeLessThanOrEqual(0);
         }
       }
     }

@@ -22,10 +22,10 @@ tab: 接口
 | `texture-opacity` | `number \| string` | 随 `variant` | 叠加层透明度，取值 0–1。最终透明度还会乘以该纹理的观感权重。 |
 | `texture-tone` | `"auto"`、`"ink"`、`"light"` | `"auto"` | 纹理画法。`auto` 按明暗决定，深色模式取 `light`。 |
 | `texture-color` | `string` | — | 任意 CSS 颜色。此属性覆盖 `texture-tone`。颜色作用于叠加纹理与藤蔓，alpha 只影响叠加纹理。 |
-| `vine-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 逐部位设置藤蔓颜色，值可以包含 alpha。`base` 设置未单独指定部位的底色。未列出的部位依次跟随 `fill`、`base`、`texture-color`。 |
+| `vine-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 逐部位设置藤蔓颜色，值可以包含 alpha。`base` 设置未单独指定部位的底色。未列出的部位依次跟随 `fill`、`base`、`texture-color`。 |
 | `vine-blend` | `"normal"`、`"multiply"`、`"screen"`、`"overlay"`、`"soft-light"`、`"difference"` | `"normal"` | 藤蔓与流体背景的混合模式，对应 CSS `mix-blend-mode`。 |
 | `vine-popout-blend` | `"normal"`、`"multiply"`、`"screen"`、`"overlay"`、`"soft-light"`、`"difference"` | `vine-blend` | 出屏藤蔓越过出屏点之后的混合模式。仅当此属性与 `vine-blend` 不同时，组件启用独立画布。 |
-| `vine-popout-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 出屏藤蔓越过出屏点后的逐部位颜色。 |
+| `vine-popout-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 出屏藤蔓越过出屏点后的逐部位颜色。 |
 | `speed` | `number \| string` | 随 `variant` | 流速倍率。1 表示变体自带的速度。 |
 | `scale` | `number \| string` | 随 `variant` | 噪声取样尺度。数值越大，褶皱越细。 |
 | `curl` | `number \| string` | 随 `variant` | 卷曲项强度。0 表示无方向的平流。 |
@@ -36,7 +36,8 @@ tab: 接口
 | `petal` | `number \| string` | 随 `variant` | 褶皱卷成花瓣臂的程度。0 表示纯流场。 |
 | `popout` | `boolean \| "auto"` | `"auto"` | 藤蔓是否越过画框。`auto` 跟随页面上的藤蔓开关。 |
 | `inward` | `boolean \| "auto"` | `"auto"` | 藤蔓是否从板内向外拱起。`auto` 与 `popout` 一致。 |
-| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 藤蔓避让区。`auto` 避开墙上的文字。`none` 或 `false` 表示不避让。 |
+| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 出屏藤蔓的避让区。`auto` 避开墙上的文字。`none` 或 `false` 表示不避让。墙内藤蔓不受此限制。 |
+| `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | 墙外安全区：出屏藤蔓避让的墙外矩形。语法与 `safe-zone` 相同，负值可伸到墙外。 |
 | `ripple` | `number` | `1` | 出屏点波纹的强度。0 表示关闭。 |
 | `ripple-speed` | `number` | `1` | 出屏点波纹的速度倍率。 |
 | `ripple-size` | `number` | `1` | 出屏点波纹的半径倍率。 |

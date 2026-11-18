@@ -242,6 +242,13 @@ describe("fluid playground", () => {
     expect(snippet).toContain(`:vine-colors="{ base: '#ff0000', fill: 'rgba(255, 0, 0, 0.5)' }"`);
   });
 
+  it("prints an outside safe zone when configured", () => {
+    const snippet = buildFluidWallSnippet(
+      config({ texture: "vine", outsideSafeZone: "0 60% 0 -20%" }),
+    );
+    expect(snippet).toContain('outside-safe-zone="0 60% 0 -20%"');
+  });
+
   it("writes the vine switches and safe zone only for the vine overlay", () => {
     const snippet = buildFluidWallSnippet(
       config({

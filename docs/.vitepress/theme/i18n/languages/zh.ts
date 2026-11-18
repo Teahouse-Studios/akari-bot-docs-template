@@ -140,6 +140,7 @@ export default {
 
     fluidDemoVineBase: "底色",
     fluidDemoVineLeaf: "叶片",
+    fluidDemoVineLeafStem: "叶根",
     fluidDemoVineFlower: "花朵",
     fluidDemoVineFlowerStem: "花茎",
     fluidDemoVineBud: "花苞",
@@ -228,6 +229,7 @@ export default {
     fluidDemoPopout: "出屏",
     fluidDemoInward: "内拱",
     fluidDemoSafeZone: "安全区",
+    fluidDemoOutsideSafeZone: "墙外安全区",
     fluidDemoOn: "开",
     fluidDemoOff: "关",
     loadingLabel: "正在加载页面",

@@ -31,7 +31,7 @@ export type VineBleed = { readonly left: number; readonly top: number; readonly 
 export type VinePart = "fill" | "tint" | "halo" | "edge" | "fine";
 
 /** A botanical part of the vine, coloured independently from the other parts. */
-export type VineBotanicalPart = "leaf" | "flower" | "bud" | "flowerStem";
+export type VineBotanicalPart = "leaf" | "flower" | "bud" | "flowerStem" | "leafStem";
 
 export type VinePartColor = { readonly color: FluidRgb; readonly alpha?: number };
 
@@ -51,6 +51,8 @@ export type Vine3dOptions = {
    * whatever is written on the wall stays readable.
    */
   keep?: readonly VineRect[];
+  /** Safe zones outside the wall that 出屏 shoots keep out of. */
+  popKeep?: readonly VineRect[];
   /** 出屏 inward too: a few shoots come up through the wall inside it and arch toward the viewer. */
   inward?: boolean;
   /** Render the leaf fill at full strength instead of the faint default wash. */
@@ -258,7 +260,7 @@ const VINE_ANCHOR = "vine_anchor";
 
 /** Per-vertex botanical part index: leaf, flower, bud, flowerStem, stem. */
 const VINE_PART = "vine_part";
-const VINE_PART_COUNT = 5;
+const VINE_PART_COUNT = 6;
 
 export function normalizeVineSeed(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number.parseInt(String(value), 10);
@@ -544,16 +546,18 @@ float vineInside = 1.0 - smoothstep(-u_vine_corner.y, u_vine_corner.y, vineCard)
 vec2 vineRim = min(vineAt, u_vine_canvas - vineAt);
 float vineOpen = smoothstep(0.0, 6.0, min(vineRim.x, vineRim.y));
 diffuseColor.a *= mix(mix(vineInside, vineOpen, u_vine_pop), 1.0, u_vine_pop_full);
-// Nothing covers the safe zone, whatever depth it is drawn at.
-vec2 vineLocal = vineAt - u_vine_card.xy;
-float vineKeep = 1e5;
-for (int i = 0; i < ${VINE_MAX_KEEP}; i++) {
-  if (i >= u_vine_keep_count) break;
-  vec4 vineRect = u_vine_keep[i];
-  vec2 vineBox = abs(vineLocal - (vineRect.xy + vineRect.zw) * 0.5) - (vineRect.zw - vineRect.xy) * 0.5;
-  vineKeep = min(vineKeep, length(max(vineBox, 0.0)) + min(max(vineBox.x, vineBox.y), 0.0));
+// Only shoots that leave the wall avoid the wall safe zone; wall vines grow freely.
+if (u_vine_depth > 0.5 && u_vine_depth < 2.5) {
+  vec2 vineLocal = vineAt - u_vine_card.xy;
+  float vineKeep = 1e5;
+  for (int i = 0; i < ${VINE_MAX_KEEP}; i++) {
+    if (i >= u_vine_keep_count) break;
+    vec4 vineRect = u_vine_keep[i];
+    vec2 vineBox = abs(vineLocal - (vineRect.xy + vineRect.zw) * 0.5) - (vineRect.zw - vineRect.xy) * 0.5;
+    vineKeep = min(vineKeep, length(max(vineBox, 0.0)) + min(max(vineBox.x, vineBox.y), 0.0));
+  }
+  diffuseColor.a *= smoothstep(-${VINE_KEEP_FEATHER.toFixed(1)}, 0.0, vineKeep);
 }
-diffuseColor.a *= smoothstep(-${VINE_KEEP_FEATHER.toFixed(1)}, 0.0, vineKeep);
 if (u_vine_depth > 1.5 && u_vine_depth < 2.5) {
   // A shadow is only there once the shoot is off the wall, and blurs away as it rises.
   diffuseColor.a *= vVineShade * (1.0 - 0.6 * vVineLift);
@@ -1016,7 +1020,7 @@ export function buildVineGeometry(plan: VinePlan): VineGeometry {
     fine: new LineSink(),
   };
   const strandPart = (role: (typeof plan.strands)[number]["role"]): number =>
-    role === "pedicel" ? 3 : role === "petiole" ? 0 : 4;
+    role === "pedicel" ? 3 : role === "petiole" ? 5 : 4;
   const bladePart = (role: (typeof plan.blades)[number]["role"]): number => (role === "petal" || role === "sepal" ? 1 : 0);
   const lathePart = (role: (typeof plan.lathes)[number]["role"]): number => (role === "bud" ? 2 : 1);
   const setPart = (part: number): void => {
@@ -1384,7 +1388,7 @@ export function createVine3d(
     hover.keepCount.value = count;
   };
   setKeep(keep);
-  const garden = planVineGarden(width, height, seed, density, edges, { keep, inward: options.inward });
+  const garden = planVineGarden(width, height, seed, density, edges, { keep, popKeep: options.popKeep, inward: options.inward });
   const plans = options.paint === "pop" ? garden.filter((plan) => plan.pop) : options.paint === "wall" ? garden.filter((plan) => !plan.pop) : garden;
   const popMaterials = plans.some((plan) => plan.pop)
     ? layerMaterials(baseColor, Math.min(1.6, alpha * POP_ALPHA), hover, VineDepth.Pop, strongFill, POP_ALPHA, partUniforms, options.paint === 'pop', options.paint === 'pop', options.paint === 'all' && options.popCut === true, currentUnderlayColor ?? new THREE.Color(0xffffff), currentUnderlayOpacity, currentUnderlayBlend)
@@ -1611,7 +1615,7 @@ void main() {
       currentPalette.fine;
     const paletteBase = seedPart ? colorFromRgb(seedPart.color) : currentBase;
     const paletteAlpha = baseAlpha * (basePart?.alpha ?? 1);
-    const partKeys = ["leaf", "flower", "bud", "flowerStem", "stem"] as const;
+    const partKeys = ["leaf", "flower", "bud", "flowerStem", "stem", "leafStem"] as const;
     for (let index = 0; index < VINE_PART_COUNT; index += 1) {
       const key = partKeys[index]!;
       const part = key === "stem" ? undefined : currentPalette[key as VineBotanicalPart];

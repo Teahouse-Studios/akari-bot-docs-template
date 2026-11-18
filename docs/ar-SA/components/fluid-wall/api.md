@@ -20,10 +20,10 @@ tab: API
 | `texture-opacity` | `number \| string` | حسب `variant` | من 0 إلى 1، والشفافية النهائية تضرب وزن النقش أيضاً |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | خطوط أو ملء؛ و`auto` يتبع الفاتح والداكن |
 | `texture-color` | `string` | — | أي لون CSS؛ يتجاوز `texture-tone` ويُطبق على النسيج والكرمة. يُطبق alpha على النسيج فقط. |
-| `vine-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | ألوان أجزاء الكرمة؛ يمكن أن تحتوي القيم على alpha. يحدد `base` لون الأجزاء غير المحددة، والأجزاء الأخرى تتبع `texture-color`. |
+| `vine-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | ألوان أجزاء الكرمة؛ يمكن أن تحتوي القيم على alpha. يحدد `base` لون الأجزاء غير المحددة، والأجزاء الأخرى تتبع `texture-color`. |
 | `vine-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `"normal"` | وضع الدمج بين الكرمة والتدفق (قيمة CSS `mix-blend-mode`). |
 | `vine-popout-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `vine-blend` | وضع دمج البراعم بعد خروجها من الجدار؛ تُستخدم لوحة منفصلة عندما يختلف عن `vine-blend`. |
-| `vine-popout-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | ألوان أجزاء البراعم بعد خروجها من الجدار. |
+| `vine-popout-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | ألوان أجزاء البراعم بعد خروجها من الجدار. |
 | `speed` | `number \| string` | حسب `variant` | مضاعف سرعة التدفق، و1 سرعة النمط نفسه |
 | `scale` | `number \| string` | حسب `variant` | مقياس أخذ الضجيج، والأكبر أدق طيّاً |
 | `curl` | `number \| string` | حسب `variant` | شدة الالتفاف، و0 تدفق بلا اتجاه |
@@ -35,6 +35,7 @@ tab: API
 | `popout` | `boolean \| "auto"` | `"auto"` | هل تخرج السيقان من الإطار؛ و`auto` يتبع إعداد الصفحة |
 | `inward` | `boolean \| "auto"` | `"auto"` | هل تقوس السيقان داخل اللوحة؛ و`auto` مثل `popout` |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | مناطق تتجنبها السيقان؛ و`auto` يتجنب نص الجدار |
+| `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | مناطق آمنة خارج الجدار: مستطيلات تتجنبها البراعم الخارجة. تستخدم نفس صيغة `safe-zone`، والقيم السالبة تمتد خارج الجدار. |
 | `ripple` | `number` | `1` | قوة التموج عند نقاط خروج البراعم؛ 0 يوقفها. |
 | `ripple-speed` | `number` | `1` | مضاعف سرعة التموج. |
 | `ripple-size` | `number` | `1` | مضاعف نصف قطر التموج. |

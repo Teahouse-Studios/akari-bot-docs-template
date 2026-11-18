@@ -164,6 +164,12 @@ const props = withDefaults(
      * `auto` among them: `"auto, 0 0 70% 60%"`.
      */
     safeZone?: boolean | string | readonly string[];
+    /**
+     * 墙外安全区: rects outside the wall that 出屏 shoots keep clear of. Uses
+     * the same `top right bottom left` inset syntax as `safeZone`, and
+     * negative insets reach outside the wall.
+     */
+    outsideSafeZone?: boolean | string | readonly string[];
   }>(),
   {
     height: "clamp(220px, 34vh, 380px)",
@@ -330,7 +336,7 @@ const textureInk = computed(() => {
   return "var(--md-sys-color-on-surface, #1d1b20)";
 });
 const VINE_PARTS = ["fill", "tint", "halo", "edge", "fine"] as const;
-const VINE_BOTANICAL_PARTS = ["leaf", "flower", "bud", "flowerStem"] as const;
+const VINE_BOTANICAL_PARTS = ["leaf", "flower", "bud", "flowerStem", "leafStem"] as const;
 const VINE_PALETTE_KEYS = [...VINE_PARTS, ...VINE_BOTANICAL_PARTS, "base"] as const;
 
 function resolveVinePalette(source?: Partial<Record<VinePart | VineBotanicalPart | "base", string>>): VinePalette {
@@ -843,6 +849,21 @@ function mergeVineKeep(input: VineRect[]): VineRect[] {
   }
 }
 
+/** Rects outside the wall that 出屏 shoots must keep clear of, in wall px about its centre. */
+function measureVineOutsideKeep(): VineRect[] {
+  const option = props.outsideSafeZone;
+  const frame = canvas.value?.getBoundingClientRect();
+  if (!frame || frame.width < 1 || frame.height < 1 || option === false || option === "none" || option === undefined) return [];
+  const entries = option === true ? [] : typeof option === "string" ? option.split(",") : option;
+  const rects: VineRect[] = [];
+  for (const entry of entries) {
+    if (entry.trim() === "auto" || entry.trim() === "") continue;
+    const rect = vineInsetRect(entry, frame.width, frame.height);
+    if (rect) rects.push(rect);
+  }
+  return mergeVineKeep(rects);
+}
+
 /** The safe zone as the wall is laid out now, in wall px about its centre (y up). */
 function measureVineKeep(): VineRect[] {
   const option = props.safeZone;
@@ -1145,6 +1166,7 @@ function rebuildVineScene(plan?: VinePlanSize): void {
     moteBlend: moteBlend.value,
     lightWall: scheme.value === "light",
     keep: vinePlannedKeep,
+    popKeep: scaleVineKeep(measureVineOutsideKeep(), planWidth / width, planHeight / height),
     radius: wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0,
   } as const;
   vineScene = createVine3d(
@@ -2290,7 +2312,7 @@ watch(overlay, (next) => {
   vinePopOutsideScene = null;
 });
 
-watch([vineSeed, () => props.safeZone], () => {
+watch([vineSeed, () => props.safeZone, () => props.outsideSafeZone], () => {
   if (overlay.value === "vine") void nextTick(() => rebuildVineScene());
 });
 

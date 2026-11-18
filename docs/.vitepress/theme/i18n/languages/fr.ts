@@ -137,6 +137,7 @@ export default {
 
     fluidDemoVineBase: "Couleur de base",
     fluidDemoVineLeaf: "Feuille",
+    fluidDemoVineLeafStem: "Pétiole",
     fluidDemoVineFlower: "Fleur",
     fluidDemoVineFlowerStem: "Tige florale",
     fluidDemoVineBud: "Bouton",
@@ -225,6 +226,7 @@ export default {
     fluidDemoPopout: "Dépassement",
     fluidDemoInward: "Vers l'intérieur",
     fluidDemoSafeZone: "Zone sûre",
+    fluidDemoOutsideSafeZone: "Zone de sécurité extérieure",
     fluidDemoOn: "Activé",
     fluidDemoOff: "Désactivé",
     loadingLabel: "Chargement de la page",

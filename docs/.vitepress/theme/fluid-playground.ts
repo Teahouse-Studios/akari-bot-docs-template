@@ -62,6 +62,7 @@ export interface FluidPlaygroundConfig {
   popout: boolean | "auto";
   inward: boolean | "auto";
   safeZone: string;
+  outsideSafeZone?: string;
 }
 
 export const FLUID_PLAYGROUND_NUMERIC_KEYS = [
@@ -79,7 +80,7 @@ export type FluidPlaygroundKey = (typeof FLUID_PLAYGROUND_NUMERIC_KEYS)[number];
 
 const DENSITY_DEFAULT = 1;
 const SAKURA_DENSITY_DEFAULT = 0.55;
-const VINE_PART_ORDER = ["leaf", "flower", "flowerStem", "bud", "base", "fill", "tint", "halo", "edge", "fine"] as const;
+const VINE_PART_ORDER = ["leaf", "leafStem", "flower", "flowerStem", "bud", "base", "fill", "tint", "halo", "edge", "fine"] as const;
 
 /** CSS colour for a picker value: a hex at full opacity, or rgba when it is dimmed. */
 export function fluidColorValue(hex: string, alpha: number): string {
@@ -262,6 +263,10 @@ export function buildFluidWallSnippet(config: FluidPlaygroundConfig): string {
     const zone = config.safeZone.trim();
     if (zone && zone !== "auto") {
       attrs.push(`safe-zone="${zone}"`);
+    }
+    const outsideZone = config.outsideSafeZone?.trim() ?? "none";
+    if (outsideZone && outsideZone !== "none") {
+      attrs.push(`outside-safe-zone="${outsideZone}"`);
     }
   }
 

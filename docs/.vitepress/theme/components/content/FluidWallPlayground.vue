@@ -59,6 +59,7 @@ const height = ref(300);
 const popout = ref<FluidPlaygroundSwitch>("auto");
 const inward = ref<FluidPlaygroundSwitch>("auto");
 const safeZone = ref("auto");
+const outsideSafeZone = ref("none");
 const ripple = ref(1);
 const rippleSpeed = ref(1);
 const rippleSize = ref(1);
@@ -121,6 +122,7 @@ interface FluidPlaygroundSnapshot {
   popout: FluidPlaygroundSwitch;
   inward: FluidPlaygroundSwitch;
   safeZone: string;
+  outsideSafeZone: string;
   ripple: number;
   rippleSpeed: number;
   rippleSize: number;
@@ -185,6 +187,7 @@ const BLEND_OPTIONS: ReadonlyArray<{ value: FluidBlendMode; label: BlendLabel }>
 
 const VINE_PART_OPTIONS = [
   { key: "leaf", label: "fluidDemoVineLeaf" },
+  { key: "leafStem", label: "fluidDemoVineLeafStem" },
   { key: "flower", label: "fluidDemoVineFlower" },
   { key: "flowerStem", label: "fluidDemoVineFlowerStem" },
   { key: "bud", label: "fluidDemoVineBud" },
@@ -555,6 +558,7 @@ const snippet = computed(() =>
     popout: popoutValue.value,
     inward: inwardValue.value,
     safeZone: safeZoneValue.value,
+    outsideSafeZone: outsideSafeZone.value,
   }),
 );
 
@@ -604,6 +608,7 @@ function reset(): void {
   popout.value = "auto";
   inward.value = "auto";
   safeZone.value = "auto";
+  outsideSafeZone.value = "none";
   ripple.value = 1;
   rippleSpeed.value = 1;
   rippleSize.value = 1;
@@ -656,6 +661,7 @@ function randomize(): void {
   popout.value = "auto";
   inward.value = "auto";
   safeZone.value = "auto";
+  outsideSafeZone.value = "none";
   ripple.value = randomBetween(0.2, 2.2, 0.05);
   rippleSpeed.value = randomBetween(0.4, 2.2, 0.05);
   rippleSize.value = randomBetween(0.6, 1.8, 0.05);
@@ -715,6 +721,7 @@ function snapshotPlayground(): FluidPlaygroundSnapshot {
     popout: popout.value,
     inward: inward.value,
     safeZone: safeZone.value,
+    outsideSafeZone: outsideSafeZone.value,
     ripple: ripple.value,
     rippleSpeed: rippleSpeed.value,
     rippleSize: rippleSize.value,
@@ -763,6 +770,7 @@ function applyPlaygroundSnapshot(config: FluidPlaygroundSnapshot): void {
   popout.value = config.popout;
   inward.value = config.inward;
   safeZone.value = config.safeZone;
+  outsideSafeZone.value = config.outsideSafeZone ?? "none";
   ripple.value = config.ripple;
   rippleSpeed.value = config.rippleSpeed;
   rippleSize.value = config.rippleSize;
@@ -917,6 +925,7 @@ onBeforeUnmount(() => window.clearTimeout(copiedTimer));
         :popout="popoutValue"
         :inward="inwardValue"
         :safe-zone="safeZoneValue"
+        :outside-safe-zone="outsideSafeZone"
       />
     </div>
 
@@ -1101,6 +1110,16 @@ onBeforeUnmount(() => window.clearTimeout(copiedTimer));
                 type="text"
                 dir="ltr"
                 placeholder="auto, 0 0 70% 60%"
+              />
+            </label>
+            <label class="fluid-playground__field">
+              <span>{{ t("fluidDemoOutsideSafeZone") }}</span>
+              <input
+                v-model="outsideSafeZone"
+                class="fluid-playground__text"
+                type="text"
+                dir="ltr"
+                placeholder="0 100% 0 -20%"
               />
             </label>
             <label

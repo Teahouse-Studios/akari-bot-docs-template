@@ -20,10 +20,10 @@ tab: API
 | `texture-opacity` | `number \| string` | from `variant` | 0–1; the final alpha also multiplies the texture's weight |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | Outlined or solid; `auto` follows the scheme (dark picks `light`) |
 | `texture-color` | `string` | — | Any CSS colour; overrides `texture-tone`. The colour reaches both the overlay texture and the vine, while its alpha only affects the overlay. |
-| `vine-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Per-part vine colours; values may carry alpha. `base` sets the colour of parts left unset; other unset parts follow `fill`, then `base`, then `texture-color`. |
+| `vine-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Per-part vine colours; values may carry alpha. `base` sets the colour of parts left unset; other unset parts follow `fill`, then `base`, then `texture-color`. |
 | `vine-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `"normal"` | Blend mode between the vine and the flow, as a CSS `mix-blend-mode` value. |
 | `vine-popout-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `vine-blend` | Blend mode for the pop-out vine layer; a separate canvas is used only when set and different from `vine-blend`. |
-| `vine-popout-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Per-part colours of the pop-out shoots beyond their portal. |
+| `vine-popout-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | Per-part colours of the pop-out shoots beyond their portal. |
 | `speed` | `number \| string` | from `variant` | Speed multiplier; 1 is the variant's own drift |
 | `scale` | `number \| string` | from `variant` | Noise sampling scale; larger means finer folds |
 | `curl` | `number \| string` | from `variant` | Curl strength; 0 is a plain, undirected flow |
@@ -34,7 +34,8 @@ tab: API
 | `petal` | `number \| string` | from `variant` | How far the folds curl into petal arms; 0 is a plain flow |
 | `popout` | `boolean \| "auto"` | `"auto"` | Whether vines leave the frame; `auto` follows the page's vine switch |
 | `inward` | `boolean \| "auto"` | `"auto"` | Whether vines rise inside the wall; `auto` matches `popout` |
-| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | Areas the vines avoid; `auto` clears the wall's text, `none`/`false` clears nothing |
+| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | Areas pop-out shoots avoid; `auto` clears the wall's text, `none`/`false` clears nothing. Wall vines grow freely through them |
+| `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | Outside-wall safe zones: rects beyond the frame that pop-out vines keep clear of. Same inset syntax as `safe-zone`; negative values reach outside the wall. |
 | `ripple` | `number` | `1` | Strength of the ripple at each pop-out portal; 0 turns it off. |
 | `ripple-speed` | `number` | `1` | Speed multiplier of that ripple. |
 | `ripple-size` | `number` | `1` | Radius multiplier of that ripple. |

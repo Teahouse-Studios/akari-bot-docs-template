@@ -20,10 +20,10 @@ tab: API
 | `texture-opacity` | `number \| string` | `variant` による | 0–1。実際の透明度は模様ごとの重みも掛ける |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | 線画か塗りか。`auto` は明暗で決める |
 | `texture-color` | `string` | — | 任意の CSS カラー。`texture-tone` を上書きし、オーバーレイとつるの両方に適用されます。alpha はオーバーレイのみに作用します。 |
-| `vine-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | つるの部位ごとの色。値に alpha を含められます。`base` は個別指定のない部位のベース色で、それ以外の未指定部位は `texture-color` に従います。 |
+| `vine-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | つるの部位ごとの色。値に alpha を含められます。`base` は個別指定のない部位のベース色で、それ以外の未指定部位は `texture-color` に従います。 |
 | `vine-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `"normal"` | つると流体背景の合成モード（CSS `mix-blend-mode`）。 |
 | `vine-popout-blend` | `"normal" \| "multiply" \| "screen" \| "overlay" \| "soft-light" \| "difference"` | `vine-blend` | はみ出しつる専用の合成モード。明示的に設定され `vine-blend` と異なる場合のみ別キャンバスを使用します。 |
-| `vine-popout-colors` | `Partial<Record<"base" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 出屏点を越えた出屏部分の部位カラー。 |
+| `vine-popout-colors` | `Partial<Record<"base" \| "leaf" \| "leafStem" \| "flower" \| "flowerStem" \| "bud" \| "fill" \| "tint" \| "halo" \| "edge" \| "fine", string>>` | — | 出屏点を越えた出屏部分の部位カラー。 |
 | `speed` | `number \| string` | `variant` による | 流速の倍率。1 がバリエーション本来の速さ |
 | `scale` | `number \| string` | `variant` による | ノイズの尺度。大きいほど皺が細かい |
 | `curl` | `number \| string` | `variant` による | 巻きの強さ。0 は向きのない流れ |
@@ -35,6 +35,7 @@ tab: API
 | `popout` | `boolean \| "auto"` | `"auto"` | 蔓が枠を越えるか。`auto` はページ側の設定に従う |
 | `inward` | `boolean \| "auto"` | `"auto"` | 蔓が板の中を拱くか。`auto` は `popout` と同じ |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 蔓が避ける領域。`auto` は壁上の文字を避ける |
+| `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | 壁外セーフゾーン。出屏するつるが避ける壁外の矩形。`safe-zone` と同じ指定方法で、負の値は壁の外側へ広がります。 |
 | `ripple` | `number` | `1` | 出屏点の波紋の強さ。0 で無効。 |
 | `ripple-speed` | `number` | `1` | 波紋の速度倍率。 |
 | `ripple-size` | `number` | `1` | 波紋の半径倍率。 |

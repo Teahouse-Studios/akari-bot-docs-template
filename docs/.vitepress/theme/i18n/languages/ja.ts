@@ -152,6 +152,7 @@ export default {
 
     fluidDemoVineBase: "ベースカラー",
     fluidDemoVineLeaf: "葉",
+    fluidDemoVineLeafStem: "葉柄",
     fluidDemoVineFlower: "花",
     fluidDemoVineFlowerStem: "花茎",
     fluidDemoVineBud: "つぼみ",
@@ -240,6 +241,7 @@ export default {
     fluidDemoPopout: "出枠",
     fluidDemoInward: "内側への張り出し",
     fluidDemoSafeZone: "安全領域",
+    fluidDemoOutsideSafeZone: "壁外セーフゾーン",
     fluidDemoOn: "オン",
     fluidDemoOff: "オフ",
     loadingLabel: "ページを読み込み中",
