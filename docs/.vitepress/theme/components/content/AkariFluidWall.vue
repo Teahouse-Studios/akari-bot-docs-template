@@ -86,6 +86,8 @@ const props = withDefaults(
     textureSize?: number | string;
     /** Density multiplier of generated texture units; lower values are sparser. */
     textureDensity?: number | string;
+    /** Density multiplier of the vine layer; lower values grow fewer vines. */
+    vineDensity?: number | string;
     /** Alpha of the overlay, 0..1; the variant picks a starting value. */
     textureOpacity?: number | string;
     /** Whether the overlay is drawn as ink or as light; `auto` follows the scheme. */
@@ -186,6 +188,7 @@ const props = withDefaults(
     texture: undefined,
     textureSize: undefined,
     textureDensity: undefined,
+    vineDensity: undefined,
     textureOpacity: undefined,
     textureTone: "auto",
     textureColor: undefined,
@@ -269,6 +272,7 @@ const textureSize = computed(() =>
 const textureDensity = computed(() =>
   fluidNumber(props.textureDensity, 0, 3, overlay.value === "sakura" ? 0.55 : 1),
 );
+const vineDensity = computed(() => fluidNumber(props.vineDensity, 0.2, 2, 0.7));
 /** Denser overlays need less alpha than sparse ones to read at the same weight. */
 const textureAlpha = computed(
   () => textureOpacity.value * FLUID_TEXTURE_WEIGHTS[overlay.value],
@@ -1174,7 +1178,7 @@ function rebuildVineScene(plan?: VinePlanSize): void {
     planWidth,
     planHeight,
     vineSeed.value,
-    textureDensity.value,
+    textureDensity.value * vineDensity.value,
     textureInkRgb(),
     vineOpacity.value,
     { ...sharedOptions, paint: "all", popCut: vinePopSplit.value },
@@ -1186,7 +1190,7 @@ function rebuildVineScene(plan?: VinePlanSize): void {
       planWidth,
       planHeight,
       vineSeed.value,
-      textureDensity.value,
+      textureDensity.value * vineDensity.value,
       textureInkRgb(),
       vineOpacity.value,
       { ...sharedOptions, paint: "pop", colors: vinePopoutPalette.value },

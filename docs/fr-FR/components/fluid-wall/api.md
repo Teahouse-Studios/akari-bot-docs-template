@@ -17,6 +17,7 @@ tab: API
 | `texture` | `string` | selon `variant` | `none`, `sakura`, `petals`, `stars`, `lace`, `vine`, `dots` |
 | `texture-size` | `number \| string` | selon `texture` | Bord de tuile du motif, en px, borné à 80–640 |
 | `texture-density` | `number \| string` | selon `texture` | Multiplicateur de densité, borné à 0–3 |
+| `vine-density` | `number \| string` | `0.7` | Multiplicateur de densité des lianes. Borné à 0,2–2. Plus la valeur est faible, moins il y a de lianes. |
 | `texture-opacity` | `number \| string` | selon `variant` | 0–1 ; l'alpha final multiplie aussi le poids du motif |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | Trait ou plein ; `auto` suit le schéma |
 | `texture-color` | `string` | — | Toute couleur CSS ; remplace `texture-tone` et s'applique à la texture et à la vigne. L'alpha ne s'applique qu'à la texture. |

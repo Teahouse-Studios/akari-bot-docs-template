@@ -536,6 +536,7 @@ export interface AkariMessages {
   fluidDemoGrid: string;
   fluidDemoTextureSize: string;
   fluidDemoTextureDensity: string;
+  fluidDemoVineDensity: string;
   fluidDemoTextureOpacity: string;
   fluidDemoRandom: string;
   fluidDemoReset: string;

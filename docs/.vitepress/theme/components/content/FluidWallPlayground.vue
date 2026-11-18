@@ -89,6 +89,7 @@ const selectedPreset = ref("");
 const values = reactive(fluidPlaygroundValues("silk"));
 const textureSize = ref(fluidTextureDefaults("silk", "auto").textureSize);
 const textureDensity = ref(fluidTextureDefaults("silk", "auto").textureDensity);
+const vineDensity = ref(0.7);
 const textureOpacity = ref(fluidTextureDefaults("silk", "auto").textureOpacity);
 
 const resolvedTexture = computed<FluidTexture>(() =>
@@ -148,6 +149,7 @@ interface FluidPlaygroundSnapshot {
   values: FluidPlaygroundValues;
   textureSize: number;
   textureDensity: number;
+  vineDensity: number;
   textureOpacity: number;
 }
 
@@ -496,6 +498,17 @@ const overlaySliders = computed<Slider[]>(() => [
     set: (value) => (textureSize.value = value),
   },
   {
+    key: "vineDensity",
+    label: t("fluidDemoVineDensity"),
+    min: 0.2,
+    max: 2,
+    step: 0.05,
+    decimals: 2,
+    value: vineDensity.value,
+    disabled: resolvedTexture.value !== "vine",
+    set: (value) => (vineDensity.value = value),
+  },
+  {
     key: "textureDensity",
     label: t("fluidDemoTextureDensity"),
     min: 0,
@@ -529,6 +542,7 @@ const snippet = computed(() =>
     values: { ...values },
     textureSize: textureSize.value,
     textureDensity: textureDensity.value,
+    vineDensity: vineDensity.value,
     textureOpacity: textureOpacity.value,
     textureColor: textureColor.value,
     mote: mote.value,
@@ -579,6 +593,7 @@ function applyTextureSeed(next: FluidVariant, nextTexture: FluidTexture | "auto"
   const defaults = fluidTextureDefaults(next, nextTexture);
   textureSize.value = defaults.textureSize;
   textureDensity.value = defaults.textureDensity;
+  vineDensity.value = 0.7;
   textureOpacity.value = defaults.textureOpacity;
 }
 
@@ -747,6 +762,7 @@ function snapshotPlayground(): FluidPlaygroundSnapshot {
     values: { ...values },
     textureSize: textureSize.value,
     textureDensity: textureDensity.value,
+    vineDensity: vineDensity.value,
     textureOpacity: textureOpacity.value,
   };
 }
@@ -796,6 +812,7 @@ function applyPlaygroundSnapshot(config: FluidPlaygroundSnapshot): void {
   Object.assign(values, config.values);
   textureSize.value = config.textureSize;
   textureDensity.value = config.textureDensity;
+  vineDensity.value = config.vineDensity ?? 0.7;
   textureOpacity.value = config.textureOpacity;
 }
 
@@ -921,6 +938,7 @@ onBeforeUnmount(() => window.clearTimeout(copiedTimer));
         :speed="values.speed"
         :texture-size="textureSize"
         :texture-density="textureDensity"
+        :vine-density="vineDensity"
         :texture-opacity="textureOpacity"
         :popout="popoutValue"
         :inward="inwardValue"

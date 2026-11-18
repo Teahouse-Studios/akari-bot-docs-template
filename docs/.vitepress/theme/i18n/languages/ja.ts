@@ -232,6 +232,7 @@ export default {
     fluidDemoGrid: "グリッド",
     fluidDemoTextureSize: "模様のサイズ",
     fluidDemoTextureDensity: "模様の密度",
+  fluidDemoVineDensity: "蔦の密度",
     fluidDemoTextureOpacity: "模様の濃さ",
     fluidDemoRandom: "ランダム",
     fluidDemoReset: "リセット",

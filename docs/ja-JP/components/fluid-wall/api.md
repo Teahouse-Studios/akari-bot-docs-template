@@ -17,6 +17,7 @@ tab: API
 | `texture` | `string` | `variant` による | `none`、`sakura`、`petals`、`stars`、`lace`、`vine`、`dots` |
 | `texture-size` | `number \| string` | `texture` による | 重ね模様のタイル辺、px。80–640 に挟む |
 | `texture-density` | `number \| string` | `texture` による | 密度の倍率。0–3 に挟む |
+| `vine-density` | `number \| string` | `0.7` | 蔦の密度倍率。0.2〜2 に収められる。値が小さいほど蔦が少なくなる。 |
 | `texture-opacity` | `number \| string` | `variant` による | 0–1。実際の透明度は模様ごとの重みも掛ける |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | 線画か塗りか。`auto` は明暗で決める |
 | `texture-color` | `string` | — | 任意の CSS カラー。`texture-tone` を上書きし、オーバーレイとつるの両方に適用されます。alpha はオーバーレイのみに作用します。 |

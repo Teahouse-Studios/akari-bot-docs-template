@@ -217,6 +217,7 @@ export default {
     fluidDemoGrid: "Grille",
     fluidDemoTextureSize: "Taille de la texture",
     fluidDemoTextureDensity: "Densité de la texture",
+  fluidDemoVineDensity: "Densité des lianes",
     fluidDemoTextureOpacity: "Opacité de la texture",
     fluidDemoRandom: "Aléatoire",
     fluidDemoReset: "Réinitialiser",

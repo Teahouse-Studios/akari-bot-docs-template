@@ -1729,16 +1729,31 @@ function planPopShoots(
     hh: frame.hh + reach,
   };
   const card: Frame = popKeep.length ? { ...frame, keep: [...frame.keep, ...popKeep] } : frame;
-  // Spread the budget evenly over the open edges instead of following edge
-  // length: a wide wall otherwise stacks most of its shoots on the long sides.
+  // Allocate the budget by edge length, with one shoot per open edge as the
+  // floor. A long edge can then take more without turning into a pile of
+  // four or five shoots on a wall that is barely wider than it is tall.
   const open = EDGES.filter((edge) => edges & (1 << edge));
   if (!open.length) return [];
   const total = clamp(3 + ((frame.width + frame.height) / frame.unit) * 1.25, 5, 10);
-  const base = Math.floor(total / open.length);
-  const extra = total % open.length;
+  const lengthOf = (edge: number): number => (edge % 2 === 0 ? frame.height : frame.width);
+  const totalLength = open.reduce<number>((sum, edge) => sum + lengthOf(edge), 0);
+  const quotas = new Map<number, number>();
+  for (const edge of open) {
+    quotas.set(edge, Math.max(1, Math.floor((total * lengthOf(edge)) / totalLength)));
+  }
+  let remaining = total - [...quotas.values()].reduce((sum, value) => sum + value, 0);
+  while (remaining > 0) {
+    const edge = [...open].sort((a, b) => {
+      const fa = (total * lengthOf(a)) / totalLength - (quotas.get(a) ?? 0);
+      const fb = (total * lengthOf(b)) / totalLength - (quotas.get(b) ?? 0);
+      return fb - fa;
+    })[0]!;
+    quotas.set(edge, (quotas.get(edge) ?? 0) + 1);
+    remaining -= 1;
+  }
   const order = [...open.slice(salt % open.length), ...open.slice(0, salt % open.length)];
   const pops: VinePlan[] = [];
-  for (const [index, edge] of order.entries()) {
+  for (const edge of order) {
     const random = vineRandom(salt ^ Math.imul(edge + 1, 0x9e3779b1));
     // Each edge grows into its own copy of the garden, so the others' shoots
     // do not steer it.
@@ -1750,7 +1765,7 @@ function planPopShoots(
       trails: [...garden.trails],
       wires: [...garden.wires],
     };
-    const want = base + (index < extra ? 1 : 0);
+    const want = quotas.get(edge) ?? 0;
     pops.push(...planEdgeShoots({ ...own, frame: wide }, card, plans, edge, edges, want));
   }
   return pops;

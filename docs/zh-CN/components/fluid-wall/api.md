@@ -19,6 +19,7 @@ tab: 接口
 | `texture` | `"none"`、`"sakura"`、`"petals"`、`"stars"`、`"lace"`、`"vine"`、`"dots"` | 随 `variant` | 叠加纹理类型。 |
 | `texture-size` | `number \| string` | 随 `texture` | 叠加层的瓦片边长，单位为 px。取值夹在 80–640。 |
 | `texture-density` | `number \| string` | 随 `texture` | 图案密度倍率。取值夹在 0–3。数值越小，图案越疏。 |
+| `vine-density` | `number \| string` | `0.7` | 藤蔓密度倍率。取值夹在 0.2–2。数值越小，藤蔓越少。 |
 | `texture-opacity` | `number \| string` | 随 `variant` | 叠加层透明度，取值 0–1。最终透明度还会乘以该纹理的观感权重。 |
 | `texture-tone` | `"auto"`、`"ink"`、`"light"` | `"auto"` | 纹理画法。`auto` 按明暗决定，深色模式取 `light`。 |
 | `texture-color` | `string` | — | 任意 CSS 颜色。此属性覆盖 `texture-tone`。颜色作用于叠加纹理与藤蔓，alpha 只影响叠加纹理。 |

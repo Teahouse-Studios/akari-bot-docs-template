@@ -220,6 +220,7 @@ export default {
     fluidDemoGrid: "网格",
     fluidDemoTextureSize: "纹理尺寸",
     fluidDemoTextureDensity: "纹理密度",
+  fluidDemoVineDensity: "藤蔓密度",
     fluidDemoTextureOpacity: "纹理浓度",
     fluidDemoRandom: "随机",
     fluidDemoReset: "重置",

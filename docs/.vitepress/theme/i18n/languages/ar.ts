@@ -230,6 +230,7 @@ export default {
     fluidDemoGrid: "الشبكة",
     fluidDemoTextureSize: "حجم النقشة",
     fluidDemoTextureDensity: "كثافة النقشة",
+  fluidDemoVineDensity: "كثافة الكروم",
     fluidDemoTextureOpacity: "شفافية النقشة",
     fluidDemoRandom: "عشوائي",
     fluidDemoReset: "إعادة الضبط",

@@ -229,6 +229,7 @@ export default {
     fluidDemoGrid: "격자",
     fluidDemoTextureSize: "무늬 크기",
     fluidDemoTextureDensity: "무늬 밀도",
+  fluidDemoVineDensity: "덩굴 밀도",
     fluidDemoTextureOpacity: "무늬 농도",
     fluidDemoRandom: "무작위",
     fluidDemoReset: "초기화",

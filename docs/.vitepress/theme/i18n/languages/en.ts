@@ -208,6 +208,7 @@ export default {
     fluidDemoGrid: "Grid",
     fluidDemoTextureSize: "Texture size",
     fluidDemoTextureDensity: "Texture density",
+  fluidDemoVineDensity: "Vine density",
     fluidDemoTextureOpacity: "Texture opacity",
     fluidDemoRandom: "Randomize",
     fluidDemoReset: "Reset",

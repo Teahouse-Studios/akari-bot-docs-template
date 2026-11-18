@@ -17,6 +17,7 @@ tab: API
 | `texture` | `string` | from `variant` | `none`, `sakura`, `petals`, `stars`, `lace`, `vine`, `dots` |
 | `texture-size` | `number \| string` | from `texture` | Tile edge of the overlay in px, clamped to 80–640 |
 | `texture-density` | `number \| string` | from `texture` | Density multiplier, clamped to 0–3; lower is sparser |
+| `vine-density` | `number \| string` | `0.7` | Vine density multiplier. Clamped to 0.2–2. Lower values grow fewer vines. |
 | `texture-opacity` | `number \| string` | from `variant` | 0–1; the final alpha also multiplies the texture's weight |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | Outlined or solid; `auto` follows the scheme (dark picks `light`) |
 | `texture-color` | `string` | — | Any CSS colour; overrides `texture-tone`. The colour reaches both the overlay texture and the vine, while its alpha only affects the overlay. |

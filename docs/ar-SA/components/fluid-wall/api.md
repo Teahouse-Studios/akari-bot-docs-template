@@ -17,6 +17,7 @@ tab: API
 | `texture` | `string` | حسب `variant` | `none` أو `sakura` أو `petals` أو `stars` أو `lace` أو `vine` أو `dots` |
 | `texture-size` | `number \| string` | حسب `texture` | حافة بلاطة النقش بالبكسل، محصورة بين 80 و640 |
 | `texture-density` | `number \| string` | حسب `texture` | مضاعف الكثافة، محصور بين 0 و3 |
+| `vine-density` | `number \| string` | `0.7` | مضاعف كثافة الكروم. محصور بين 0.2 و2. القيم الأصغر تنشئ كرومًا أقل. |
 | `texture-opacity` | `number \| string` | حسب `variant` | من 0 إلى 1، والشفافية النهائية تضرب وزن النقش أيضاً |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | خطوط أو ملء؛ و`auto` يتبع الفاتح والداكن |
 | `texture-color` | `string` | — | أي لون CSS؛ يتجاوز `texture-tone` ويُطبق على النسيج والكرمة. يُطبق alpha على النسيج فقط. |

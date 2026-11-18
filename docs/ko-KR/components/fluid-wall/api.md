@@ -17,6 +17,7 @@ tab: API
 | `texture` | `string` | `variant`에 따름 | `none`, `sakura`, `petals`, `stars`, `lace`, `vine`, `dots` |
 | `texture-size` | `number \| string` | `texture`에 따름 | 겹침 무늬의 타일 변, px. 80–640으로 자름 |
 | `texture-density` | `number \| string` | `texture`에 따름 | 밀도 배율. 0–3으로 자름 |
+| `vine-density` | `number \| string` | `0.7` | 덩굴 밀도 배율. 0.2–2로 제한됩니다. 값이 작을수록 덩굴이 적습니다. |
 | `texture-opacity` | `number \| string` | `variant`에 따름 | 0–1. 실제 투명도는 무늬별 가중치도 곱한다 |
 | `texture-tone` | `"auto" \| "ink" \| "light"` | `"auto"` | 선화인지 채움인지. `auto`는 밝기에 따른다 |
 | `texture-color` | `string` | — | 임의의 CSS 색상. `texture-tone`을 덮어쓰며 오버레이와 덩굴 모두에 적용됩니다. alpha는 오버레이에만 적용됩니다. |
