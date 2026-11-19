@@ -2118,6 +2118,10 @@ void main() {
       }
       for (const object of paintedObjects) object.visible = true;
       if (particlePoints) particlePoints.visible = true;
+      // Shadow meshes are only valid inside a shadow render target. Hiding them
+      // here makes a leaked pass unable to paint a dark duplicate on the wall.
+      for (const object of shadowObjects) object.visible = false;
+      for (const object of wallShadowObjects) object.visible = false;
       renderer.render(scene, camera);
       if (wallShadowActive && wallShadowDrawn && wallShadowTarget) compositeShadow(wallShadowTarget, wallShadowBlur);
       if (shadowActive && shadowDrawn && shadowTarget) compositeShadow(shadowTarget, shadowBlur);
