@@ -46,6 +46,7 @@ import {
 } from "../../vine3d";
 import { VINE_POP_ALL, vinePopBleed, type VineRect } from "../../vinePlan";
 import { hasAkariGpu } from "../../gpu-tier";
+import { whenAkariReady } from "../../ready";
 
 /** Every overlay except the empty one, which is drawn by nothing at all. */
 type OverlayKind = Exclude<FluidTexture, "none">;
@@ -1632,6 +1633,8 @@ let drawnAt = 0;
 let elapsed = 0; /* seconds */
 let vineReadyTimer = 0;
 let rippleReadyTimer = 0;
+/** The garden waits for the page to finish hydrating before it fades in. */
+let pageReady = false;
 let rippleRampStart = -1;
 /** The pointer drags the field and the light a little, so the wall answers it. */
 const pointer = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
@@ -2047,7 +2050,7 @@ function draw(): void {
   context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
   vineScene?.render(elapsed);
   vinePopOutsideScene?.render(elapsed);
-  if (!vineReady.value && vineScene && vineReadyTimer === 0) {
+  if (!vineReady.value && vineScene && pageReady && vineReadyTimer === 0) {
     vineReadyTimer = window.setTimeout(() => {
       vineReady.value = true;
       vineReadyTimer = 0;
@@ -2427,6 +2430,10 @@ onMounted(() => {
   window.addEventListener(VINE_POPOUT_EVENT, onVinePopoutChange);
   window.addEventListener("resize", checkVinePopEdges, { passive: true });
   window.addEventListener("scroll", onPageScroll, { passive: true });
+  void whenAkariReady().then(() => {
+    pageReady = true;
+    if (!vineReady.value && vineScene) draw();
+  });
   void bootstrap();
 });
 
