@@ -11,6 +11,7 @@ tab: API
 | 속성 | 형 | 기본값 | 설명 |
 | --- | --- | --- | --- |
 | `height` | `string` | `clamp(220px, 34vh, 380px)` | 임의의 CSS 길이 |
+| `seed` | `number \| string` | 페이지 시드 | 배경판 시드. 흐름, 레이스, 무늬, 덩굴 배열이 모두 여기서 파생됩니다. 생략하면 페이지 시드를 따르며 새로고침마다 달라집니다. 고정하면 배경판 전체를 재현합니다. |
 | `variant` | `string` | `"silk"` | `silk`, `aurora`, `mesh`, `nebula`, `blossom`. 모르는 값은 `silk` |
 | `light` | `"start" \| "center" \| "end"` | `"end"` | 가상 광원의 위치. 주변 어둡기의 방향도 정한다 |
 | `placement` | `"start" \| "center" \| "end"` | `"start"` | 슬롯 내용의 가로 위치. 베일도 같은 방향으로 돈다 |
@@ -122,6 +123,8 @@ import {
 | `fluidVariant(v)`, `fluidTexture(v)` | 임의 입력을 합법 열거로 좁히고 모르면 `silk` / `none` |
 | `fluidTextureTone(tone, scheme)` | `auto`를 `ink`나 `light`로 푼다 |
 | `fluidNumber(value, min, max, fallback)` | 자르기와 기본값. 모든 숫자 속성이 여기를 지난다 |
+| `fluidSeedOffset(seed)` | 시드에서 노이즈 장의 오프셋을 구한다. 같은 시드는 같은 위치가 된다. |
+| `deriveVineSeed(boardSeed)` | 배경판 시드에서 덩굴 시드를 파생한다. |
 | `fluidPalette(tokens, scheme, tone, accent)` | 아홉 색 토큰과 두 조절값으로 `FluidPalette`를 만든다 |
 | `mixFluid(from, to, amount)` | GLSL `mix`와 같은 의미의 선형 보간 |
 | `FLUID_LOOPS`, `fluidLoopOffset`, `fluidLoopOffsets` | 네 갈래 닫힌 표류의 주기와 위상 |
@@ -144,5 +147,5 @@ import {
 ## 기타
 
 - 겹침 무늬는 정적이라 흐름을 따라 움직이지 않습니다. 움직이려면 셰이더를 바꿔야 합니다.
-- `lace`는 마운트할 때마다 seed를 다시 뽑으므로 새로 고치면 띠 위치가 바뀝니다. 고정 seed는 속성으로 노출하지 않습니다.
+- `lace`, 겹침 무늬, 덩굴은 모두 같은 배경판 `seed`에서 파생됩니다. 생략하면 페이지 시드를 따르며 새로고침마다 달라집니다. 고정 `seed`를 넘기면 배경판 전체를 재현합니다.
 - 외부 이미지에 기대지 않습니다. 무늬와 레이스 모두 실행 중에 만드는 인라인 SVG와 경로라 추가 통신이 없습니다.

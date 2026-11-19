@@ -11,6 +11,7 @@ tab: API
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `height` | `string` | `clamp(220px, 34vh, 380px)` | Any CSS length |
+| `seed` | `number \| string` | page seed | Board seed. The flow, lace, texture and vine sequence all derive from it. Omit it to follow the page seed and vary per load; a fixed value reproduces the whole board. |
 | `variant` | `string` | `"silk"` | `silk`, `aurora`, `mesh`, `nebula`, `blossom`; unknown values fall back to `silk` |
 | `light` | `"start" \| "center" \| "end"` | `"end"` | Which end the virtual light sits at; also turns the vignette |
 | `placement` | `"start" \| "center" \| "end"` | `"start"` | Where the slotted content sits; the veil turns with it |
@@ -122,6 +123,8 @@ import {
 | `fluidVariant(v)`, `fluidTexture(v)` | Narrow any input to a legal enum, falling back to `silk` / `none` |
 | `fluidTextureTone(tone, scheme)` | Resolves `auto` into `ink` or `light` |
 | `fluidNumber(value, min, max, fallback)` | Clamp and fall back; every numeric prop goes through it |
+| `fluidSeedOffset(seed)` | Noise-field offset for a seed; the same seed lands on the same patch. |
+| `deriveVineSeed(boardSeed)` | Derives the vine seed from the board seed. |
 | `fluidPalette(tokens, scheme, tone, accent)` | Turns nine colour tokens and two dials into a `FluidPalette` |
 | `mixFluid(from, to, amount)` | Linear interpolation with the same semantics as GLSL `mix` |
 | `FLUID_LOOPS`, `fluidLoopOffset(s, loop)`, `fluidLoopOffsets(s)` | Periods of the four closed drifts, and their phase offsets |
@@ -144,5 +147,5 @@ import {
 ## Notes
 
 - Overlays are static: they do not move with the flow. Making them move means changing the shader.
-- `lace` reseeds on every mount, so ribbon positions change on refresh; the component does not expose a fixed seed.
+- `lace`, the texture and the vines all derive from the same board `seed`; omitted, the wall follows the page seed and changes on refresh. Pass a fixed `seed` to reproduce the whole board.
 - No external assets: textures and lace are inline SVG and paths generated at runtime, with no extra requests.

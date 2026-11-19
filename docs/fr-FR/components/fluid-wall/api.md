@@ -11,6 +11,7 @@ tab: API
 | Attribut | Type | Défaut | Description |
 | --- | --- | --- | --- |
 | `height` | `string` | `clamp(220px, 34vh, 380px)` | Toute longueur CSS |
+| `seed` | `number \| string` | graine de la page | Graine du panneau. Le flux, le lacet, le motif et la séquence des lianes en dérivent. Omise, elle suit la graine de la page et change à chaque chargement ; une valeur fixe reproduit tout le panneau. |
 | `variant` | `string` | `"silk"` | `silk`, `aurora`, `mesh`, `nebula`, `blossom` ; une valeur inconnue retombe sur `silk` |
 | `light` | `"start" \| "center" \| "end"` | `"end"` | Où se trouve la lumière virtuelle ; oriente aussi le vignettage |
 | `placement` | `"start" \| "center" \| "end"` | `"start"` | Position horizontale du contenu ; le voile tourne avec |
@@ -122,6 +123,8 @@ import {
 | `fluidVariant(v)`, `fluidTexture(v)` | Ramènent une entrée à une énumération légale, sinon `silk` / `none` |
 | `fluidTextureTone(tone, scheme)` | Résout `auto` en `ink` ou `light` |
 | `fluidNumber(value, min, max, fallback)` | Borne et repli ; tous les attributs numériques passent par là |
+| `fluidSeedOffset(seed)` | Décalage du champ de bruit pour une graine ; même graine, même région. |
+| `deriveVineSeed(boardSeed)` | Dérive la graine des lianes depuis celle du panneau. |
 | `fluidPalette(tokens, scheme, tone, accent)` | Neuf jetons de couleur et deux réglages donnent un `FluidPalette` |
 | `mixFluid(from, to, amount)` | Interpolation linéaire de même sémantique que `mix` en GLSL |
 | `FLUID_LOOPS`, `fluidLoopOffset`, `fluidLoopOffsets` | Périodes des quatre dérives fermées et leurs phases |
@@ -144,5 +147,5 @@ import {
 ## Remarques
 
 - Les motifs sont statiques : ils ne suivent pas le flux. Les faire bouger exige de changer le shader.
-- `lace` retire une graine à chaque montage : les bandes changent de place au rechargement ; le composant n'expose pas de graine fixe.
+- `lace`, le motif et les lianes dérivent tous de la même `seed` du panneau ; omise, elle suit la graine de la page et change au rechargement. Une `seed` fixe reproduit tout le panneau.
 - Aucune ressource externe : motifs et dentelle sont des SVG en ligne et des chemins générés à l'exécution, sans requête supplémentaire.

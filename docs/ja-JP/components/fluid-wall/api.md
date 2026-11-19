@@ -11,6 +11,7 @@ tab: API
 | 属性 | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | `height` | `string` | `clamp(220px, 34vh, 380px)` | 任意の CSS 長さ |
+| `seed` | `number \| string` | ページのシード | 背景板のシード。流れ・レース・模様・蔦の並びはすべてここから派生します。省略するとページのシードに従い、読み込みごとに変わります。固定すると背景板全体を再現できます。 |
 | `variant` | `string` | `"silk"` | `silk`、`aurora`、`mesh`、`nebula`、`blossom`。不明な値は `silk` |
 | `light` | `"start" \| "center" \| "end"` | `"end"` | 仮想光源の位置。周辺減光の向きも決める |
 | `placement` | `"start" \| "center" \| "end"` | `"start"` | スロット内容の横位置。ベールも同じ向きに回る |
@@ -122,6 +123,8 @@ import {
 | `fluidVariant(v)`、`fluidTexture(v)` | 任意の入力を合法な列挙に寄せ、不明なら `silk` / `none` |
 | `fluidTextureTone(tone, scheme)` | `auto` を `ink` か `light` に解く |
 | `fluidNumber(value, min, max, fallback)` | 挟みと既定値。数値属性はすべてここを通る |
+| `fluidSeedOffset(seed)` | シードからノイズ場のオフセットを返す。同じシードは同じ位置になる。 |
+| `deriveVineSeed(boardSeed)` | 背景板のシードから蔦のシードを導出する。 |
 | `fluidPalette(tokens, scheme, tone, accent)` | 九つの色トークンと二つの調整値から `FluidPalette` を出す |
 | `mixFluid(from, to, amount)` | GLSL の `mix` と同じ意味の線形補間 |
 | `FLUID_LOOPS`、`fluidLoopOffset`、`fluidLoopOffsets` | 四本の閉じた漂流の周期と位相 |
@@ -144,5 +147,5 @@ import {
 ## その他
 
 - 重ね模様は静的で、流れに乗って動きません。動かすにはシェーダを変える必要があります。
-- `lace` はマウントのたびに種を振り直すため、再読み込みで帯の位置が変わります。固定の種は属性として公開していません。
+- `lace`、重ね模様、蔦は同じ背景板 `seed` から派生します。省略時はページのシードに従い、再読み込みで変わります。固定の `seed` を渡すと背景板全体を再現できます。
 - 外部画像に依存しません。模様もレースも実行時に生成するインライン SVG と経路で、追加の通信はありません。

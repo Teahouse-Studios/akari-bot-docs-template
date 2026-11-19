@@ -2,28 +2,28 @@
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 import {
+  BOARD_SEED_EVENT,
   normalizeVineSeed,
+  readBoardSeed,
   readVinePopout,
-  readVineSeed,
   VINE_DEFAULT_SEED,
   VINE_POPOUT_EVENT,
-  VINE_SEED_EVENT,
+  writeBoardSeed,
   writeVinePopout,
-  writeVineSeed,
 } from "../../vine3d";
 
-const seed = ref(VINE_DEFAULT_SEED);
+const boardSeed = ref(VINE_DEFAULT_SEED);
 // Read once mounted, so the server-rendered box and the hydrated one agree.
 const popout = ref(false);
-const draft = ref(String(seed.value));
+const draft = ref(String(boardSeed.value));
 
 function apply(value: unknown = draft.value): void {
-  seed.value = writeVineSeed(value);
-  draft.value = String(seed.value);
+  boardSeed.value = writeBoardSeed(value);
+  draft.value = String(boardSeed.value);
 }
 
 function shift(amount: number): void {
-  apply(seed.value + amount);
+  apply(boardSeed.value + amount);
 }
 
 function randomize(): void {
@@ -31,8 +31,8 @@ function randomize(): void {
 }
 
 function onSeedChange(event: Event): void {
-  seed.value = normalizeVineSeed((event as CustomEvent<unknown>).detail);
-  draft.value = String(seed.value);
+  boardSeed.value = normalizeVineSeed((event as CustomEvent<unknown>).detail);
+  draft.value = String(boardSeed.value);
 }
 
 function togglePopout(event: Event): void {
@@ -44,14 +44,14 @@ function onPopoutChange(event: Event): void {
 }
 
 onMounted(() => {
-  seed.value = readVineSeed();
-  draft.value = String(seed.value);
+  boardSeed.value = readBoardSeed();
+  draft.value = String(boardSeed.value);
   popout.value = readVinePopout();
-  window.addEventListener(VINE_SEED_EVENT, onSeedChange);
+  window.addEventListener(BOARD_SEED_EVENT, onSeedChange);
   window.addEventListener(VINE_POPOUT_EVENT, onPopoutChange);
 });
 onBeforeUnmount(() => {
-  window.removeEventListener(VINE_SEED_EVENT, onSeedChange);
+  window.removeEventListener(BOARD_SEED_EVENT, onSeedChange);
   window.removeEventListener(VINE_POPOUT_EVENT, onPopoutChange);
 });
 </script>
@@ -59,7 +59,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="akari-vine-seed-control">
     <label>
-      <span>藤蔓种子</span>
+      <span>背景板种子</span>
       <input
         v-model="draft"
         type="number"

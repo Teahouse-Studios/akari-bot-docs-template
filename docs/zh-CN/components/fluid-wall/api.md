@@ -13,6 +13,7 @@ tab: 接口
 | 属性 | 取值 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `height` | `string` | `clamp(220px, 34vh, 380px)` | 任意 CSS 长度。 |
+| `seed` | `number \| string` | 随页面 | 背景板种子。流场、蕾丝、纹理与藤蔓序列都由它派生；省略时跟随页面种子，每次加载不同；固定数值可复现整块背景板。 |
 | `variant` | `"silk"`、`"aurora"`、`"mesh"`、`"nebula"`、`"blossom"` | `"silk"` | 背景板形态。未知值退回 `silk`。 |
 | `light` | `"start"`、`"center"`、`"end"` | `"end"` | 虚拟光源所在的一端。此属性同时决定暗角方向。 |
 | `placement` | `"start"`、`"center"`、`"end"` | `"start"` | 插槽内容的横向位置。渐变蒙版随之翻转。 |
@@ -126,6 +127,8 @@ import {
 | `fluidVariant(v)`、`fluidTexture(v)` | 把任意输入收敛为合法枚举。未知值退回 `silk` 或 `none`。 |
 | `fluidTextureTone(tone, scheme)` | 把 `auto` 按明暗解析为 `ink` 或 `light`。 |
 | `fluidNumber(value, min, max, fallback)` | 夹紧并返回兜底值。所有数值属性的解析都经过此函数。 |
+| `fluidSeedOffset(seed)` | 由种子得到噪声场偏移，相同种子得到相同位置。 |
+| `deriveVineSeed(boardSeed)` | 由背景板种子派生藤蔓种子。 |
 | `fluidPalette(tokens, scheme, tone, accent)` | 由九个颜色令牌与两档调节量计算一份 `FluidPalette`。 |
 | `mixFluid(from, to, amount)` | 线性插值，口径与 GLSL `mix` 相同。 |
 | `FLUID_LOOPS`、`fluidLoopOffset(s, loop)`、`fluidLoopOffsets(s)` | 四路闭合漂移的周期，以及单路与整体的相位偏移。 |
@@ -148,5 +151,5 @@ import {
 ## 使用限制
 
 - 叠加纹理是静态图案，不随流场移动。需要动画时必须修改着色器。
-- `lace` 的带子每次挂载都会重新生成随机种子，因此刷新页面后花边位置会变化。需要固定位置时，请使用组件之外的随机源缓存，组件目前不提供固定种子的属性。
+- `lace`、叠加纹理与藤蔓都由同一个背景板 `seed` 派生；省略时跟随页面种子，刷新后变化。传入固定 `seed` 可复现整块背景板。
 - 组件不依赖外部图片。纹理与蕾丝都是运行时生成的内联 SVG 与路径，不产生额外网络请求。

@@ -14,6 +14,7 @@ import {
   fluidNumber,
   fluidPalette,
   fluidRenderSize,
+  fluidSeedOffset,
   fluidTextureTone,
   buildFluidRibbons,
   ribbonBandPath,
@@ -373,4 +374,20 @@ describe("buildFluidRibbons", () => {
     expect((lace.match(/M/g) ?? []).length).toBeGreaterThan(10);
   });
 
+});
+
+
+describe("fluidSeedOffset", () => {
+  it("is reproducible and moves the field for a different seed", () => {
+    expect(fluidSeedOffset(7)).toEqual(fluidSeedOffset(7));
+    expect(fluidSeedOffset(7)).not.toEqual(fluidSeedOffset(8));
+  });
+
+  it("stays inside the tile the shader expects", () => {
+    for (let seed = 1; seed <= 64; seed += 1) {
+      const [x, y] = fluidSeedOffset(seed);
+      expect(Math.abs(x)).toBeLessThanOrEqual(16);
+      expect(Math.abs(y)).toBeLessThanOrEqual(16);
+    }
+  });
 });

@@ -19,8 +19,9 @@ import {
 } from "./vinePlan";
 
 export const VINE_DEFAULT_SEED = 20261116;
+export const BOARD_SEED_EVENT = "akari-board-seed-change";
 export const VINE_SEED_STORAGE_KEY = "akari-vine-seed";
-export const VINE_SEED_EVENT = "akari-vine-seed-change";
+export const VINE_SEED_EVENT = BOARD_SEED_EVENT;
 export const VINE_POPOUT_STORAGE_KEY = "akari-vine-popout";
 export const VINE_POPOUT_EVENT = "akari-vine-popout-change";
 
@@ -270,14 +271,32 @@ export function normalizeVineSeed(value: unknown): number {
   return Math.min(0x7fffffff, Math.max(1, Math.trunc(parsed)));
 }
 
-let pageVineSeed: number | null = null;
+/**
+ * Derives the vine sequence from the board seed. The board seed is the public
+ * input; vines never get an independent random seed, so one value reproduces
+ * the whole wall.
+ */
+export function deriveVineSeed(boardSeed: number): number {
+  let hash = normalizeVineSeed(boardSeed) >>> 0;
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash ^= hash >>> 16;
+  return (hash & 0x7fffffff) || 1;
+}
 
-export function readVineSeed(): number {
+let pageBoardSeed: number | null = null;
+
+export function readBoardSeed(): number {
   if (typeof window === "undefined") return VINE_DEFAULT_SEED;
-  if (pageVineSeed === null) {
-    pageVineSeed = normalizeVineSeed(Math.floor(Math.random() * 0x7fffffff));
+  if (pageBoardSeed === null) {
+    pageBoardSeed = normalizeVineSeed(Math.floor(Math.random() * 0x7fffffff));
   }
-  return pageVineSeed;
+  return pageBoardSeed;
+}
+
+/** Legacy alias; the page seed is now the board seed. */
+export function readVineSeed(): number {
+  return readBoardSeed();
 }
 
 export function readVinePopout(): boolean {
@@ -301,12 +320,17 @@ export function writeVinePopout(value: boolean): boolean {
   return next;
 }
 
-export function writeVineSeed(value: unknown): number {
+export function writeBoardSeed(value: unknown): number {
   const seed = normalizeVineSeed(value);
   if (typeof window === "undefined") return seed;
-  pageVineSeed = seed;
-  window.dispatchEvent(new CustomEvent<number>(VINE_SEED_EVENT, { detail: seed }));
+  pageBoardSeed = seed;
+  window.dispatchEvent(new CustomEvent<number>(BOARD_SEED_EVENT, { detail: seed }));
   return seed;
+}
+
+/** Legacy alias; the page seed is now the board seed. */
+export function writeVineSeed(value: unknown): number {
+  return writeBoardSeed(value);
 }
 
 type VinePartUniforms = {

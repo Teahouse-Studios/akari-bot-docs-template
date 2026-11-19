@@ -9,6 +9,7 @@ import {
   type VinePlan,
   type VineRect,
 } from "../docs/.vitepress/theme/vinePlan";
+import { deriveVineSeed } from "../docs/.vitepress/theme/vine3d";
 
 const SIZES: readonly (readonly [number, number])[] = [
   [280, 280],
@@ -139,5 +140,17 @@ describe("planVineGarden safe zones and inward shoots", () => {
       }
     }
     expect(count).toBeGreaterThan(0);
+  });
+});
+
+describe("deriveVineSeed", () => {
+  it("derives a stable vine seed in range from the board seed", () => {
+    for (let board = 1; board <= 64; board++) {
+      const seed = deriveVineSeed(board);
+      expect(seed).toBe(deriveVineSeed(board));
+      expect(seed).toBeGreaterThan(0);
+      expect(seed).toBeLessThanOrEqual(0x7fffffff);
+    }
+    expect(deriveVineSeed(1)).not.toBe(deriveVineSeed(2));
   });
 });

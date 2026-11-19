@@ -52,7 +52,7 @@ import FluidWallPlayground from "../../../.vitepress/theme/components/content/Fl
 
 `sakura`는 다섯 잎 꽃입니다. 밝은 쪽에서는 선화, 어두운 쪽에서는 채움입니다. `texture-tone`으로 고정할 수 있습니다.
 
-`lace`는 타일이 아니라 띠를 하나씩 만듭니다. 양 끝은 화면 밖으로 빠지고 위치와 방향은 마운트할 때마다 다시 뽑습니다.
+`lace`는 타일이 아니라 띠를 하나씩 만듭니다. 양 끝은 화면 밖으로 빠지고 위치와 방향은 `seed`로 정해집니다. 생략하면 새로고침마다 달라지고, 고정하면 재현됩니다.
 
 `vine`은 덩굴을 뻗으며 틀 밖으로 나갈 수도 있습니다.
 

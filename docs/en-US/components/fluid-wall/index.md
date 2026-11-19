@@ -75,7 +75,7 @@ Switch **Texture** in the playground above to preview each one.
 
 `stars` is a sparkle field, best on the darkest walls.
 
-`lace` is not a tile: it builds ribbon bands, each entering and leaving the frame at random, with two scalloped edges and a row of lace motifs. Position and direction are redrawn on every mount.
+`lace` is not a tile: it builds ribbon bands, each entering and leaving the frame at random, with two scalloped edges and a row of lace motifs. Position and direction come from `seed`; omitted, they change per load, and a fixed `seed` reproduces them.
 
 `vine` grows shoots, and they can reach past the frame (see below).
 

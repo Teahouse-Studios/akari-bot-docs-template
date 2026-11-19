@@ -52,7 +52,7 @@ Le bloc ci-dessous est interactif : l'aperçu en haut, tous les réglages de sty
 
 `sakura` est une fleur à cinq pétales : trait en clair, plein en sombre ; `texture-tone` force l'un ou l'autre.
 
-`lace` n'est pas une tuile : chaque bande est construite séparément, entre et sort du cadre au hasard, avec deux bords festonnés et une rangée de motifs. Position et direction sont retirées à chaque montage.
+`lace` n'est pas une tuile : chaque bande est construite séparément, entre et sort du cadre au hasard, avec deux bords festonnés et une rangée de motifs. Position et direction viennent de `seed` ; omise, elles changent à chaque chargement, une graine fixe les reproduit.
 
 `vine` fait pousser des tiges, qui peuvent dépasser du cadre.
 

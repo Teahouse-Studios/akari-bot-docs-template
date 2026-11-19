@@ -12,6 +12,7 @@ import {
   fluidNumber,
   fluidPalette,
   fluidRenderSize,
+  fluidSeedOffset,
   fluidTextureTone,
   resolveFluid,
   ribbonBandPath,
@@ -27,15 +28,16 @@ import {
   type FluidTokens,
 } from "../../fluid";
 import {
+  BOARD_SEED_EVENT,
   createVine3d,
+  deriveVineSeed,
   normalizeVineSeed,
+  readBoardSeed,
   readVinePopout,
-  readVineSeed,
   VINE_POPOUT_EVENT,
   VINE_MAX_RIPPLES,
   VINE_RIPPLE_RINGS,
   VINE_RIPPLE_SPEED,
-  VINE_SEED_EVENT,
   type Vine3dController,
   type VineBotanicalPart,
   type VinePalette,
@@ -55,6 +57,12 @@ const props = withDefaults(
   defineProps<{
     /** Height of the wall, as any CSS length. */
     height?: string;
+    /**
+     * The board seed. The flow, lace, texture and vine sequence all derive from
+     * it. Omit it to follow the page seed, so every load differs; a fixed value
+     * reproduces the whole board.
+     */
+    seed?: number | string;
     /** Which end of the wall the virtual light sits at. */
     light?: "start" | "center" | "end";
     /**
@@ -178,6 +186,7 @@ const props = withDefaults(
   }>(),
   {
     height: "clamp(220px, 34vh, 380px)",
+    seed: undefined,
     light: "end",
     variant: "silk",
     speed: undefined,
@@ -393,6 +402,8 @@ function setRibbonPressLayer(element: unknown, index: number): void {
 }
 /** Set once a frame has been drawn, so the card is never shown empty. */
 const painted = ref(false);
+/** Horizontal origin of the wall's light, kept in sync with its aspect. */
+const wallLightX = ref(80);
 /** Set after the first vine frame, so the garden fades in as a whole. */
 const vineReady = ref(false);
 /** Ripple waits until the vine's 900 ms fade-in has finished. */
@@ -643,9 +654,15 @@ const uid = ++ribbonCounter;
 const ribbonSize = ref({ width: 0, height: 0 });
 /** The wall size the lace was picked for; a resize stretches it until it passes the stretch limit. */
 const ribbonLayout = ref({ width: 0, height: 0 });
-/** Redrawn per mount: the crossings should not repeat between visits. */
-const ribbonSeed = Math.floor(Math.random() * 0x7fffffff) || 1;
-const vineSeed = ref(readVineSeed());
+/** The page board seed; every wall on the page follows it unless the tag fixes one. */
+const pageSeed = ref(readBoardSeed());
+/** The board seed is primary: flow, lace, texture and vines all derive from it. */
+const boardSeed = computed(() => (props.seed === undefined ? pageSeed.value : normalizeVineSeed(props.seed)));
+/** Vines get their own sequence, derived deterministically from the board seed. */
+const vineSeed = computed(() => deriveVineSeed(boardSeed.value));
+/** Lace and texture use the board seed directly. */
+const ribbonSeed = computed(() => normalizeVineSeed(boardSeed.value));
+const fieldSeedOffset = computed(() => fluidSeedOffset(boardSeed.value));
 const vinePopoutSwitch = ref(readVinePopout());
 /** Edges a 出屏 shoot may leave by, as `1 << edge` bits; 0 keeps the vines inside. */
 const vinePopEdges = ref(0);
@@ -752,7 +769,7 @@ const vinePopOutsideCanvasStyle = computed(() => {
 
 const ribbons = computed<FluidRibbon[]>(() =>
   overlay.value === "lace" && ribbonSize.value.width > 0
-    ? buildFluidRibbons(ribbonSize.value.width, ribbonSize.value.height, ribbonSeed, 6, ribbonLayout.value)
+    ? buildFluidRibbons(ribbonSize.value.width, ribbonSize.value.height, ribbonSeed.value, 6, ribbonLayout.value)
     : [],
 );
 
@@ -1222,8 +1239,8 @@ function ribbonPath(ribbon: FluidRibbon): string {
   return `M${x0.toFixed(1)} ${y0.toFixed(1)} C${x1.toFixed(1)} ${y1.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)} ${x3.toFixed(1)} ${y3.toFixed(1)}`;
 }
 
-function onVineSeedChange(event: Event): void {
-  vineSeed.value = normalizeVineSeed((event as CustomEvent<unknown>).detail);
+function onBoardSeedChange(event: Event): void {
+  pageSeed.value = normalizeVineSeed((event as CustomEvent<unknown>).detail);
 }
 
 function onVinePopoutChange(event: Event): void {
@@ -1237,7 +1254,7 @@ const textureMask = computed(() =>
   textureTile(
     overlayKind.value,
     textureTone.value === "light",
-    ribbonSeed,
+    ribbonSeed.value,
     textureFrameWidth.value,
     textureFrameHeight.value,
     textureSize.value,
@@ -1448,7 +1465,10 @@ void main() {
     rippleCrest += pow(0.5 + 0.5 * cos(phase), 3.0) * env * u_ripple_strength;
   }
   vec2 field = css / u_span + u_centre;
-  vec2 suv = field * u_scale * u_stretch + u_offset;
+  // A very wide wall would otherwise stretch one fold into a broad light/dark
+  // half. Give the field more cycles across the width so the masses average.
+  float fieldGain = mix(1.0, 1.6, smoothstep(1.8, 3.2, aspect));
+  vec2 suv = field * u_scale * u_stretch * fieldGain + u_offset;
 
   vec2 curl = curlish(suv);
   vec2 uvD = suv + curl * u_curl;
@@ -1528,7 +1548,7 @@ void main() {
   // A wide wall exposes the endpoint light as one bright side and one dark
   // side. Pull it toward the middle and let its halo cover the width instead.
   float wide = smoothstep(1.25, 2.4, aspect);
-  vec2 lightUv = mix(u_light_pos, vec2(0.5, u_light_pos.y), wide * 0.8);
+  vec2 lightUv = mix(u_light_pos, vec2(0.5, u_light_pos.y), wide);
   float lightAspect = mix(min(aspect, 2.0), 1.0, wide);
   float ld = length((uv - lightUv) * vec2(lightAspect, 1.0));
   col += u_core * exp(-ld * ld * 7.0) * u_light_core;
@@ -1621,8 +1641,6 @@ const TOKEN_NAMES = [
   "on-surface",
 ] as const;
 
-/** Where the noise field starts inside its tile. */
-const FIELD_OFFSET: readonly [number, number] = [-1.0, -0.22];
 /** Frames are capped here: the flow reads the same at 30 as at 60. */
 const FRAME_INTERVAL = 1000 / 30;
 /** Let the page settle for a moment before the garden fades in on first load. */
@@ -1669,6 +1687,7 @@ let sized = false;
 let refreshFrame = 0;
 let themeObserver: MutationObserver | null = null;
 let resizeObserver: ResizeObserver | null = null;
+let wallLightObserver: ResizeObserver | null = null;
 let intersectionObserver: IntersectionObserver | null = null;
 /** Watches the page box, whose changes can slide the wall sideways. */
 let pageObserver: ResizeObserver | null = null;
@@ -1865,11 +1884,23 @@ function scheduleRefresh(): void {
   });
 }
 
+function syncWallLight(): void {
+  const element = wall.value;
+  if (!element) return;
+  const rect = element.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  const aspect = rect.width / rect.height;
+  const wide = Math.min(1, Math.max(0, (aspect - 1.25) / (2.4 - 1.25)));
+  const base = LIGHT_POSITIONS[props.light] * 100;
+  wallLightX.value = base + (50 - base) * wide;
+}
+
 function resize(): boolean {
   const element = canvas.value;
   if (!context || !element) return false;
   const rect = element.getBoundingClientRect();
   if (rect.width < 1 || rect.height < 1) return false;
+  syncWallLight();
   const size = fluidRenderSize(rect.width, rect.height, window.devicePixelRatio || 1);
   if (element.width !== size.width || element.height !== size.height) {
     element.width = size.width;
@@ -2015,10 +2046,11 @@ function draw(): void {
   const drift = 0.06;
   const offset = locations.get("u_offset");
   if (offset) {
+    const [seedX, seedY] = fieldSeedOffset.value;
     context.uniform2f(
       offset,
-      FIELD_OFFSET[0] + (pointer.x - 0.5) * drift,
-      FIELD_OFFSET[1] + (pointer.y - 0.5) * drift * 0.8,
+      seedX + (pointer.x - 0.5) * drift,
+      seedY + (pointer.y - 0.5) * drift * 0.8,
     );
   }
   const light = locations.get("u_light_pos");
@@ -2319,6 +2351,7 @@ async function bootstrap(): Promise<void> {
 watch(
   () => [props.variant, props.scale, props.curl, props.tone, props.warp, props.petal, props.glow, props.light],
   () => {
+    syncWallLight();
     applyPalette();
     if (!frame) draw();
   },
@@ -2426,6 +2459,10 @@ watch([wallShadowColorRgb, wallShadowAngle, wallShadowBlur], () => {
   if (!frame) draw();
 });
 
+watch(boardSeed, () => {
+  if (!frame) draw();
+});
+
 watch([vinePopout, vineInward, () => props.wallVinesInSafeZone], () => {
   if (overlay.value === "vine") void nextTick(() => rebuildVineScene(currentVinePlan()));
 });
@@ -2435,7 +2472,12 @@ watch(vinePopSplit, () => {
 });
 
 onMounted(() => {
-  window.addEventListener(VINE_SEED_EVENT, onVineSeedChange);
+  syncWallLight();
+  if (wall.value) {
+    wallLightObserver = new ResizeObserver(syncWallLight);
+    wallLightObserver.observe(wall.value);
+  }
+  window.addEventListener(BOARD_SEED_EVENT, onBoardSeedChange);
   window.addEventListener(VINE_POPOUT_EVENT, onVinePopoutChange);
   window.addEventListener("resize", checkVinePopEdges, { passive: true });
   window.addEventListener("scroll", onPageScroll, { passive: true });
@@ -2448,6 +2490,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stop();
+  wallLightObserver?.disconnect();
+  wallLightObserver = null;
   if (vineReadyTimer !== 0) {
     window.clearTimeout(vineReadyTimer);
     vineReadyTimer = 0;
@@ -2471,7 +2515,7 @@ onBeforeUnmount(() => {
   keepObserver?.disconnect();
   motionQuery?.removeEventListener("change", onMotionChange);
   window.removeEventListener("akari-ready", scheduleRefresh);
-  window.removeEventListener(VINE_SEED_EVENT, onVineSeedChange);
+  window.removeEventListener(BOARD_SEED_EVENT, onBoardSeedChange);
   window.removeEventListener(VINE_POPOUT_EVENT, onVinePopoutChange);
   window.removeEventListener("resize", checkVinePopEdges);
   window.removeEventListener("scroll", onPageScroll);
@@ -2500,7 +2544,7 @@ onBeforeUnmount(() => {
     ref="wall"
     class="akari-fluid-wall"
     :class="{ 'is-painted': painted, 'is-popout': vinePopEdges > 0, 'is-vine-pop-split': vinePopSplit }"
-    :style="{ '--_wall-height': props.height, '--_vine-blend': vineBlendMode, '--_vine-pop-blend': vinePopoutBlendMode }"
+    :style="{ '--_wall-height': props.height, '--_vine-blend': vineBlendMode, '--_vine-pop-blend': vinePopoutBlendMode, '--_wall-light-x': `${wallLightX}%` }"
     :data-placement="props.placement"
   >
     <div class="akari-fluid-wall__canvas" aria-hidden="true">
@@ -2703,7 +2747,7 @@ onBeforeUnmount(() => {
     var(--md-sys-color-primary, #6750a4) 18%
   );
   background-image: radial-gradient(
-    118% 132% at 84% 48%,
+    118% 132% at var(--_wall-light-x, 84%) 48%,
     color-mix(in srgb, var(--md-sys-color-primary, #6750a4) 34%, transparent) 0%,
     transparent 62%
   );
@@ -2718,7 +2762,7 @@ html.dark .akari-fluid-wall {
     var(--md-sys-color-primary-container, #4f378b) 12%
   );
   background-image: radial-gradient(
-    118% 132% at 84% 48%,
+    118% 132% at var(--_wall-light-x, 84%) 48%,
     color-mix(in srgb, var(--md-sys-color-primary, #d0bcff) 22%, transparent) 0%,
     transparent 64%
   );
@@ -2849,7 +2893,7 @@ html.dark .akari-fluid-wall {
     var(--_grid-size) var(--_grid-size),
     calc(var(--_grid-size) * 4) calc(var(--_grid-size) * 4),
     calc(var(--_grid-size) * 4) calc(var(--_grid-size) * 4);
-  mask-image: radial-gradient(135% 155% at 80% 46%, #000 0%, rgba(0, 0, 0, 0.55) 58%, transparent 96%);
+  mask-image: radial-gradient(135% 155% at var(--_wall-light-x, 80%) 46%, #000 0%, rgba(0, 0, 0, 0.55) 58%, transparent 96%);
 }
 
 /*
@@ -2906,7 +2950,7 @@ html.dark .akari-fluid-wall__grid {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  mask-image: radial-gradient(135% 155% at 80% 46%, #000 0%, rgba(0, 0, 0, 0.55) 58%, transparent 96%);
+  mask-image: radial-gradient(135% 155% at var(--_wall-light-x, 80%) 46%, #000 0%, rgba(0, 0, 0, 0.55) 58%, transparent 96%);
 }
 
 .akari-fluid-wall__texture-pattern,

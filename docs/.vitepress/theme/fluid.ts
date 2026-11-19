@@ -70,6 +70,18 @@ export function mixFluid(from: FluidRgb, to: FluidRgb, amount: number): FluidRgb
 }
 
 /**
+ * Offset into the noise field for a seed. The same seed always lands on the
+ * same patch of field, so a wall can be reproduced without baking pixels.
+ */
+export function fluidSeedOffset(seed: number): readonly [number, number] {
+  let hash = (seed >>> 0) || 1;
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash ^= hash >>> 16;
+  return [((hash & 0xffff) / 0xffff - 0.5) * 32, (((hash >>> 16) & 0xffff) / 0xffff - 0.5) * 32];
+}
+
+/**
  * Keeps a figure that arrives from a tag attribute usable. Attributes reach the
  * component as strings, so this parses them, rejects anything that is not a
  * finite number, and clamps the rest to the range the shader can honour.
