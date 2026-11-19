@@ -210,6 +210,15 @@ describe("fluid playground", () => {
     expect(snippet).toContain(':underlay-opacity="0.32"');
   });
 
+  it("prints each underlay attribute once", () => {
+    const snippet = buildFluidWallSnippet(
+      config({ underlayColor: "#c8b6ff", underlayOpacity: 0.32, underlayBlend: "screen" }),
+    );
+    for (const attr of ["underlay-color", "underlay-opacity", "underlay-blend"]) {
+      expect(snippet.match(new RegExp(attr, "g"))).toHaveLength(1);
+    }
+  });
+
   it("prints a custom texture colour and leaves the default out", () => {
     expect(buildFluidWallSnippet(config())).not.toContain("texture-color");
     const snippet = buildFluidWallSnippet(
