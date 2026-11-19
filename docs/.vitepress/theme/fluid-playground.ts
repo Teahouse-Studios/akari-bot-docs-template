@@ -209,6 +209,15 @@ export function buildFluidWallSnippet(config: FluidPlaygroundConfig): string {
   if (config.underlayBlend && config.underlayBlend !== "additive") {
     attrs.push(`underlay-blend="${config.underlayBlend}"`);
   }
+  if (config.underlayColor && config.underlayColor !== "#ffffff") {
+    attrs.push(`underlay-color="${config.underlayColor}"`);
+  }
+  if (config.underlayOpacity !== undefined && config.underlayOpacity !== 0.18) {
+    attrs.push(`:underlay-opacity="${formatNumber(config.underlayOpacity)}"`);
+  }
+  if (config.underlayBlend && config.underlayBlend !== "additive") {
+    attrs.push(`underlay-blend="${config.underlayBlend}"`);
+  }
   if (config.mote !== undefined && config.mote !== 1) {
     attrs.push(`:mote="${formatNumber(config.mote)}"`);
   }
