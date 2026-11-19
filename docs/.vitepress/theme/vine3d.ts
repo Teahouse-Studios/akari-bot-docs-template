@@ -1154,7 +1154,7 @@ function layerMaterials(
       opacity: underlayOpacity * alpha,
       blending: UNDERLAY_BLENDING[underlayBlend] ?? THREE.AdditiveBlending,
     }),
-    fill: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? 0.95 : 0.085) * alpha }),
+    fill: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? 0.95 : 0.16) * alpha }),
     tint: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? 0.35 : 0.06) * alpha }),
     halo: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: 0.2 * alpha }),
     edge: new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.3 * alpha }),
@@ -1674,7 +1674,7 @@ void main() {
           continue;
         }
         const factor =
-          key === "fill" ? (fillEmphasis ? 0.95 : 0.085) :
+          key === "fill" ? (fillEmphasis ? 0.95 : 0.16) :
           key === "tint" ? (fillEmphasis ? 0.35 : 0.06) :
           key === "halo" ? (fillEmphasis ? 0.3 : 0.2) :
           key === "edge" ? (fillEmphasis ? 0.78 : 0.3) :
@@ -1736,8 +1736,10 @@ void main() {
       object.renderOrder = order + offset;
       // Bounds are those of the plan; the shader stretches it past them.
       object.frustumCulled = false;
-      if (asShadow) shadowObjects.push(object);
-      else paintedObjects.push(object);
+      if (asShadow) {
+        object.visible = false;
+        shadowObjects.push(object);
+      } else paintedObjects.push(object);
       scene.add(object);
     };
     if (geometry.halo) add(new THREE.Mesh(geometry.halo, materials.halo), 0);
@@ -1765,6 +1767,7 @@ void main() {
       const addWallShadow = (object: THREE.Object3D, offset: number) => {
         object.renderOrder = order + offset;
         object.frustumCulled = false;
+        object.visible = false;
         wallShadowObjects.push(object);
         scene.add(object);
       };
@@ -2073,7 +2076,7 @@ void main() {
         renderer.render(scene, camera);
         scene.overrideMaterial = null;
         renderer.setRenderTarget(null);
-        for (const object of wallShadowObjects) object.visible = true;
+        for (const object of wallShadowObjects) object.visible = false;
         if (particles) particles.visible = true;
       }
       const renderShadowPass = (
@@ -2103,19 +2106,21 @@ void main() {
         renderer.render(blurScene, blurCamera);
         renderer.autoClear = true;
       };
+      const wallShadowActive = hover.wallShadowStrength.value > 1e-3;
+      const shadowActive = hover.shadowStrength.value > 1e-3;
       let wallShadowDrawn = false;
       let shadowDrawn = false;
-      if (wallShadow && wallShadowObjects.length && wallShadowTarget) {
+      if (wallShadowActive && wallShadow && wallShadowObjects.length && wallShadowTarget) {
         wallShadowDrawn = renderShadowPass(wallShadowObjects, wallShadowTarget, wallShadowBlur);
       }
-      if (shadow && shadowTarget) {
+      if (shadowActive && shadow && shadowTarget) {
         shadowDrawn = renderShadowPass(shadowObjects, shadowTarget, shadowBlur);
       }
       for (const object of paintedObjects) object.visible = true;
       if (particlePoints) particlePoints.visible = true;
       renderer.render(scene, camera);
-      if (wallShadowDrawn && wallShadowTarget) compositeShadow(wallShadowTarget, wallShadowBlur);
-      if (shadowDrawn && shadowTarget) compositeShadow(shadowTarget, shadowBlur);
+      if (wallShadowActive && wallShadowDrawn && wallShadowTarget) compositeShadow(wallShadowTarget, wallShadowBlur);
+      if (shadowActive && shadowDrawn && shadowTarget) compositeShadow(shadowTarget, shadowBlur);
     },
     dispose() {
       const geometries = new Set<THREE.BufferGeometry>();

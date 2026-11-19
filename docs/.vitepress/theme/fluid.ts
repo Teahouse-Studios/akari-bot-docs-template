@@ -199,11 +199,11 @@ function basePalette(tokens: FluidTokens, scheme: FluidScheme, accent: number): 
 
   return {
     stops: [
-      mixFluid(tokens.primaryContainer, tokens.primary, 0.42),
-      mixFluid(tokens.primaryContainer, tokens.primary, 0.22),
-      mixFluid(tokens.surfaceContainer, tokens.primaryContainer, 0.55),
-      mixFluid(tokens.tertiaryContainer, tokens.tertiary, 0.2 * accent),
+      mixFluid(tokens.primaryContainer, tokens.primary, 0.52),
+      mixFluid(tokens.primaryContainer, tokens.primary, 0.26),
       mixFluid(tokens.surfaceContainer, tokens.secondaryContainer, 0.7),
+      mixFluid(tokens.tertiaryContainer, tokens.tertiary, 0.3 * accent),
+      mixFluid(tokens.secondaryContainer, tokens.primaryContainer, 0.45),
     ],
     core: mixFluid(WHITE, tokens.tertiary, 0.45 * accent),
     halo: mixFluid(WHITE, tokens.primary, 0.35),
