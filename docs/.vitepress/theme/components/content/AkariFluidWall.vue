@@ -1478,6 +1478,23 @@ void main() {
   float f = fluidNoise(uvD);
   float swirl = snoise(vec3(uvD * 0.8 + f * 1.5, 0.0) + vec3(u_loops[3].y, 0.0, u_loops[3].x)) * 0.5 + 0.5;
   float n = f * 0.5 + 0.5;
+  // Mirror the broad colour field about the centre on very wide walls: the
+  // low-frequency masses are what read as one bright and one dark side, while
+  // the curl detail stays asymmetric.
+  float mirrorWide = smoothstep(2.2, 3.8, aspect) * 0.8;
+  if (mirrorWide > 0.0) {
+    vec2 fieldM = vec2(2.0 * u_centre.x - field.x, field.y);
+    vec2 suvM = fieldM * u_scale * u_stretch * fieldGain + u_offset;
+    vec2 curlM = curlish(suvM);
+    vec2 uvDM = suvM + curlM * u_curl;
+    if (u_petal > 0.0) {
+      uvDM += petalSwirl(fieldM, 0.2 * u_petal) / max(u_scale, 0.4);
+    }
+    float fM = fluidNoise(uvDM);
+    float swirlM = snoise(vec3(uvDM * 0.8 + fM * 1.5, 0.0) + vec3(u_loops[3].y, 0.0, u_loops[3].x)) * 0.5 + 0.5;
+    n = mix(n, fM * 0.5 + 0.5, mirrorWide);
+    swirl = mix(swirl, swirlM, mirrorWide);
+  }
 
   /*
    * Five-lobed blossoms around a drifting centre, bent by the same noise as the
@@ -1520,6 +1537,10 @@ void main() {
     // A second, faster comb breaks the first one into strands instead of columns.
     float comb = 0.5 + 0.5 * sin(suv.x * 7.4 - u_curtain * 0.55 + (f - 0.5) * 2.2);
     band = mix(band, comb, 0.4);
+    // A wide wall exposes the curtain's phase as one bright side and one dark
+    // side. Flatten its swing toward the mean so the width averages out.
+    float curtainWide = smoothstep(2.0, 3.6, aspect);
+    band = mix(band, 0.5, curtainWide * 0.96);
     // A pale wall cannot take the same swing as a dark one before it clips.
     col *= mix(1.0, mix(1.0 - u_curtain_gain, 1.0 + u_curtain_gain, band), u_curtain_amt);
   }
