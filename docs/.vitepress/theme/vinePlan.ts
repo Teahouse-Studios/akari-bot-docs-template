@@ -1060,7 +1060,7 @@ function growVine(
       z: { base: zBase, amp: frame.unit * 0.02, wave: frame.unit * between(random, 0.5, 0.9), phase: random() * TAU, rise: 0 },
     });
     const fault = pathFault(frame, path);
-    if (fault >= 0.5) continue;
+    if (fault >= 0.35) continue;
     if (wireOverlap(path, garden.wires, frame.unit * 0.018) > 0.35) continue;
     const score = fault + crossings(null, garden, path, 0) * STEM_CROSSING_COST;
     if (!best || score < best.score) best = { path, score };
@@ -1864,6 +1864,7 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
   const form = weighted(random, POP_FORMS) as PopForm;
   // Keep the root on the host vine; shifting it inward leaves a loose stub in the wall.
   const base = seatBase;
+  if (edgeInside(card, base.x, base.y) < 4) return null;
   const tangent = tangentAt(strand.points, seat.sample);
   const heading = Math.atan2(tangent.y, tangent.x);
   const edgeHeading = seat.edge % 2 === 0 ? Math.PI / 2 : 0;
@@ -1894,6 +1895,9 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
   const [ix, iy] = VINE_EDGE_INWARD[seat.edge]!;
   const reach = wide.hw - card.hw;
   const inside = edgeDistance(card, seat.edge, base.x, base.y);
+  // A root that starts on or past the rim leaves the pop layer with nothing
+  // to hold on to, so it reads as a vine floating outside the wall.
+  if (inside < card.unit * 0.08) return null;
   const parentRadius = strand.radii[seat.sample]!;
   const r0 = parentRadius * between(random, 0.6, 0.72);
   const forkDistance = Math.max(parentRadius * 10, 12);
@@ -1972,6 +1976,9 @@ function planPopShoot(garden: Garden, card: Frame, seat: PopSeat): VinePlan | nu
     if (wireOverlap(path, garden.wires, card.unit * 0.025) > 0.45) continue;
     if (crossings(null, garden, path, forkDistance * 2) > (attempt < 2 ? 0 : 1)) continue;
     const portal = liftShoot(path, card, between(random, POP_LIFT[0], POP_LIFT[1]) * card.unit, random);
+    // A portal at the very start leaves no visible stem inside the wall; the
+    // shoot then looks like it was generated outside the card.
+    if (portal.from < 3) continue;
     // Hold out for the chosen organ first; a shorter reach may still fit it.
     for (const kind of attempt < 3 ? kinds.slice(0, 1) : kinds) {
       const mark = markPlan(plan, garden);

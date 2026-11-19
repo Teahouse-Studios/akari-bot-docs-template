@@ -659,11 +659,16 @@ let vinePlannedKeep: VineRect[] = [];
 const vineCanvasStyle = computed(() => {
   const { left, top, right, bottom } = vineBleed.value;
   if (left + top + right + bottom <= 0) return undefined;
+  const radius = wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0;
   return {
     left: `${-left}px`,
     top: `${-top}px`,
     width: `calc(100% + ${left + right}px)`,
     height: `calc(100% + ${top + bottom}px)`,
+    // The wall layer may overflow into its bleed for pop-out geometry; keep
+    // ordinary wall vines inside the card even if a browser misses the shader
+    // clip at the rounded corners.
+    clipPath: `inset(${top}px ${right}px ${bottom}px ${left}px round ${radius}px)`,
   };
 });
 

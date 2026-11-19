@@ -1038,6 +1038,8 @@ export function buildVineGeometry(plan: VinePlan): VineGeometry {
     sinks.edge.side = sinks.fine.side = side;
   };
   const portalFrom = plan.portal?.from;
+  const portalSide = (origin: THREE.Vector3 | undefined): number =>
+    plan.portal && origin && origin.z > plan.portal.z + 0.01 ? 1 : 0;
   for (const strand of plan.strands) {
     setPart(strandPart(strand.role));
     tube(sinks.tube, strand, 1, 0, portalFrom);
@@ -1047,19 +1049,19 @@ export function buildVineGeometry(plan: VinePlan): VineGeometry {
   // stretched wall moves them with their stem but never squashes them.
   for (const item of plan.blades) {
     setPart(bladePart(item.role));
-    setSide(plan.portal ? 1 : 0);
+    setSide(portalSide(item.origin));
     pin(sinks, item.origin);
     blade(sinks, item);
   }
   for (const item of plan.lathes) {
     setPart(lathePart(item.role));
-    setSide(plan.portal ? 1 : 0);
+    setSide(portalSide(item.origin));
     pin(sinks, item.origin);
     lathe(sinks, item);
   }
   for (const item of plan.strokes) {
     setPart(1);
-    setSide(plan.portal ? 1 : 0);
+    setSide(portalSide(item.points[0]));
     pin(sinks, item.points[0] ?? null);
     stroke(sinks, item);
   }
