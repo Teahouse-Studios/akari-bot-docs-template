@@ -1525,7 +1525,12 @@ void main() {
   float bloom = smoothstep(u_bloom_threshold - u_bloom_range, u_bloom_threshold + u_bloom_range, luma);
   col += (col * 0.85 + vec3(0.15, 0.145, 0.13)) * bloom * u_bloom_strength;
 
-  float ld = length((uv - u_light_pos) * vec2(min(aspect, 2.0), 1.0));
+  // A wide wall exposes the endpoint light as one bright side and one dark
+  // side. Pull it toward the middle and let its halo cover the width instead.
+  float wide = smoothstep(1.25, 2.4, aspect);
+  vec2 lightUv = mix(u_light_pos, vec2(0.5, u_light_pos.y), wide * 0.8);
+  float lightAspect = mix(min(aspect, 2.0), 1.0, wide);
+  float ld = length((uv - lightUv) * vec2(lightAspect, 1.0));
   col += u_core * exp(-ld * ld * 7.0) * u_light_core;
   col += u_halo * exp(-ld * 2.4) * u_light_halo;
 

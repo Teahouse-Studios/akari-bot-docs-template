@@ -10,3 +10,4 @@ plans/*
 specs/*
 **/.omc/*
 /reports
+/generated-images
