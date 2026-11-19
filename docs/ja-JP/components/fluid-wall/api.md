@@ -37,6 +37,7 @@ tab: API
 | `inward` | `boolean \| "auto"` | `"auto"` | 蔓が板の中を拱くか。`auto` は `popout` と同じ |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 蔓が避ける領域。`auto` は壁上の文字を避ける |
 | `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | 壁外セーフゾーン。出屏するつるが避ける壁外の矩形。`safe-zone` と同じ指定方法で、負の値は壁の外側へ広がります。 |
+| `wall-vines-in-safe-zone` | `boolean` | `true` | 壁内のつるが `safe-zone` に入れるか。`false` のとき壁内のつるは避け、出屏のつるは常に避ける。 |
 | `ripple` | `number` | `1` | 出屏点の波紋の強さ。0 で無効。 |
 | `ripple-speed` | `number` | `1` | 波紋の速度倍率。 |
 | `ripple-size` | `number` | `1` | 波紋の半径倍率。 |

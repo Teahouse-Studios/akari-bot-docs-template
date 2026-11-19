@@ -51,6 +51,8 @@ export type Vine3dOptions = {
    * whatever is written on the wall stays readable.
    */
   keep?: readonly VineRect[];
+  /** Safe zones the wall vines keep out of; pop-out shoots use `keep` too. */
+  wallKeep?: readonly VineRect[];
   /** Safe zones outside the wall that 出屏 shoots keep out of. */
   popKeep?: readonly VineRect[];
   /** 出屏 inward too: a few shoots come up through the wall inside it and arch toward the viewer. */
@@ -1396,7 +1398,7 @@ export function createVine3d(
     hover.keepCount.value = count;
   };
   setKeep(keep);
-  const garden = planVineGarden(width, height, seed, density, edges, { keep, popKeep: options.popKeep, inward: options.inward });
+  const garden = planVineGarden(width, height, seed, density, edges, { keep, wallKeep: options.wallKeep, popKeep: options.popKeep, inward: options.inward });
   const plans = options.paint === "pop" ? garden.filter((plan) => plan.pop) : options.paint === "wall" ? garden.filter((plan) => !plan.pop) : garden;
   const popMaterials = plans.some((plan) => plan.pop)
     ? layerMaterials(baseColor, Math.min(1.6, alpha * POP_ALPHA), hover, VineDepth.Pop, strongFill, POP_ALPHA, partUniforms, options.paint === 'pop', options.paint === 'pop', options.paint === 'all' && options.popCut === true, currentUnderlayColor ?? new THREE.Color(0xffffff), currentUnderlayOpacity, currentUnderlayBlend)

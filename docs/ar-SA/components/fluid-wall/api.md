@@ -37,6 +37,7 @@ tab: API
 | `inward` | `boolean \| "auto"` | `"auto"` | هل تقوس السيقان داخل اللوحة؛ و`auto` مثل `popout` |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | مناطق تتجنبها السيقان؛ و`auto` يتجنب نص الجدار |
 | `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | مناطق آمنة خارج الجدار: مستطيلات تتجنبها البراعم الخارجة. تستخدم نفس صيغة `safe-zone`، والقيم السالبة تمتد خارج الجدار. |
+| `wall-vines-in-safe-zone` | `boolean` | `true` | هل يمكن لكروم الجدار دخول `safe-zone`؟ عند `false` تتجنبها كروم الجدار، وتتجنبها البراعم الخارجة دائمًا. |
 | `ripple` | `number` | `1` | قوة التموج عند نقاط خروج البراعم؛ 0 يوقفها. |
 | `ripple-speed` | `number` | `1` | مضاعف سرعة التموج. |
 | `ripple-size` | `number` | `1` | مضاعف نصف قطر التموج. |

@@ -78,6 +78,19 @@ describe("planVineGarden safe zones and inward shoots", () => {
     }
   });
 
+  it("keeps wall vines out of the wall safe zones when wallKeep is set", () => {
+    for (const [width, height] of SIZES) {
+      const keep = keepFor(width, height);
+      for (const seed of SEEDS) {
+        for (const plan of planVineGarden(width, height, seed, 1, false, { wallKeep: keep })) {
+          if (plan.pop) continue;
+          const intrusion = reach(plan, (x, y) => vineKeepClearance(keep, x, y));
+          expect(intrusion).toBeLessThanOrEqual(0);
+        }
+      }
+    }
+  });
+
   it("keeps every planned number finite", () => {
     for (const [width, height] of SIZES) {
       for (const seed of SEEDS) {

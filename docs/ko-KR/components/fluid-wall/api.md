@@ -37,6 +37,7 @@ tab: API
 | `inward` | `boolean \| "auto"` | `"auto"` | 덩굴이 판 안을 아치로 오르는지. `auto`는 `popout`과 같다 |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 덩굴이 피하는 영역. `auto`는 벽 위 글을 피한다 |
 | `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | 벽 외부 안전 영역. 벽 밖으로 나가는 덩굴이 피할 사각형. `safe-zone`과 같은 지정 방식을 쓰며 음수 값은 벽 바깥까지 확장됩니다. |
+| `wall-vines-in-safe-zone` | `boolean` | `true` | 벽 안 덩굴이 `safe-zone`에 들어갈 수 있는지. `false`이면 벽 안 덩굴은 피하고, 벽 밖으로 나온 덩굴은 항상 피한다. |
 | `ripple` | `number` | `1` | 돌출 지점 파문의 강도. 0이면 끔. |
 | `ripple-speed` | `number` | `1` | 파문 속도 배율. |
 | `ripple-size` | `number` | `1` | 파문 반경 배율. |

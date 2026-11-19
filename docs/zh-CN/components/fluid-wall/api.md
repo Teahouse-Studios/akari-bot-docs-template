@@ -37,8 +37,9 @@ tab: 接口
 | `petal` | `number \| string` | 随 `variant` | 褶皱卷成花瓣臂的程度。0 表示纯流场。 |
 | `popout` | `boolean \| "auto"` | `"auto"` | 藤蔓是否越过画框。`auto` 跟随页面上的藤蔓开关。 |
 | `inward` | `boolean \| "auto"` | `"auto"` | 藤蔓是否从板内向外拱起。`auto` 与 `popout` 一致。 |
-| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 出屏藤蔓的避让区。`auto` 避开墙上的文字。`none` 或 `false` 表示不避让。墙内藤蔓不受此限制。 |
+| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | 出屏藤蔓的避让区。`auto` 避开墙上的文字。`none` 或 `false` 表示不避让。墙内藤蔓是否避让由 `wall-vines-in-safe-zone` 控制。 |
 | `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | 墙外安全区：出屏藤蔓避让的墙外矩形。语法与 `safe-zone` 相同，负值可伸到墙外。 |
+| `wall-vines-in-safe-zone` | `boolean` | `true` | 墙内藤蔓能否进入 `safe-zone`。设为 `false` 时墙内藤蔓避开安全区；出屏藤蔓始终避让。 |
 | `ripple` | `number` | `1` | 出屏点波纹的强度。0 表示关闭。 |
 | `ripple-speed` | `number` | `1` | 出屏点波纹的速度倍率。 |
 | `ripple-size` | `number` | `1` | 出屏点波纹的半径倍率。 |

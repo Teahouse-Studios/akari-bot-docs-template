@@ -32,6 +32,7 @@ export interface FluidPlaygroundConfig {
   textureSize: number;
   textureDensity: number;
   vineDensity?: number;
+  wallVinesInSafeZone?: boolean;
   textureOpacity: number;
   textureColor: string;
   vineColors?: Partial<Record<string, string>>;
@@ -254,6 +255,9 @@ export function buildFluidWallSnippet(config: FluidPlaygroundConfig): string {
   if (overlay === "vine") {
     if (Math.abs((config.vineDensity ?? 0.7) - 0.7) > 0.001) {
       attrs.push(`:vine-density="${formatNumber(config.vineDensity ?? 0.7)}"`);
+    }
+    if (config.wallVinesInSafeZone === false) {
+      attrs.push(`:wall-vines-in-safe-zone="false"`);
     }
     const paletteAttr = (
       name: string,

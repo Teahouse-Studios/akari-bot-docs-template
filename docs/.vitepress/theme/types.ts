@@ -547,6 +547,7 @@ export interface AkariMessages {
   fluidDemoInward: string;
   fluidDemoSafeZone: string;
   fluidDemoOutsideSafeZone: string;
+  fluidDemoWallVinesInSafeZone: string;
   fluidDemoOn: string;
   fluidDemoOff: string;
 }

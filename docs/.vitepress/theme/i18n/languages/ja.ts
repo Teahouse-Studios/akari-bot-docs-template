@@ -243,6 +243,7 @@ export default {
     fluidDemoInward: "内側への張り出し",
     fluidDemoSafeZone: "安全領域",
     fluidDemoOutsideSafeZone: "壁外セーフゾーン",
+    fluidDemoWallVinesInSafeZone: "壁内のつるをセーフゾーンに入れる",
     fluidDemoOn: "オン",
     fluidDemoOff: "オフ",
     loadingLabel: "ページを読み込み中",

@@ -90,6 +90,7 @@ const values = reactive(fluidPlaygroundValues("silk"));
 const textureSize = ref(fluidTextureDefaults("silk", "auto").textureSize);
 const textureDensity = ref(fluidTextureDefaults("silk", "auto").textureDensity);
 const vineDensity = ref(0.7);
+const wallVinesInSafeZone = ref(true);
 const textureOpacity = ref(fluidTextureDefaults("silk", "auto").textureOpacity);
 
 const resolvedTexture = computed<FluidTexture>(() =>
@@ -124,6 +125,7 @@ interface FluidPlaygroundSnapshot {
   inward: FluidPlaygroundSwitch;
   safeZone: string;
   outsideSafeZone: string;
+  wallVinesInSafeZone: boolean;
   ripple: number;
   rippleSpeed: number;
   rippleSize: number;
@@ -543,6 +545,7 @@ const snippet = computed(() =>
     textureSize: textureSize.value,
     textureDensity: textureDensity.value,
     vineDensity: vineDensity.value,
+    wallVinesInSafeZone: wallVinesInSafeZone.value,
     textureOpacity: textureOpacity.value,
     textureColor: textureColor.value,
     mote: mote.value,
@@ -597,6 +600,7 @@ function applyTextureSeed(next: FluidVariant, nextTexture: FluidTexture | "auto"
   textureSize.value = defaults.textureSize;
   textureDensity.value = defaults.textureDensity;
   vineDensity.value = 0.7;
+  wallVinesInSafeZone.value = true;
   textureOpacity.value = defaults.textureOpacity;
 }
 
@@ -680,6 +684,7 @@ function randomize(): void {
   inward.value = "auto";
   safeZone.value = "auto";
   outsideSafeZone.value = "none";
+  wallVinesInSafeZone.value = true;
   ripple.value = randomBetween(0.2, 2.2, 0.05);
   rippleSpeed.value = randomBetween(0.4, 2.2, 0.05);
   rippleSize.value = randomBetween(0.6, 1.8, 0.05);
@@ -740,6 +745,7 @@ function snapshotPlayground(): FluidPlaygroundSnapshot {
     inward: inward.value,
     safeZone: safeZone.value,
     outsideSafeZone: outsideSafeZone.value,
+    wallVinesInSafeZone: wallVinesInSafeZone.value,
     ripple: ripple.value,
     rippleSpeed: rippleSpeed.value,
     rippleSize: rippleSize.value,
@@ -790,6 +796,7 @@ function applyPlaygroundSnapshot(config: FluidPlaygroundSnapshot): void {
   inward.value = config.inward;
   safeZone.value = config.safeZone;
   outsideSafeZone.value = config.outsideSafeZone ?? "none";
+  wallVinesInSafeZone.value = config.wallVinesInSafeZone ?? true;
   ripple.value = config.ripple;
   rippleSpeed.value = config.rippleSpeed;
   rippleSize.value = config.rippleSize;
@@ -942,6 +949,7 @@ onBeforeUnmount(() => window.clearTimeout(copiedTimer));
         :texture-size="textureSize"
         :texture-density="textureDensity"
         :vine-density="vineDensity"
+        :wall-vines-in-safe-zone="wallVinesInSafeZone"
         :texture-opacity="textureOpacity"
         :popout="popoutValue"
         :inward="inwardValue"
@@ -1142,6 +1150,10 @@ onBeforeUnmount(() => window.clearTimeout(copiedTimer));
                 dir="ltr"
                 placeholder="0 100% 0 -20%"
               />
+            </label>
+            <label class="fluid-playground__field">
+              <span>{{ t("fluidDemoWallVinesInSafeZone") }}</span>
+              <input v-model="wallVinesInSafeZone" type="checkbox" />
             </label>
             <label
               v-for="slider in rippleSliders"

@@ -89,6 +89,8 @@ const props = withDefaults(
     textureDensity?: number | string;
     /** Density multiplier of the vine layer; lower values grow fewer vines. */
     vineDensity?: number | string;
+    /** Whether wall vines may grow across the safe zones; false keeps them clear. */
+    wallVinesInSafeZone?: boolean;
     /** Alpha of the overlay, 0..1; the variant picks a starting value. */
     textureOpacity?: number | string;
     /** Whether the overlay is drawn as ink or as light; `auto` follows the scheme. */
@@ -190,6 +192,7 @@ const props = withDefaults(
     textureSize: undefined,
     textureDensity: undefined,
     vineDensity: undefined,
+    wallVinesInSafeZone: true,
     textureOpacity: undefined,
     textureTone: "auto",
     textureColor: undefined,
@@ -1176,6 +1179,7 @@ function rebuildVineScene(plan?: VinePlanSize): void {
     moteBlend: moteBlend.value,
     lightWall: scheme.value === "light",
     keep: vinePlannedKeep,
+    wallKeep: props.wallVinesInSafeZone ? [] : vinePlannedKeep,
     popKeep: scaleVineKeep(measureVineOutsideKeep(), planWidth / width, planHeight / height),
     radius: wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0,
   } as const;
@@ -2417,7 +2421,7 @@ watch([wallShadowColorRgb, wallShadowAngle, wallShadowBlur], () => {
   if (!frame) draw();
 });
 
-watch([vinePopout, vineInward], () => {
+watch([vinePopout, vineInward, () => props.wallVinesInSafeZone], () => {
   if (overlay.value === "vine") void nextTick(() => rebuildVineScene(currentVinePlan()));
 });
 

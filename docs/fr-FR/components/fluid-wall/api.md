@@ -37,6 +37,7 @@ tab: API
 | `inward` | `boolean \| "auto"` | `"auto"` | Les lianes montent-elles en arc à l'intérieur ; `auto` comme `popout` |
 | `safe-zone` | `boolean \| string \| string[]` | `"auto"` | Zones évitées par les lianes ; `auto` évite le texte du mur |
 | `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | Zones de sécurité hors du mur : rectangles que les pousses sortantes évitent. Même syntaxe que `safe-zone` ; les valeurs négatives dépassent du mur. |
+| `wall-vines-in-safe-zone` | `boolean` | `true` | Les vignes murales peuvent-elles entrer dans `safe-zone` ? Si `false`, elles l’évitent ; les pousses extérieures l’évitent toujours. |
 | `ripple` | `number` | `1` | Intensité de l’onde à chaque point de sortie ; 0 la désactive. |
 | `ripple-speed` | `number` | `1` | Multiplicateur de vitesse de cette onde. |
 | `ripple-size` | `number` | `1` | Multiplicateur de rayon de cette onde. |

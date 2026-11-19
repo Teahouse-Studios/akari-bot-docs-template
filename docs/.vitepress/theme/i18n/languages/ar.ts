@@ -241,6 +241,7 @@ export default {
     fluidDemoInward: "إلى الداخل",
     fluidDemoSafeZone: "المنطقة الآمنة",
     fluidDemoOutsideSafeZone: "منطقة آمنة خارج الجدار",
+    fluidDemoWallVinesInSafeZone: "دخول كروم الجدار إلى المنطقة الآمنة",
     fluidDemoOn: "تشغيل",
     fluidDemoOff: "إيقاف",
     loadingLabel: "جارٍ تحميل الصفحة",

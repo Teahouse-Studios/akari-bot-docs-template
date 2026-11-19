@@ -219,6 +219,7 @@ export default {
     fluidDemoInward: "Inward",
     fluidDemoSafeZone: "Safe zone",
     fluidDemoOutsideSafeZone: "Outside safe zone",
+    fluidDemoWallVinesInSafeZone: "Wall vines in safe zone",
     fluidDemoOn: "On",
     fluidDemoOff: "Off",
     loadingLabel: "Loading page",

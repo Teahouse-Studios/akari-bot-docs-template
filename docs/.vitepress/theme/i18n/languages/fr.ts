@@ -228,6 +228,7 @@ export default {
     fluidDemoInward: "Vers l'intérieur",
     fluidDemoSafeZone: "Zone sûre",
     fluidDemoOutsideSafeZone: "Zone de sécurité extérieure",
+    fluidDemoWallVinesInSafeZone: "Vignes murales dans la zone de sécurité",
     fluidDemoOn: "Activé",
     fluidDemoOff: "Désactivé",
     loadingLabel: "Chargement de la page",

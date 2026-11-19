@@ -271,6 +271,16 @@ describe("fluid playground", () => {
     expect(blankZone).not.toContain("safe-zone");
   });
 
+  it("prints the wall-vines-in-safe-zone switch only when it is off", () => {
+    expect(buildFluidWallSnippet(config({ texture: "vine" }))).not.toContain("wall-vines-in-safe-zone");
+    expect(
+      buildFluidWallSnippet(config({ texture: "vine", wallVinesInSafeZone: false })),
+    ).toContain(':wall-vines-in-safe-zone="false"');
+    expect(
+      buildFluidWallSnippet(config({ texture: "stars", wallVinesInSafeZone: false })),
+    ).not.toContain("wall-vines-in-safe-zone");
+  });
+
   it("wraps long tags one attribute per line", () => {
     const snippet = buildFluidWallSnippet(
       config({

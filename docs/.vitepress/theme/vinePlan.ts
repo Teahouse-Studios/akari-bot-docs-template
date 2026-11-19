@@ -938,6 +938,8 @@ export function vineGardenStats(width: number, height: number): VineGardenStats 
 export interface VineGardenOptions {
   /** Safe zones, in plan px centred on the wall, y up: no vine grows over them. */
   readonly keep?: readonly VineRect[];
+  /** Safe zones that keep the wall vines out; empty lets them cross the text. */
+  readonly wallKeep?: readonly VineRect[];
   /** Safe zones outside the wall that 出屏 shoots keep out of. */
   readonly popKeep?: readonly VineRect[];
   /** 朝内: a few shoots that come up through the wall inside it and rise towards the viewer. */
@@ -955,7 +957,14 @@ export function planVineGarden(
   if (!(width > 0) || !(height > 0) || !(density > 0)) return [];
   const random = vineRandom(seed);
   const keep = options.keep ?? [];
-  const frame = makeFrame(width, height);
+  const pad = Math.max(3, Math.min(width, height) * 0.02);
+  const wallKeep = (options.wallKeep ?? []).map((rect) => ({
+    x0: rect.x0 - pad,
+    y0: rect.y0 - pad,
+    x1: rect.x1 + pad,
+    y1: rect.y1 + pad,
+  }));
+  const frame = makeFrame(width, height, wallKeep);
   const garden: Garden = { frame, random, occupied: [], targets: [], trails: [], wires: [] };
   // Fewer vines on a wall that is mostly safe zone, so the rest is not crammed.
   const count = vineCount(frame, density * Math.max(0.5, freeShare(frame)));

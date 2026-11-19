@@ -240,6 +240,7 @@ export default {
     fluidDemoInward: "안쪽으로",
     fluidDemoSafeZone: "안전 영역",
     fluidDemoOutsideSafeZone: "벽 외부 안전 영역",
+    fluidDemoWallVinesInSafeZone: "벽 안 덩굴이 안전 영역에 들어가기",
     fluidDemoOn: "켜기",
     fluidDemoOff: "끄기",
     loadingLabel: "페이지 로드 중",

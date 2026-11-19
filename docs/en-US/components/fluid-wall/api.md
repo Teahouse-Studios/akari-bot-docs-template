@@ -35,8 +35,9 @@ tab: API
 | `petal` | `number \| string` | from `variant` | How far the folds curl into petal arms; 0 is a plain flow |
 | `popout` | `boolean \| "auto"` | `"auto"` | Whether vines leave the frame; `auto` follows the page's vine switch |
 | `inward` | `boolean \| "auto"` | `"auto"` | Whether vines rise inside the wall; `auto` matches `popout` |
-| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | Areas pop-out shoots avoid; `auto` clears the wall's text, `none`/`false` clears nothing. Wall vines grow freely through them |
+| `safe-zone` | `boolean \| string \| string[]` | `"auto"` | Areas pop-out shoots avoid; `auto` clears the wall's text, `none`/`false` clears nothing. Wall vines follow `wall-vines-in-safe-zone` instead |
 | `outside-safe-zone` | `boolean \| string \| string[]` | `"none"` | Outside-wall safe zones: rects beyond the frame that pop-out vines keep clear of. Same inset syntax as `safe-zone`; negative values reach outside the wall. |
+| `wall-vines-in-safe-zone` | `boolean` | `true` | Whether wall vines may enter `safe-zone`. When `false`, wall vines keep clear of it; pop-out shoots always avoid it. |
 | `ripple` | `number` | `1` | Strength of the ripple at each pop-out portal; 0 turns it off. |
 | `ripple-speed` | `number` | `1` | Speed multiplier of that ripple. |
 | `ripple-size` | `number` | `1` | Radius multiplier of that ripple. |

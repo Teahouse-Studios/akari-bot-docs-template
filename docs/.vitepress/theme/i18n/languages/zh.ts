@@ -231,6 +231,7 @@ export default {
     fluidDemoInward: "内拱",
     fluidDemoSafeZone: "安全区",
     fluidDemoOutsideSafeZone: "墙外安全区",
+    fluidDemoWallVinesInSafeZone: "墙内藤蔓进入安全区",
     fluidDemoOn: "开",
     fluidDemoOff: "关",
     loadingLabel: "正在加载页面",
