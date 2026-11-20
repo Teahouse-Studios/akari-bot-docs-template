@@ -440,8 +440,8 @@ onUnmounted(() => {
     var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
   position: sticky;
   top: 0;
-  /* The hover drawer floats over the app bar, so it must sit above the bar's layer (12). */
-  z-index: 13;
+  /* Above the app bar (12) and the flying search copy (13). */
+  z-index: 14;
   grid-column: 1;
   grid-row: 1 / -1;
   align-self: start;

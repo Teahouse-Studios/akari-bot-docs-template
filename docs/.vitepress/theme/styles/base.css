@@ -582,8 +582,8 @@ html[data-akari-gpu-tier="bad"] *::after {
 .akari-drawers {
   position: fixed;
   inset: var(--akari-doc-app-bar-height) 0 0;
-  /* Above the flying search copy; its inset starts below the app bar. */
-  z-index: 8;
+  /* Above the flying search copy (13); its inset starts below the app bar. */
+  z-index: 14;
   pointer-events: none;
   --m3e-drawer-container-color: var(--md-sys-color-surface-container-low);
   --m3e-modal-drawer-container-color: var(--md-sys-color-surface-container);
@@ -659,6 +659,29 @@ m3e-badge {
 
 /* Compact windows: no rail, navigation moves into a modal drawer. */
 @media (max-width: 959.98px) {
+  /*
+   * While the start drawer is open, put the bar's surface color underneath
+   * it. The bar's own gradient stays on top: its transparent tail now reads
+   * as the same solid surface, so content no longer shows through, and the
+   * layer fades in and out with the drawer instead of snapping.
+   */
+  .akari-frame__bar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-color: var(--md-sys-color-surface-container-low, Canvas);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity
+      var(--md-sys-motion-duration-short-4, 200ms)
+      var(--md-sys-motion-easing-standard, ease);
+  }
+
+  html:has(.akari-drawers[start]) .akari-frame__bar::before {
+    opacity: 1;
+  }
+
   .akari-main {
     padding: var(--akari-doc-top-space) 8px 0;
     --akari-doc-top-space: 8px;
