@@ -6,6 +6,7 @@ import { useAkariConfig } from "../../composables/useAkariConfig";
 import { useAkariSettingsDialog } from "../../composables/useSettingsDialog";
 import { AKARI_SETTINGS_ID } from "../../constants";
 import MorphDialog from "../shell/MorphDialog.vue";
+import ReviewSettings from "../content/ReviewSettings.vue";
 import SettingsPanel from "./SettingsPanel.vue";
 
 const config = useAkariConfig();
@@ -28,6 +29,7 @@ const panel = computed(() => config.value.components.Settings ?? SettingsPanel);
   >
     <div :id="AKARI_SETTINGS_ID" class="akari-settings-dialog__body">
       <component :is="panel" />
+      <ReviewSettings />
     </div>
   </MorphDialog>
 </template>

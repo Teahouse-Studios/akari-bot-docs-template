@@ -11,3 +11,4 @@ specs/*
 **/.omc/*
 /reports
 /generated-images
+/.vitepress/cache

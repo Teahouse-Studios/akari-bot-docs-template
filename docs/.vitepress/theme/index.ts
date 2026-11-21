@@ -13,6 +13,10 @@ import ModuleConfig from "./components/content/ModuleConfig.vue";
 import ModuleData from "./components/content/ModuleData.vue";
 import ModuleMeta from "./components/content/ModuleMeta.vue";
 import NoticeBox from "./components/content/NoticeBox.vue";
+import ApiCatalog from "./components/content/ApiCatalog.vue";
+import PackageDependencies from "./components/content/PackageDependencies.vue";
+import ReviewTool from "./components/content/ReviewTool.vue";
+import SupportedLanguages from "./components/content/SupportedLanguages.vue";
 import VineSeedControl from "./components/content/VineSeedControl.vue";
 import SearchDock from "./search/components/SearchDock.vue";
 import Layout from "./layouts/AkariLayout.vue";
@@ -36,6 +40,10 @@ export default {
     provideAkariSiteData(app, siteData);
     app.component("ModuleMeta", ModuleMeta);
     app.component("NoticeBox", NoticeBox);
+    app.component("ApiCatalog", ApiCatalog);
+    app.component("PackageDependencies", PackageDependencies);
+    app.component("ReviewTool", ReviewTool);
+    app.component("SupportedLanguages", SupportedLanguages);
     app.component("CommandUsage", CommandUsage);
     app.component("ChatExample", ChatExample);
     app.component("ModuleConfig", ModuleConfig);
@@ -66,6 +74,10 @@ export {
   ModuleData,
   ModuleMeta,
   NoticeBox,
+  ApiCatalog,
+  PackageDependencies,
+  ReviewTool,
+  SupportedLanguages,
   VineSeedControl,
 };
 export * from "./types";

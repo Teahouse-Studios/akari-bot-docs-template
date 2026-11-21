@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRouter } from "vitepress";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from "vue";
 
 import {
@@ -292,7 +293,7 @@ const textureAlpha = computed(
 );
 const rippleStrength = computed(() => fluidNumber(props.ripple, 0, 3, 1));
 /** The wall must not ripple before the vine has had time to fade in. */
-const liveRippleStrength = computed(() => rippleStrength.value * rippleGain.value);
+const liveRippleStrength = computed(() => rippleStrength.value * rippleGain.value * leavingGain.value);
 const rippleSpeed = computed(() => fluidNumber(props.rippleSpeed, 0, 4, 1) * VINE_RIPPLE_SPEED);
 const rippleSize = computed(() => fluidNumber(props.rippleSize, 0.25, 3, 1));
 const rippleRings = computed(() => fluidNumber(props.rippleRings, 0.5, 6, VINE_RIPPLE_RINGS));
@@ -343,6 +344,7 @@ const underlayBlend = computed<VineUnderlayBlend>(() => {
   return value === "normal" || value === "screen" || value === "multiply" || value === "subtractive" ? value : "additive";
 });
 const scheme = ref<FluidScheme>("light");
+
 const probeVersion = ref(0);
 const textureTone = computed(() => fluidTextureTone(props.textureTone, scheme.value));
 const textureInk = computed(() => {
@@ -387,6 +389,59 @@ const vineOpacity = computed(() =>
 const wall = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const vineCanvas = ref<HTMLCanvasElement | null>(null);
+const vineBloomLayer = ref<HTMLElement | null>(null);
+const vineBudLayer = ref<HTMLElement | null>(null);
+const vinePopBloomLayer = ref<HTMLElement | null>(null);
+const vinePopBudLayer = ref<HTMLElement | null>(null);
+const vinePopBloomStyle = computed(() => {
+  const portal = vinePopPortal.value;
+  if (!portal) return undefined;
+  // The pop-out layer is teleported to body, so the wall's CSS variable never
+  // reaches it; carry the bloom strength on the element itself.
+  return {
+    left: `${portal.left}px`,
+    top: `${portal.top}px`,
+    width: `${portal.width}px`,
+    height: `${portal.height}px`,
+    "--_bloom-alpha": Math.min(1, bloomAlpha.value).toFixed(2),
+  };
+});
+const vinePopBudStyle = computed(() => {
+  const portal = vinePopPortal.value;
+  if (!portal) return undefined;
+  return {
+    left: `${portal.left}px`,
+    top: `${portal.top}px`,
+    width: `${portal.width}px`,
+    height: `${portal.height}px`,
+    "--_bloom-alpha": Math.min(1, budAlpha.value).toFixed(2),
+  };
+});
+// 临时调试：泛光强度/半径滑块，确认观感后删除。
+const BLOOM_DEBUG = false;
+const bloomAlpha = ref(0.28);
+const bloomRadius = ref(1.4);
+const budAlpha = ref(0.44);
+const budRadius = ref(1.6);
+const bloomScale = { value: 1 };
+watch([scheme, bloomRadius], () => {
+  bloomScale.value = bloomRadius.value;
+});
+watch(scheme, () => {
+  const light = scheme.value === "light";
+  bloomAlpha.value = light ? 0.14 : 0.28;
+  budAlpha.value = light ? 0.22 : 0.44;
+  bloomRadius.value = light ? 0.8 : 1.4;
+  budRadius.value = light ? 0.9 : 1.6;
+}, { immediate: true });
+// Two additive layers: blossoms and buds carry their own opacity, so either
+// slider moves its own dots without being capped by the other kind.
+const vineBloomStyle = computed(() => ({
+  "--_bloom-alpha": Math.min(1, bloomAlpha.value).toFixed(2),
+}));
+const vineBudBloomStyle = computed(() => ({
+  "--_bloom-alpha": Math.min(1, budAlpha.value).toFixed(2),
+}));
 const vinePopOutsideCanvas = ref<HTMLCanvasElement | null>(null);
 const vineGhost = ref<HTMLCanvasElement | null>(null);
 const litGrid = ref<HTMLElement | null>(null);
@@ -410,6 +465,8 @@ const vineReady = ref(false);
 const rippleReady = ref(false);
 /** Ramp from 0 to 1 once the vine is visible, so the ripple eases in instead of popping. */
 const rippleGain = ref(0);
+/** Drops to 0 while the page is leaving, so the ripple fades with the vines. */
+const leavingGain = ref(1);
 
 /** Shape fragments used by the generated overlays. */
 const LEAF_PATH =
@@ -663,6 +720,21 @@ const vineSeed = computed(() => deriveVineSeed(boardSeed.value));
 /** Lace and texture use the board seed directly. */
 const ribbonSeed = computed(() => normalizeVineSeed(boardSeed.value));
 const fieldSeedOffset = computed(() => fluidSeedOffset(boardSeed.value));
+let loggedSeed = "";
+/** Reproducing a report needs the exact numbers that produced it. */
+function logSeeds(): void {
+  const key = `${boardSeed.value}/${vineSeed.value}`;
+  if (key === loggedSeed) return;
+  loggedSeed = key;
+  const seeds = { board: boardSeed.value, vine: vineSeed.value };
+  if (typeof window === "undefined") return;
+  (window as unknown as Record<string, unknown>).__akariFluidSeeds = seeds;
+  console.info(
+    `[akari-fluid] board seed ${seeds.board}, vine seed ${seeds.vine} `
+    + `— pass seed="${seeds.board}" to reproduce`,
+  );
+}
+watch([boardSeed, vineSeed], logSeeds, { immediate: true });
 const vinePopoutSwitch = ref(readVinePopout());
 /** Edges a 出屏 shoot may leave by, as `1 << edge` bits; 0 keeps the vines inside. */
 const vinePopEdges = ref(0);
@@ -689,6 +761,21 @@ const vineCanvasStyle = computed(() => {
     // The wall layer may overflow into its bleed for pop-out geometry; keep
     // ordinary wall vines inside the card even if a browser misses the shader
     // clip at the rounded corners.
+    clipPath: `inset(${top}px ${right}px ${bottom}px ${left}px round ${radius}px)`,
+  };
+});
+
+// The bloom dots are projected in canvas pixels, so their layer must share the
+// canvas bleed box instead of the card box; otherwise every dot is offset.
+const vineBloomBoxStyle = computed(() => {
+  const { left, top, right, bottom } = vineBleed.value;
+  if (left + top + right + bottom <= 0) return undefined;
+  const radius = wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0;
+  return {
+    left: `${-left}px`,
+    top: `${-top}px`,
+    width: `calc(100% + ${left + right}px)`,
+    height: `calc(100% + ${top + bottom}px)`,
     clipPath: `inset(${top}px ${right}px ${bottom}px ${left}px round ${radius}px)`,
   };
 });
@@ -1171,6 +1258,8 @@ function rebuildVineScene(plan?: VinePlanSize): void {
     strongFill: textureEmphasis.value,
     // The texture colour's alpha belongs to the flat overlay; the vine has its own per-part alpha.
     colorAlpha: 1,
+    bloomScale,
+    budBloom: { alpha: budAlpha, radius: budRadius },
     colors: vinePalette.value,
     rippleStrength: liveRippleStrength.value,
     rippleSpeed: rippleSpeed.value,
@@ -1208,7 +1297,7 @@ function rebuildVineScene(plan?: VinePlanSize): void {
     textureDensity.value * vineDensity.value,
     textureInkRgb(),
     vineOpacity.value,
-    { ...sharedOptions, paint: "all", popCut: vinePopSplit.value },
+    { ...sharedOptions, paint: "all", popCut: vinePopSplit.value, bloomLayer: vineBloomLayer.value, budLayer: vineBudLayer.value },
   );
 
   if (vinePopSplit.value && vinePopOutsideCanvas.value) {
@@ -1220,7 +1309,7 @@ function rebuildVineScene(plan?: VinePlanSize): void {
       textureDensity.value * vineDensity.value,
       textureInkRgb(),
       vineOpacity.value,
-      { ...sharedOptions, paint: "pop", colors: vinePopoutPalette.value },
+      { ...sharedOptions, paint: "pop", colors: vinePopoutPalette.value, bloomLayer: vinePopBloomLayer.value, budLayer: vinePopBudLayer.value },
     );
   }
   if (planWidth !== width || planHeight !== height || plan?.keep) {
@@ -1480,8 +1569,9 @@ void main() {
   float n = f * 0.5 + 0.5;
   // Mirror the broad colour field about the centre on very wide walls: the
   // low-frequency masses are what read as one bright and one dark side, while
-  // the curl detail stays asymmetric.
-  float mirrorWide = smoothstep(2.2, 3.8, aspect) * 0.8;
+  // the curl detail stays asymmetric. Kept faint: a full fold reads as a
+  // symmetric wallpaper rather than a flow.
+  float mirrorWide = smoothstep(2.2, 3.8, aspect) * 0.22;
   if (mirrorWide > 0.0) {
     vec2 fieldM = vec2(2.0 * u_centre.x - field.x, field.y);
     vec2 suvM = fieldM * u_scale * u_stretch * fieldGain + u_offset;
@@ -2092,7 +2182,7 @@ function draw(): void {
   setFloat("u_ripple_light", scheme.value === "dark" ? 0.45 : 1);
   setFloat("u_press_size", PRESS_SIZE);
   setFloat("u_press_softness", 0.085);
-  setFloat("u_press_gain", scheme.value === "dark" ? 0.55 : 0.18);
+  setFloat("u_press_gain", (scheme.value === "dark" ? 0.55 : 0.18) * leavingGain.value);
   setFloat("u_petal_light", palette.petalLight);
   setFloat("u_petal_ink", palette.petalInk);
 
@@ -2493,6 +2583,68 @@ watch(vinePopSplit, () => {
 });
 
 onMounted(() => {
+  // Capture phase runs before the router handles the click, while the
+  // 出屏 canvas still holds its last frame.
+  onLinkPress = (event: PointerEvent) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const hit = document.elementFromPoint(event.clientX, event.clientY);
+    const target = event.target as Element | null;
+    // 侧边栏条目是 <m3e-nav-item href> 形式的自定义元素，不是 <a>。
+    const link = hit?.closest?.("a[href]") ?? hit?.closest?.('[href][role="link"]')
+      ?? target?.closest?.("a[href]") ?? target?.closest?.('[href][role="link"]');
+    const href = link?.getAttribute("href");
+    if (!link || !href || href.startsWith("#") || link.getAttribute("target") === "_blank") return;
+    const url = new URL(href, window.location.href);
+    if (url.origin !== window.location.origin) return;
+    if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+    if (navigating || overlay.value !== "vine" || !vineReady.value) return;
+    // Hold the route for one fade so the vines leave with the page instead of
+    // being deleted the instant the router swaps the content.
+    navigating = true;
+    holdNavigation = true;
+    const leavingAnimations: Animation[] = [];
+    for (const layer of [
+      vineCanvas.value,
+      vinePopOutsideCanvas.value,
+      vineBloomLayer.value,
+      vineBudLayer.value,
+      vinePopBloomLayer.value,
+      vinePopBudLayer.value,
+    ]) {
+      if (!layer) continue;
+      leavingAnimations.push(layer.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: VINE_LEAVE_MS,
+        easing: VINE_LEAVE_EASING,
+        fill: "forwards",
+      }));
+    }
+    const startedAt = performance.now();
+    const easeRipple = () => {
+      const t = Math.min(1, (performance.now() - startedAt) / VINE_LEAVE_MS);
+      leavingGain.value = 1 - t;
+      if (t < 1) requestAnimationFrame(easeRipple);
+    };
+    requestAnimationFrame(easeRipple);
+    window.setTimeout(() => {
+      navigating = false;
+      holdNavigation = false;
+      // The navigation can be cancelled; put the wall back instead of leaving it invisible.
+      if (window.location.pathname === url.pathname && window.location.search === url.search) {
+        for (const animation of leavingAnimations) animation.cancel();
+        leavingGain.value = 1;
+      }
+    }, VINE_LEAVE_MS + 400);
+  };
+  const previousBeforeRouteChange = router.onBeforeRouteChange;
+  router.onBeforeRouteChange = async (to: string) => {
+    if (holdNavigation) {
+      holdNavigation = false;
+      await new Promise((resolve) => window.setTimeout(resolve, VINE_LEAVE_MS));
+    }
+    return previousBeforeRouteChange ? await previousBeforeRouteChange(to) : undefined;
+  };
+  removeRouteGuard = () => { router.onBeforeRouteChange = previousBeforeRouteChange; };
+  window.addEventListener("pointerdown", onLinkPress, true);
   syncWallLight();
   if (wall.value) {
     wallLightObserver = new ResizeObserver(syncWallLight);
@@ -2509,7 +2661,29 @@ onMounted(() => {
   void bootstrap();
 });
 
+/**
+ * The 出屏 canvases live in `body` through a Teleport, so unmounting the page
+ * removes them in one go. Copy the last frame into a detached twin and fade it
+ * out, otherwise the shoots vanish while the wall itself fades with the page.
+ */
+const router = useRouter();
+let navigating = false;
+let holdNavigation = false;
+let removeRouteGuard: (() => void) | null = null;
+let onLinkPress: ((event: PointerEvent) => void) | null = null;
+
+/** Matches `.akari-doc.is-leaving` so the snapshot leaves with the page. */
+// The router swaps the document children while `.akari-doc` is still fading,
+// so the twin has to be gone before the incoming content paints.
+/** Matches the page's own leave curve so the wall and the content part together. */
+const VINE_LEAVE_MS = 180;
+const VINE_LEAVE_EASING = "cubic-bezier(0.3, 0, 0.8, 0.15)";
+
 onBeforeUnmount(() => {
+  removeRouteGuard?.();
+  removeRouteGuard = null;
+  if (onLinkPress) window.removeEventListener("pointerdown", onLinkPress, true);
+  onLinkPress = null;
   stop();
   wallLightObserver?.disconnect();
   wallLightObserver = null;
@@ -2565,7 +2739,7 @@ onBeforeUnmount(() => {
     ref="wall"
     class="akari-fluid-wall"
     :class="{ 'is-painted': painted, 'is-popout': vinePopEdges > 0, 'is-vine-pop-split': vinePopSplit }"
-    :style="{ '--_wall-height': props.height, '--_vine-blend': vineBlendMode, '--_vine-pop-blend': vinePopoutBlendMode, '--_wall-light-x': `${wallLightX}%` }"
+    :style="{ '--_wall-height': props.height, '--_vine-blend': vineBlendMode, '--_vine-pop-blend': vinePopoutBlendMode, '--_wall-light-x': `${wallLightX}%`, ...vineBloomStyle }"
     :data-placement="props.placement"
   >
     <div class="akari-fluid-wall__canvas" aria-hidden="true">
@@ -2585,6 +2759,49 @@ onBeforeUnmount(() => {
       :style="vineCanvasStyle"
       aria-hidden="true"
     ></canvas>
+    <div
+      v-if="BLOOM_DEBUG && spec.texture === 'vine'"
+      class="akari-fluid-wall__bloom-debug"
+      @pointerdown.stop
+      @click.stop
+    >
+      <label>
+        <span>α</span>
+        <input v-model.number="bloomAlpha" type="range" min="0" max="1.6" step="0.02" />
+        <b>{{ bloomAlpha.toFixed(2) }}</b>
+      </label>
+      <label>
+        <span>r</span>
+        <input v-model.number="bloomRadius" type="range" min="0.2" max="6" step="0.1" />
+        <b>{{ bloomRadius.toFixed(1) }}</b>
+      </label>
+      <label>
+        <span>β</span>
+        <input v-model.number="budAlpha" type="range" min="0" max="1.4" step="0.02" />
+        <b>{{ budAlpha.toFixed(2) }}</b>
+      </label>
+      <label>
+        <span>br</span>
+        <input v-model.number="budRadius" type="range" min="0.2" max="6" step="0.1" />
+        <b>{{ budRadius.toFixed(1) }}</b>
+      </label>
+    </div>
+    <div
+      v-if="spec.texture === 'vine' && textureOpacity > 0"
+      ref="vineBloomLayer"
+      class="akari-fluid-wall__vine-bloom"
+      :class="{ 'is-vine-ready': vineReady }"
+      :style="vineBloomBoxStyle"
+      aria-hidden="true"
+    ></div>
+    <div
+      v-if="spec.texture === 'vine' && textureOpacity > 0"
+      ref="vineBudLayer"
+      class="akari-fluid-wall__vine-bloom akari-fluid-wall__vine-bloom--bud"
+      :class="{ 'is-vine-ready': vineReady }"
+      :style="{ ...vineBloomBoxStyle, ...vineBudBloomStyle }"
+      aria-hidden="true"
+    ></div>
     <Teleport to="body">
       <canvas
         v-if="spec.texture === 'vine' && textureOpacity > 0"
@@ -2595,6 +2812,22 @@ onBeforeUnmount(() => {
         :style="vinePopOutsideCanvasStyle"
         aria-hidden="true"
       ></canvas>
+      <div
+        v-if="spec.texture === 'vine' && textureOpacity > 0 && vinePopSplit"
+        ref="vinePopBloomLayer"
+        class="akari-fluid-wall__vine-bloom akari-fluid-wall__vine-bloom--outside"
+        :class="{ 'is-vine-ready': vineReady }"
+        :style="vinePopBloomStyle"
+        aria-hidden="true"
+      ></div>
+      <div
+        v-if="spec.texture === 'vine' && textureOpacity > 0 && vinePopSplit"
+        ref="vinePopBudLayer"
+        class="akari-fluid-wall__vine-bloom akari-fluid-wall__vine-bloom--outside akari-fluid-wall__vine-bloom--bud"
+        :class="{ 'is-vine-ready': vineReady }"
+        :style="vinePopBudStyle"
+        aria-hidden="true"
+      ></div>
     </Teleport>
     <canvas
       v-if="spec.texture === 'vine' && textureOpacity > 0"
@@ -2873,6 +3106,71 @@ html.dark .akari-fluid-wall {
   to {
     opacity: 1;
   }
+}
+
+/* Flower bloom: an additive layer, so it can only add light to the wall. */
+.akari-fluid-wall__vine-bloom {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: plus-lighter;
+  opacity: 0;
+  transition: opacity 900ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.akari-fluid-wall__vine-bloom.is-vine-ready {
+  opacity: var(--_bloom-alpha, 0);
+}
+
+.akari-fluid-wall__bloom-debug {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  z-index: 20;
+  max-inline-size: calc(100% - 32px);
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 62%);
+  color: #9ff;
+  font: 11px/1.2 ui-monospace, monospace;
+}
+
+.akari-fluid-wall__bloom-debug label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.akari-fluid-wall__bloom-debug input {
+  inline-size: 92px;
+}
+
+.akari-fluid-wall__bloom-debug b {
+  inline-size: 28px;
+  text-align: right;
+  font-weight: 500;
+}
+
+.akari-fluid-wall__vine-bloom--outside {
+  position: absolute;
+  z-index: 7;
+}
+
+.akari-fluid-wall__bloom-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  will-change: transform;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 205, 235, 0.55) 26%,
+    rgba(255, 160, 215, 0) 72%
+  );
 }
 
 .akari-fluid-wall__vine-canvas.is-vine-ready,

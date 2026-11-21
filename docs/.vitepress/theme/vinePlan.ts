@@ -784,6 +784,9 @@ interface Disc {
   readonly r: number;
 }
 
+/** The stem as grown, before decoration curls its tip. */
+const skeletons = new WeakMap<VinePlan, { path: Path; r0: number }>();
+
 interface Garden {
   readonly frame: Frame;
   readonly random: VineRandom;
@@ -840,6 +843,59 @@ function vineCount(frame: Frame, density: number): number {
  * Entry points spread around the edge, so vines come from every side. Short
  * edges are weighted up on a wide strip; otherwise almost every vine would
  * drop from the top or rise from the bottom.
+ */
+/**
+ * Entries for the left half only: the left edge, plus the left runs of the top
+ * and bottom edges. {@link mirrorSkeleton} supplies its stem.
+ */
+function halfEntries(
+  frame: Frame,
+  count: number,
+  random: VineRandom,
+): Array<{ edge: VineEdge; along: number }> {
+  const entries: Array<{ edge: VineEdge; along: number }> = [];
+  for (let index = 0; index < count; index += 1) {
+    const roll = random();
+    if (roll < 0.55) {
+      entries.push({ edge: 0, along: between(random, 0.08, 0.92) });
+    } else {
+      entries.push({ edge: roll < 0.78 ? 1 : 3, along: between(random, 0.06, 0.46) });
+    }
+  }
+  return entries;
+}
+
+/**
+ * The stem's centre line turned to the far side: across the vertical centre
+ * line, or through the wall's centre when `flipY` is set.
+ */
+function mirrorSkeleton(plan: VinePlan, flipY = false): { path: Path; r0: number } {
+  const stem = skeletons.get(plan) ?? { path: { points: [], arcs: [], headings: [] }, r0: 1 };
+  const sign = flipY ? -1 : 1;
+  return {
+    path: {
+      points: stem.path.points.map((point) => new THREE.Vector3(-point.x, sign * point.y, point.z)),
+      arcs: [...stem.path.arcs],
+      headings: stem.path.headings.map((heading) => (flipY ? heading + Math.PI : Math.PI - heading)),
+    },
+    r0: stem.r0,
+  };
+}
+
+/** Whether a plan may be added: safe zones are real, so they are respected. */
+function planIsClear(garden: Garden, plan: VinePlan): boolean {
+  if (!garden.frame.keep.length) return true;
+  const clear = (point: THREE.Vector3): boolean =>
+    keepClearance(garden.frame, point.x, point.y) >= 0;
+  return (
+    plan.strands.every((strand) => strand.points.every(clear)) &&
+    plan.blades.every((blade) => clear(blade.origin) && clear(blade.origin.clone().addScaledVector(blade.x, blade.spec.length)))
+  );
+}
+
+/**
+ * Entries for the left half only: the left edge, plus the left runs of the top
+ * and bottom edges. {@link mirrorSkeleton} supplies its stem.
  */
 function perimeterEntries(frame: Frame, count: number, random: VineRandom): Array<{ edge: VineEdge; along: number }> {
   const vertical = clamp(Math.sqrt(frame.width / frame.height), 1, 2.2);
@@ -967,31 +1023,51 @@ export function planVineGarden(
   const frame = makeFrame(width, height, wallKeep);
   const garden: Garden = { frame, random, occupied: [], targets: [], trails: [], wires: [] };
   // Fewer vines on a wall that is mostly safe zone, so the rest is not crammed.
+  // Only the left half is grown, then every stem is mirrored across the centre
+  // line: both halves carry the same mass and the composition cannot drift.
   const count = vineCount(frame, density * Math.max(0.5, freeShare(frame)));
+  const half = Math.max(1, Math.round(count / 2));
   const species = shuffle(random, SPECIES);
-  // Drawn for the full count either way, so the stream does not hang on which are dropped.
-  const entries = perimeterEntries(frame, count, random).flatMap((entry) => {
+  const entries = halfEntries(frame, half, random).flatMap((entry) => {
     const along = clearAlong(frame, entry.edge, entry.along);
     return along === null ? [] : [{ edge: entry.edge, along }];
   });
   const depths = shuffle(
     random,
-    Array.from({ length: count }, (_, index) => (index + 0.2 + random() * 0.6) / count),
+    Array.from({ length: half }, (_, index) => (index + 0.2 + random() * 0.6) / half),
   );
   // Front vines grow first, so their blooms take the room they want.
   const order = entries
     .map((entry, index) => ({ entry, depth: depths[index]!, species: species[index % species.length]! }))
     .sort((a, b) => b.depth - a.depth);
   const plans: VinePlan[] = [];
+  // Both halves get the same budget; each side may drift a bloom up or down.
+  const bloomBudget = (): number => clamp(2 + Math.round(between(random, -1, 1)), 1, 3);
+  const twinBudget = (plan: VinePlan, terminal: VineTerminalKind): number => {
+    const head = terminal === "flower" || terminal === "bud" ? 1 : 0;
+    return clamp(plan.lathes.length - head + Math.round(between(random, -1, 1)), 1, 3);
+  };
   for (const { entry, depth, species: kind } of order) {
-    const plan = growVine(garden, entry.edge, entry.along, depth, kind);
-    if (plan) plans.push(plan);
-  }
-  const used = species.slice(0, Math.min(species.length, count));
-  for (let extra = 0; extra < 4; extra += 1) {
-    const plan = fillGap(garden, used);
-    if (!plan) break;
+    const terminal = weighted(random, MAIN_TERMINALS);
+    const plan = growVine(garden, entry.edge, entry.along, depth, kind, null, null, bloomBudget(), terminal);
+    if (!plan) continue;
     plans.push(plan);
+    // Only the stem is mirrored; leaves and blooms are grown afresh on the
+    // mirrored skeleton, so the two halves balance without being identical.
+    const edge = plan.edge === 0 ? 2 : plan.edge === 2 ? 0 : plan.edge;
+    // A stem that runs across the centre line would meet its own mirror head
+    // on; turning it through the wall's centre puts it on the other band.
+    let skeleton = mirrorSkeleton(plan);
+    const tolerance = frame.unit * 0.018;
+    if (wireOverlap(skeleton.path, garden.wires, tolerance) > 0.35) {
+      const flipped = mirrorSkeleton(plan, true);
+      if (wireOverlap(flipped.path, garden.wires, tolerance) > 0.35) continue;
+      skeleton = flipped;
+    }
+    const twin = growVine(garden, edge, 1 - entry.along, depth, kind, null, skeleton, twinBudget(plan, terminal), terminal);
+    if (!twin) continue;
+    // Safe zones are real and not symmetric, so a twin that crosses one is dropped.
+    if (planIsClear(garden, twin)) plans.push(twin);
   }
   // Planned last, so the wall underneath is the same with them on or off. One
   // draw seeds both kinds, each on its own copy of the garden, so neither
@@ -1029,10 +1105,13 @@ function growVine(
   depth: number,
   species: Species,
   goal: THREE.Vector2 | null = null,
+  skeleton: { path: Path; r0: number } | null = null,
+  blooms: number | null = null,
+  terminal: VineTerminalKind | null = null,
 ): VinePlan | null {
   const { frame, random } = garden;
   const size = 0.82 + depth * 0.36;
-  const r0 = frame.unit * between(random, 0.0068, 0.0108) * size;
+  let r0 = frame.unit * between(random, 0.0068, 0.0108) * size;
   const anchor = edgeAnchor(frame, edge, along);
   const [ix, iy] = VINE_EDGE_INWARD[edge]!;
   const inward = new THREE.Vector2(ix, iy);
@@ -1046,8 +1125,8 @@ function growVine(
   const distance = Math.hypot(target.x - start.x, target.y - start.y);
 
   // Keep the stem inside the wall and, where it can, off the stems already grown.
-  let best: { path: Path; score: number } | null = null;
-  for (let attempt = 0; attempt < 8; attempt += 1) {
+  let best: { path: Path; score: number } | null = skeleton ? { path: skeleton.path, score: 0 } : null;
+  if (!skeleton) for (let attempt = 0; attempt < 8; attempt += 1) {
     const aim = Math.atan2(target.y - start.y, target.x - start.x);
     const heading = inwardAngle + clamp(wrapAngle(aim - inwardAngle) + between(random, -0.55, 0.55), -1.15, 1.15);
     const path = beginPath(start, heading);
@@ -1076,6 +1155,7 @@ function growVine(
     if (score < 0.02) break;
   }
   if (!best) return null;
+  if (skeleton) r0 = skeleton.r0;
 
   const path = best.path;
   const length = path.arcs[path.arcs.length - 1]!;
@@ -1098,15 +1178,19 @@ function growVine(
     leafBase: between(random, 0.088, 0.118) * size,
     droop: between(random, 0.15, 0.95),
     branches: (length > frame.unit * 1.1 ? 2 : 1) + (random() < 0.5 ? 1 : 0),
-    blooms: 1 + (random() < 0.55 ? 1 : 0),
+    blooms: blooms ?? 1 + (random() < 0.55 ? 1 : 0),
   };
+  skeletons.set(plan, {
+    path: { points: path.points.map((point) => point.clone()), arcs: [...path.arcs], headings: [...path.headings] },
+    r0,
+  });
   develop(vine, {
     role: "stem",
     path,
     r0,
     generation: 0,
     size,
-    terminal: weighted(random, MAIN_TERMINALS),
+    terminal: terminal ?? weighted(random, MAIN_TERMINALS),
     fixed: false,
     parent: -1,
     parentSample: -1,

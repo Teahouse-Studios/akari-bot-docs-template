@@ -40,6 +40,13 @@ export type VinePartColor = { readonly color: FluidRgb; readonly alpha?: number 
 export type VinePalette = Partial<Record<VinePart | VineBotanicalPart, VinePartColor>> & { base?: VinePartColor };
 
 export type Vine3dOptions = {
+  /** DOM layer composited with plus-lighter, carrying the flower bloom. */
+  bloomLayer?: HTMLElement | null;
+  budLayer?: HTMLElement | null;
+  /** Live bloom radius multiplier driven by the debug slider. */
+  bloomScale?: { value: number };
+  /** Buds glow softer than blossoms; null means buds stay unlit. */
+  budBloom?: { alpha: { value: number }; radius: { value: number } } | null;
   /**
    * 出屏: let a few shoots grow out past the wall. `true` opens every edge, a
    * number only the edges whose bits are set (`1 << edge`: left, top, right, bottom).
@@ -114,7 +121,7 @@ export type Vine3dOptions = {
    * Restrict this renderer to one half of the garden. A second canvas can then
    * paint the 出屏 shoots with a different compositing mode from the wall vines.
    */
-  paint?: "all" | "wall" | "pop";
+  paint?: "all" | "wall" | "pop" | "back" | "front";
   /** With `paint: "all"`, cut the 出屏 shoots at the portal so a pop layer can paint them. */
   popCut?: boolean;
 };
@@ -1125,8 +1132,19 @@ type LayerMaterials = {
   fine: THREE.LineBasicMaterial;
 };
 
-/** Vines further back are fainter: the only depth cue an orthographic wall has besides size. */
-const LAYER_ALPHA = [0.6, 0.8, 1] as const;
+/** Layer scale is a size cue only; opacity must not fade with depth or the wall shows through. */
+const LAYER_SCALE = [0.6, 0.8, 1] as const;
+
+/** Temporary audit aid: print each vine's effective alpha beside it on the wall. */
+const VINE_ALPHA_DEBUG = false;
+// TEMP 定位调试：花朵染蓝。
+const VINE_BLUE_DEBUG = false;
+
+/** Coloured vines keep a slight translucency so the wall reads behind them without turning grey. */
+const STRONG_FILL_ALPHA = 0.9;
+
+/** Shadow meshes live on their own layer so the main camera can never draw them. */
+const SHADOW_LAYER = 1;
 
 /** 出屏 shoots stand off the wall, so they read a little stronger than the front layer. */
 const POP_ALPHA = 1.45;
@@ -1154,9 +1172,9 @@ function layerMaterials(
       opacity: underlayOpacity * alpha,
       blending: UNDERLAY_BLENDING[underlayBlend] ?? THREE.AdditiveBlending,
     }),
-    fill: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? 0.95 : 0.16) * alpha }),
+    fill: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? STRONG_FILL_ALPHA : 0.16) * alpha }),
     tint: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: (strongFill ? 0.35 : 0.06) * alpha }),
-    halo: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: 0.2 * alpha }),
+    halo: new THREE.MeshBasicMaterial({ ...common, color: 0xffffff, opacity: 0.2 * alpha, blending: THREE.AdditiveBlending }),
     edge: new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.3 * alpha }),
     fine: new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0.16 * alpha }),
   };
@@ -1179,7 +1197,13 @@ function shadowMaterial(alpha: number, hover: VineHover, strongFill = false, pop
     depthTest: false,
     depthWrite: false,
     side: THREE.DoubleSide,
-    opacity: (wall ? (strongFill ? 0.38 : 0.46) : (strongFill ? 0.3 : 0.34)) * alpha,
+    opacity: (wall ? (strongFill ? 0.12 : 0.16) : (strongFill ? 0.09 : 0.12)) * alpha,
+    // One shade per pixel: crossing quads take the stronger one instead of
+    // stacking into a darker patch.
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.MaxEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneFactor,
   });
   attachHover(
     material,
@@ -1290,6 +1314,52 @@ function buildVineParticles(plans: readonly VinePlan[], density: number, seed: n
   return motes;
 }
 
+let flowerPointTexture: THREE.Texture | null = null;
+
+function makeFlowerPointTexture(): THREE.Texture {
+  if (flowerPointTexture) return flowerPointTexture;
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.18, "rgba(255,255,255,0.95)");
+  g.addColorStop(0.46, "rgba(255,255,255,0.28)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  flowerPointTexture = new THREE.CanvasTexture(canvas);
+  flowerPointTexture.colorSpace = THREE.SRGBColorSpace;
+  return flowerPointTexture;
+}
+
+
+function makeAlphaLabel(text: string): THREE.Sprite {
+  const font = 13;
+  const pad = 6;
+  const canvas = document.createElement("canvas");
+  const measure = canvas.getContext("2d")!;
+  measure.font = `600 ${font}px ui-monospace, Menlo, monospace`;
+  canvas.width = Math.ceil(measure.measureText(text).width) + pad * 2;
+  canvas.height = font + pad * 2;
+  const ctx = canvas.getContext("2d")!;
+  ctx.font = `600 ${font}px ui-monospace, Menlo, monospace`;
+  ctx.fillStyle = "rgba(8, 10, 9, 0.72)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#5dff9b";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, pad, canvas.height / 2 + 1);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false }),
+  );
+  sprite.scale.set(canvas.width, canvas.height, 1);
+  return sprite;
+}
+
 export function createVine3d(
   canvas: HTMLCanvasElement,
   width: number,
@@ -1372,9 +1442,45 @@ export function createVine3d(
   const strongFill = options.strongFill ?? false;
   let fillEmphasis = strongFill;
   let currentPalette: VinePalette = options.colors ?? {};
+  const lightWall = options.lightWall ?? false;
   const partColors = Array.from({ length: VINE_PART_COUNT }, () => new THREE.Vector3(1, 1, 1));
   const partAlphas = Array.from({ length: VINE_PART_COUNT }, () => 1);
   const partUniforms: VinePartUniforms = { colors: partColors, alphas: partAlphas };
+  // Bloom dots must follow the same view-space moves as their petals: the wall
+  // warp pin plus the pointer tilt, which the vertex shader applies per depth
+  // branch. Plain sprites get none of them, so the placement is replayed here.
+  const bloomScale = options.bloomScale ?? { value: 1 };
+  const budBloom = options.budBloom ?? null;
+  options.bloomLayer?.replaceChildren();
+  options.budLayer?.replaceChildren();
+  const bloomProbe = new THREE.Vector3();
+  const bloomDots: Array<{ el: HTMLElement; owner: { centre: THREE.Vector3; base: THREE.Vector3; portal?: VinePortal }; size: number; bud: boolean }> = [];
+  const flowerDotMaterials: THREE.SpriteMaterial[] = [];
+  const budDotMaterials: THREE.SpriteMaterial[] = [];
+  const bloomSprites: Array<{
+    sprite: THREE.Sprite;
+    centre: THREE.Vector3;
+    base: THREE.Vector3;
+    portal?: VinePortal;
+  }> = [];
+  const placeBloomSprite = (sprite: THREE.Object3D, entry: { centre: THREE.Vector3; base: THREE.Vector3; portal?: VinePortal }): void => {
+    let x = entry.centre.x + (hover.warp.x - 1) * entry.base.x;
+    let y = entry.centre.y + (hover.warp.y - 1) * entry.base.y;
+    if (entry.portal) {
+      // 出屏 blooms hang past the portal: the view scales them around it and
+      // leans them with the pointer, by as much of the shoot as has risen.
+      const portalX = entry.portal.x * hover.warp.x;
+      const portalY = entry.portal.y * hover.warp.y;
+      const lift = THREE.MathUtils.clamp(entry.base.z - entry.portal.z, 0, entry.portal.eye * 0.6);
+      const scale = entry.portal.eye / Math.max(entry.portal.eye - lift, 0.001);
+      x = portalX + (x - portalX) * scale - hover.tilt.x * lift * VINE_POP_TILT;
+      y = portalY + (y - portalY) * scale - hover.tilt.y * lift * VINE_POP_TILT;
+    } else {
+      x += hover.tilt.x * 2;
+      y += hover.tilt.y * 2;
+    }
+    sprite.position.set(x, y, entry.centre.z);
+  };
   hover.rippleStrength.value = options.rippleStrength ?? 1;
   hover.rippleSpeed.value = options.rippleSpeed ?? VINE_RIPPLE_SPEED;
   hover.rippleSize.value = options.rippleSize ?? 1;
@@ -1395,10 +1501,10 @@ export function createVine3d(
   let currentUnderlayColor: THREE.Color | null = options.underlayColor ? colorFromRgb(options.underlayColor) : null;
   let currentUnderlayOpacity = THREE.MathUtils.clamp(options.underlayOpacity ?? 0.18, 0, 1);
   let currentUnderlayBlend = options.underlayBlend ?? "additive";
-  const layers = LAYER_ALPHA.map((share) =>
+  const layers = LAYER_SCALE.map((share) =>
     layerMaterials(
       baseColor,
-      alpha * share,
+      alpha,
       hover,
       VineDepth.Wall,
       strongFill,
@@ -1423,24 +1529,20 @@ export function createVine3d(
   };
   setKeep(keep);
   const garden = planVineGarden(width, height, seed, density, edges, { keep, wallKeep: options.wallKeep, popKeep: options.popKeep, inward: options.inward });
-  const plans = options.paint === "pop" ? garden.filter((plan) => plan.pop) : options.paint === "wall" ? garden.filter((plan) => !plan.pop) : garden;
+  const wallPlans = garden.filter((plan) => !plan.pop);
+  const plans =
+    options.paint === "pop" ? garden.filter((plan) => plan.pop) :
+    options.paint === "wall" ? wallPlans :
+    options.paint === "back" ? wallPlans.filter((plan) => plan.layer < 2) :
+    // The crisp pass keeps all three wall layers out of the blurred pass, plus
+    // the pop shoots that still belong to the wall side of a split.
+    options.paint === "front" ? garden.filter((plan) => plan.pop || plan.layer === 2) :
+    garden;
   const popMaterials = plans.some((plan) => plan.pop)
     ? layerMaterials(baseColor, Math.min(1.6, alpha * POP_ALPHA), hover, VineDepth.Pop, strongFill, POP_ALPHA, partUniforms, options.paint === 'pop', options.paint === 'pop', options.paint === 'all' && options.popCut === true, currentUnderlayColor ?? new THREE.Color(0xffffff), currentUnderlayOpacity, currentUnderlayBlend)
     : null;
-  const maskTarget = plans.length
-    ? new THREE.WebGLRenderTarget(1, 1, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBAFormat,
-        depthBuffer: false,
-        stencilBuffer: false,
-      })
-    : null;
-  const maskMaterial = maskTarget
-    ? new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, depthTest: false, depthWrite: false })
-    : null;
-  const shadow = popMaterials ? shadowMaterial(alpha, hover, strongFill, options.paint === 'pop', options.paint === 'all' && options.popCut === true, false, undefined, maskTarget?.texture) : null;
-  const wallShadow = options.paint !== "pop" ? shadowMaterial(alpha, hover, strongFill, false, false, true, hover.shadowWallAngle, maskTarget?.texture, hover.wallShadowSize) : null;
+  const shadow = popMaterials ? shadowMaterial(alpha, hover, strongFill, options.paint === 'pop', options.paint === 'all' && options.popCut === true, false, undefined, null) : null;
+  const wallShadow = options.paint !== "pop" ? shadowMaterial(alpha, hover, strongFill, false, false, true, hover.shadowWallAngle, null, hover.wallShadowSize) : null;
   const materialSets = popMaterials ? [...layers, popMaterials] : layers;
   const shadowObjects: THREE.Object3D[] = [];
   const wallShadowObjects: THREE.Object3D[] = [];
@@ -1649,6 +1751,12 @@ void main() {
       currentPalette.fine;
     const paletteBase = seedPart ? colorFromRgb(seedPart.color) : currentBase;
     const paletteAlpha = baseAlpha * (basePart?.alpha ?? 1);
+    const edgeEntry = currentPalette.edge ?? currentPalette.fine ?? currentPalette.halo;
+    const fineEntry = currentPalette.fine ?? currentPalette.edge ?? currentPalette.halo;
+    const haloEntry = currentPalette.halo ?? currentPalette.fine ?? currentPalette.edge;
+    const edgeColor = edgeEntry ? colorFromRgb(edgeEntry.color) : paletteBase;
+    const fineColor = fineEntry ? colorFromRgb(fineEntry.color) : paletteBase;
+    const haloColor = haloEntry ? colorFromRgb(haloEntry.color) : paletteBase;
     const partKeys = ["leaf", "flower", "bud", "flowerStem", "stem", "leafStem"] as const;
     for (let index = 0; index < VINE_PART_COUNT; index += 1) {
       const key = partKeys[index]!;
@@ -1657,6 +1765,16 @@ void main() {
       const color = entry ? colorFromRgb(entry.color) : paletteBase;
       partColors[index]!.set(color.r, color.g, color.b);
       partAlphas[index] = entry?.alpha ?? 1;
+    }
+    // TEMP 定位调试：花朵整体染蓝，白点位置一眼可辨。
+    if (VINE_BLUE_DEBUG) {
+      const blue = new THREE.Color(0x1558ff);
+      for (let index = 0; index < VINE_PART_COUNT; index += 1) {
+        if (partKeys[index] === "flower") {
+          partColors[index]!.set(blue.r, blue.g, blue.b);
+          partAlphas[index] = 1;
+        }
+      }
     }
     const sceneAlpha = (material: THREE.Material): number => (material.userData.sceneAlpha as number | undefined) ?? 1;
     const setOpacity = (
@@ -1674,18 +1792,23 @@ void main() {
           continue;
         }
         const factor =
-          key === "fill" ? (fillEmphasis ? 0.95 : 0.16) :
+          key === "fill" ? (fillEmphasis ? STRONG_FILL_ALPHA : 0.16) :
           key === "tint" ? (fillEmphasis ? 0.35 : 0.06) :
-          key === "halo" ? (fillEmphasis ? 0.3 : 0.2) :
-          key === "edge" ? (fillEmphasis ? 0.78 : 0.3) :
+          key === "halo" ? (fillEmphasis ? 0.34 : 0.2) :
+          key === "edge" ? (fillEmphasis ? 0.92 : 0.3) :
+          key === "fine" ? (fillEmphasis ? 0.78 : 0.16) :
           fillEmphasis ? 0.52 : 0.16;
         setOpacity(material as THREE.MeshBasicMaterial | THREE.LineBasicMaterial, factor);
         if (key === "fill") {
           const uniform = material.userData.vineLighten as { value: number } | undefined;
           if (uniform) uniform.value = fillEmphasis ? 0.18 : 0.72;
         }
-        if (key === "edge" || key === "fine" || key === "halo") {
-          (material as THREE.LineBasicMaterial | THREE.MeshBasicMaterial).color.copy(paletteBase);
+        if (key === "edge") {
+          (material as THREE.LineBasicMaterial).color.copy(edgeColor);
+        } else if (key === "fine") {
+          (material as THREE.LineBasicMaterial).color.copy(fineColor);
+        } else if (key === "halo") {
+          (material as THREE.MeshBasicMaterial).color.copy(haloColor);
         }
       }
     }
@@ -1722,6 +1845,7 @@ void main() {
         strength *
         paletteAlpha;
     }
+
   };
   applyPalette();
   const portals = plans.flatMap((plan) => (plan.pop && plan.portal ? [plan.portal] : [])).slice(0, VINE_MAX_RIPPLES);
@@ -1738,10 +1862,106 @@ void main() {
       object.frustumCulled = false;
       if (asShadow) {
         object.visible = false;
+        object.layers.set(SHADOW_LAYER);
         shadowObjects.push(object);
       } else paintedObjects.push(object);
       scene.add(object);
     };
+    // The bloom the eye sees is the fan of petals, whose visual centre sits
+    // past the disc throat along the flower's axis; cluster petals by their
+    // attachment point and light the weighted centre of their mid-points.
+    const bloomGroups: Array<{ base: THREE.Vector3; mids: THREE.Vector3[]; tips: THREE.Vector3[]; weights: number[]; bud: boolean }> = [];
+    // Anchor each bloom on the flower lathe itself. Petals can be scattered across
+    // plans and split into clusters, but the lathe is exactly what gets drawn.
+    const addAnchor = (lathe: (typeof plan.lathes)[number], bud: boolean, scale: number): void => {
+      if (lathe.rows.length === 0) return;
+      const row = lathe.rows[lathe.rows.length - 1]!;
+      const centre = lathe.origin.clone().addScaledVector(lathe.axis, row[0] * 0.5);
+      if (bloomGroups.some((group) => group.base.distanceToSquared(centre) < 18 * 18)) return;
+      const reach = Math.max(row[1] * scale, bud ? 4 : 4);
+      bloomGroups.push({
+        base: centre,
+        mids: [centre],
+        tips: [centre.clone().addScaledVector(lathe.axis, reach)],
+        weights: [reach],
+        bud,
+      });
+    };
+    // Corollas and buds carry the flower itself; star/blossom kinds only emit
+    // petal whorls plus a disc, so the disc is their centre.
+    for (const lathe of plan.lathes) {
+      if (lathe.role === "bud") {
+        if (budBloom) addAnchor(lathe, true, 1);
+      } else if (lathe.role === "corolla") {
+        addAnchor(lathe, false, 1);
+      }
+    }
+    for (const lathe of plan.lathes) {
+      if (lathe.role === "disc") addAnchor(lathe, false, 2.4);
+    }
+    for (const group of bloomGroups) {
+      const weight = group.weights.reduce((sum, value) => sum + value, 0);
+      const centre = group.mids
+        .reduce((sum, mid, index) => sum.clone().addScaledVector(mid, group.weights[index]!), new THREE.Vector3())
+        .multiplyScalar(1 / weight);
+      const reach = Math.max(...group.tips.map((tip) => centre.distanceTo(tip)));
+      const point = THREE.MathUtils.clamp(reach * 0.45, 5, 16);
+      const entry = { centre, base: group.base, portal: plan.pop ? plan.portal : undefined };
+      const dot = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: makeFlowerPointTexture(),
+          color: 0xffffff,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+          blending: THREE.NormalBlending,
+          opacity: group.bud ? 0.55 : 0.9,
+        }),
+      );
+      dot.scale.set(point * 2, point * 2, 1);
+      (group.bud ? budDotMaterials : flowerDotMaterials).push(dot.material as THREE.SpriteMaterial);
+      placeBloomSprite(dot, entry);
+      bloomSprites.push({ sprite: dot, ...entry });
+      add(dot, 7);
+      const bloomLayer = group.bud ? options.budLayer : options.bloomLayer;
+      if (bloomLayer) {
+        const el = document.createElement("div");
+        el.className = "akari-fluid-wall__bloom-dot";
+        // Scoped component CSS cannot reach nodes created here, so the dot paints itself.
+        el.style.position = "absolute";
+        el.style.left = "0";
+        el.style.top = "0";
+        el.style.borderRadius = "50%";
+        el.style.pointerEvents = "none";
+        // On the dark wall the petals are near-white, so a white halo disappears;
+        // the night glow leans pink to stay readable against them.
+        el.style.background = group.bud
+          ? lightWall
+            ? "radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,222,244,0.3) 24%, rgba(255,190,230,0.1) 52%, rgba(255,190,230,0) 78%)"
+            : "radial-gradient(circle, rgba(255,205,240,0.5) 0%, rgba(246,140,214,0.28) 24%, rgba(238,110,204,0.09) 52%, rgba(238,110,204,0) 78%)"
+          : lightWall
+            ? "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,214,240,0.62) 22%, rgba(255,176,222,0.22) 48%, rgba(255,176,222,0) 72%)"
+            : "radial-gradient(circle, rgba(255,176,230,0.95) 0%, rgba(250,116,206,0.6) 22%, rgba(238,84,192,0.2) 48%, rgba(238,84,192,0) 72%)";
+        bloomLayer.appendChild(el);
+        bloomDots.push({ el, owner: entry, size: reach * (group.bud ? 7 : 4.2), bud: group.bud });
+      }
+    }
+    if (VINE_ALPHA_DEBUG && plan.layer === 2 && !plan.pop) {
+      const anchor = plan.strands[0]?.points[0] ?? new THREE.Vector3();
+      const effective = plan.pop ? Math.min(1.6, alpha * POP_ALPHA) : alpha;
+      const fill = (strongFill ? STRONG_FILL_ALPHA : 0.16) * effective;
+      const label = makeAlphaLabel(`L${plan.layer} α${effective.toFixed(2)} f${fill.toFixed(2)}`);
+      const labelX = THREE.MathUtils.clamp(anchor.x + (anchor.x < 0 ? 76 : -76), -520, 400);
+      const labelY = THREE.MathUtils.clamp(anchor.y + (anchor.y < 0 ? 44 : -44), -130, 130);
+      const labelEntry = {
+        centre: new THREE.Vector3(labelX, labelY, 30),
+        base: anchor.clone(),
+        portal: plan.pop ? plan.portal : undefined,
+      };
+      placeBloomSprite(label, labelEntry);
+      bloomSprites.push({ sprite: label, ...labelEntry });
+      add(label, 8);
+    }
     if (geometry.halo) add(new THREE.Mesh(geometry.halo, materials.halo), 0);
     if (geometry.organ) {
       add(new THREE.Mesh(geometry.organ, materials.underlay), 0.5);
@@ -1768,6 +1988,7 @@ void main() {
         object.renderOrder = order + offset;
         object.frustumCulled = false;
         object.visible = false;
+        object.layers.set(SHADOW_LAYER);
         wallShadowObjects.push(object);
         scene.add(object);
       };
@@ -1775,6 +1996,9 @@ void main() {
       if (geometry.tube) addWallShadow(new THREE.Mesh(geometry.tube, wallShadow), 7);
     }
   });
+  // Highlights are created after the plan walk; give them the current palette
+  // before the first frame rather than waiting for the next colour update.
+  applyPalette();
   const pointerTarget = new THREE.Vector3();
   const pointerLast = new THREE.Vector3();
   let lastPointerMoveAt = -1;
@@ -1783,7 +2007,10 @@ void main() {
   const shadowHistory: { x: number; y: number; t: number }[] = [];
   const SHADOW_TRAIL_SECONDS = 5;
   const SHADOW_SAMPLE_SECONDS = 0.2;
-  const SHADOW_SPEED = 0.8;
+  /** Degrees the shade may lean either side of the authored angle while tracking the pointer. */
+const SHADOW_ANGLE_LIMIT = 10;
+
+const SHADOW_SPEED = 0.8;
   let shadowSampleClock = -1;
   let shadowClock = -1;
   let lastShadowFrameTime = -1;
@@ -1870,6 +2097,7 @@ void main() {
     cardWidth = nextWidth;
     cardHeight = nextHeight;
     hover.warp.set(nextWidth / width, nextHeight / height);
+    for (const entry of bloomSprites) placeBloomSprite(entry.sprite, entry);
     const far = Math.max(nextWidth, nextHeight);
     key.position.set(-nextWidth * 0.28, nextHeight * 0.4, far * 0.3);
     fill.position.set(nextWidth * 0.35, -nextHeight * 0.25, far * 0.15);
@@ -1888,7 +2116,6 @@ void main() {
     if (shadowTarget) shadowTarget.setSize(drawingBuffer.x, drawingBuffer.y);
     if (wallShadowTarget) wallShadowTarget.setSize(drawingBuffer.x, drawingBuffer.y);
     if (blurMaterial) blurMaterial.uniforms.u_texel.value.set(1 / drawingBuffer.x, 1 / drawingBuffer.y);
-    maskTarget?.setSize(drawingBuffer.x, drawingBuffer.y);
     hover.canvas.set(canvasWidth, canvasHeight);
     hover.card.set(bleed.left + nextWidth / 2, bleed.bottom + nextHeight / 2, nextWidth / 2, nextHeight / 2);
     hover.corner.x = Math.min(radius, nextWidth / 2, nextHeight / 2);
@@ -1958,7 +2185,7 @@ void main() {
       const value = THREE.MathUtils.clamp(nextAlpha, 0, 1);
       for (const materials of materialSets) {
         for (const material of Object.values(materials)) {
-          material.userData.sceneAlpha = value * ((material.userData.sceneShare as number | undefined) ?? 1);
+          material.userData.sceneAlpha = value;
         }
       }
       if (shadow) shadow.userData.shadowAlpha = value;
@@ -1978,6 +2205,30 @@ void main() {
     render(time) {
       if (time !== undefined) hover.time.value = time;
       hover.tilt.lerp(tiltTarget, 0.06);
+      for (const entry of bloomSprites) placeBloomSprite(entry.sprite, entry);
+      // Keep the white core readable even when the diffuse alpha is dialled low.
+      const bloomOpacity = Math.max(0.62, 0.9 * THREE.MathUtils.clamp(bloomScale.value, 0, 1.4));
+      for (const material of flowerDotMaterials) material.opacity = bloomOpacity;
+      const budStrength = budBloom ? THREE.MathUtils.clamp(budBloom.alpha.value, 0, 1.4) : 0;
+      for (const material of budDotMaterials) material.opacity = 0.55 * budStrength;
+      if (bloomDots.length) {
+        const boxWidth = canvas.clientWidth || renderer.domElement.clientWidth;
+        const boxHeight = canvas.clientHeight || renderer.domElement.clientHeight;
+        const spanX = camera.right - camera.left;
+        const spanY = camera.top - camera.bottom;
+        for (const dot of bloomDots) {
+          const sprite = bloomSprites.find((item) => item.centre === dot.owner.centre)?.sprite;
+          if (!sprite) continue;
+          bloomProbe.copy(sprite.position).project(camera);
+          const px = (bloomProbe.x * 0.5 + 0.5) * boxWidth;
+          const py = (-bloomProbe.y * 0.5 + 0.5) * boxHeight;
+          const scale = dot.bud ? (budBloom?.radius.value ?? 0) : bloomScale.value;
+          const size = ((dot.size * scale) / spanX) * boxWidth;
+          dot.el.style.transform = `translate3d(${(px - size / 2).toFixed(1)}px, ${(py - size / 2).toFixed(1)}px, 0)`;
+          dot.el.style.width = `${size.toFixed(1)}px`;
+          dot.el.style.height = `${size.toFixed(1)}px`;
+        }
+      }
       pointer.lerp(pointerTarget, 0.16);
       hover.pointer.lerp(pointerUvTarget, 0.16);
       pointerLight.position.copy(pointer);
@@ -2060,25 +2311,15 @@ void main() {
       const pointerAngle = shadowRadius > Math.max(cardWidth, cardHeight) * 0.06
         ? Math.atan2(-shadowPointer.y, -shadowPointer.x) * (180 / Math.PI)
         : hover.shadowAngleBase.value;
-      const angleDelta = ((pointerAngle - hover.shadowAngle.value + 540) % 360) - 180;
+      // The pointer may swing the light far, but the shade only leans a little
+      // around the authored angle; a large swing reads as a spinning lamp.
+      const baseAngle = hover.shadowAngleBase.value;
+      const fromBase = ((pointerAngle - baseAngle + 540) % 360) - 180;
+      const limitedAngle = baseAngle + Math.max(-SHADOW_ANGLE_LIMIT, Math.min(SHADOW_ANGLE_LIMIT, fromBase));
+      const angleDelta = ((limitedAngle - hover.shadowAngle.value + 540) % 360) - 180;
       const angleStep = Math.max(-2.5, Math.min(2.5, angleDelta * 0.08));
       hover.shadowAngle.value = ((hover.shadowAngle.value + angleStep) % 360 + 360) % 360;
       hover.shadowWallAngle.value = ((hover.shadowAngle.value + wallShadowAngleOffset) % 360 + 360) % 360;
-      if (maskTarget && maskMaterial) {
-        const particles = particlePoints;
-        for (const object of shadowObjects) object.visible = false;
-        for (const object of wallShadowObjects) object.visible = false;
-        if (particles) particles.visible = false;
-        scene.overrideMaterial = maskMaterial;
-        renderer.setRenderTarget(maskTarget);
-        renderer.setClearColor(0x000000, 0);
-        renderer.clear();
-        renderer.render(scene, camera);
-        scene.overrideMaterial = null;
-        renderer.setRenderTarget(null);
-        for (const object of wallShadowObjects) object.visible = false;
-        if (particles) particles.visible = true;
-      }
       const renderShadowPass = (
         objects: THREE.Object3D[],
         target: THREE.WebGLRenderTarget,
@@ -2093,7 +2334,9 @@ void main() {
         renderer.setRenderTarget(target);
         renderer.setClearColor(0x000000, 0);
         renderer.clear();
+        camera.layers.enable(SHADOW_LAYER);
         renderer.render(scene, camera);
+        camera.layers.disable(SHADOW_LAYER);
         renderer.setRenderTarget(null);
         for (const object of objects) object.visible = false;
         return true;
@@ -2122,9 +2365,17 @@ void main() {
       // here makes a leaked pass unable to paint a dark duplicate on the wall.
       for (const object of shadowObjects) object.visible = false;
       for (const object of wallShadowObjects) object.visible = false;
-      renderer.render(scene, camera);
+      // Draw the shade first and the vines over it, so a stem covers its own
+      // shadow without needing a mask pass that would have to follow the warp.
+      renderer.autoClear = false;
+      renderer.setClearColor(0x000000, 0);
+      renderer.clear();
       if (wallShadowActive && wallShadowDrawn && wallShadowTarget) compositeShadow(wallShadowTarget, wallShadowBlur);
       if (shadowActive && shadowDrawn && shadowTarget) compositeShadow(shadowTarget, shadowBlur);
+      // compositeShadow restores autoClear, which would wipe the shade again.
+      renderer.autoClear = false;
+      renderer.render(scene, camera);
+      renderer.autoClear = true;
     },
     dispose() {
       const geometries = new Set<THREE.BufferGeometry>();
@@ -2137,10 +2388,11 @@ void main() {
       shadow?.dispose();
       wallShadow?.dispose();
       particleMaterial?.dispose();
+      for (const bloom of bloomSprites) bloom.sprite.material.dispose();
+      for (const dot of bloomDots) dot.el.remove();
+      bloomDots.length = 0;
       shadowTarget?.dispose();
       wallShadowTarget?.dispose();
-      maskTarget?.dispose();
-      maskMaterial?.dispose();
       blurMaterial?.dispose();
       blurScene?.traverse((object) => {
         const mesh = object as THREE.Mesh;

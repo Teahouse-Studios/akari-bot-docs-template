@@ -12,6 +12,7 @@ import DocFabs from "../components/content/DocFabs.vue";
 import AppBarMenu from "../components/shell/AppBarMenu.vue";
 import DefaultToc from "../components/content/DocToc.vue";
 import DefaultPager from "../components/content/DocPager.vue";
+import ReviewTool from "../components/content/ReviewTool.vue";
 import DefaultFooter from "../components/content/DocFooter.vue";
 import LocaleDialog from "../components/shell/LocaleDialog.vue";
 import LoadingBar from "../components/shell/LoadingBar.vue";
@@ -30,6 +31,7 @@ import { provideAkariConfig } from "../composables/useAkariConfig";
 import { usePageTransition } from "../composables/usePageTransition";
 import { useScrolledUnder } from "../composables/useScrolledUnder";
 import { provideAkariSettings } from "../composables/useSettings";
+import { provideReview } from "../composables/useReview";
 import { provideAkariSettingsDialog } from "../composables/useSettingsDialog";
 import { provideAkariTabs } from "../composables/useTabs";
 import SearchDialog from "../search/components/SearchDialog.vue";
@@ -44,6 +46,7 @@ import {
 
 const config = provideAkariConfig();
 const settingsApi = provideAkariSettings(config);
+provideReview();
 const { settings } = settingsApi;
 const { resolved: resolvedScheme } = provideAkariColorScheme(settingsApi);
 const search = provideAkariSearch(config);
@@ -58,7 +61,13 @@ watchEffect(() => applyFonts(config.value.fonts));
 const { homeHref, locales } = useAkariLocales();
 const hero = useHero();
 const heroColor = useHeroColor(hero, resolvedScheme);
-const logoColor = useLogoColor(computed(() => config.value.appBar.logo ?? ""));
+const logo = computed(() => {
+  const brand = config.value.brand;
+  return resolvedScheme.value === "dark"
+    ? (brand.logoDark ?? brand.logo ?? "")
+    : (brand.logo ?? "");
+});
+const logoColor = useLogoColor(logo);
 // The hidden pattern on the page's surfaces, and the light the pointer moves.
 const pattern = providePagePattern(hero);
 
@@ -290,5 +299,6 @@ onUnmounted(() => {
     <SearchDialog v-if="config.search.enabled" />
     <LocaleDialog v-if="locales.length > 1" />
     <SettingsDialog v-if="config.settings.enabled" />
+    <ReviewTool />
   </m3e-theme>
 </template>

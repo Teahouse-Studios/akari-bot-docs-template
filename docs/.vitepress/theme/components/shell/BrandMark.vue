@@ -1,15 +1,10 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { withBase } from "vitepress";
-
 import { useAkariConfig } from "../../composables/useAkariConfig";
+import { useLogoSrc } from "../../composables/useLogoSrc";
 
 const config = useAkariConfig();
 
-const logo = computed(() => {
-  const value = config.value.appBar.logo;
-  return value ? withBase(value) : "";
-});
+const logo = useLogoSrc();
 </script>
 
 <template>

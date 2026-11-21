@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { withBase } from "vitepress";
 
 import { useAkariI18n } from "../../composables/useI18n";
 import { useAkariLocales } from "../../composables/useLocales";
 import { useAkariConfig } from "../../composables/useAkariConfig";
+import { useLogoSrc } from "../../composables/useLogoSrc";
 import { usePageHref } from "../../composables/usePageHref";
 import { findFirstLink, isExternalLink } from "../../sidebar";
 import type { AkariSidebarItem } from "../../types";
@@ -28,10 +28,7 @@ const config = useAkariConfig();
 const pageHref = usePageHref();
 const { t } = useAkariI18n();
 const { homeHref } = useAkariLocales();
-const logo = computed(() => {
-  const value = config.value.appBar.logo;
-  return value ? withBase(value) : "";
-});
+const logo = useLogoSrc();
 
 // The item selected at mount skips m3e's selection animation, so the rail
 // renders settled; later navigation animates the newly selected item.

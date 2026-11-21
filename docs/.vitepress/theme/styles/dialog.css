@@ -6,6 +6,8 @@
  */
 .akari-morph-dialog {
   position: fixed;
+  /* Above the vine layers (6, 7) but below the desktop nav rail (13). */
+  z-index: 10;
   inset: 0;
   width: 100vw;
   max-width: none;

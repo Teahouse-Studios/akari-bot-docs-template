@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { withBase } from "vitepress";
 
 import { useAkariI18n } from "../../composables/useI18n";
 import { useAkariLocales } from "../../composables/useLocales";
 import { useAkariConfig } from "../../composables/useAkariConfig";
+import { useLogoSrc } from "../../composables/useLogoSrc";
 import { usePageHref } from "../../composables/usePageHref";
 import { useSidebar } from "../../composables/useSidebar";
 import { flattenSidebar, isExternalLink } from "../../sidebar";
@@ -20,10 +20,7 @@ const { t } = useAkariI18n();
 const { items } = useSidebar();
 const { homeHref } = useAkariLocales();
 
-const logo = computed(() => {
-  const value = config.value.appBar.logo;
-  return value ? withBase(value) : "";
-});
+const logo = useLogoSrc();
 
 const groups = computed<AkariFooterLinkGroup[]>(() => {
   const links = config.value.footer.links;

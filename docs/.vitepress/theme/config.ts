@@ -37,6 +37,35 @@ export function defineAkariThemeConfig(config: AkariThemeConfig): AkariThemeConf
   return config;
 }
 
+function normalizeLanguages(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object") return {};
+  const entries = Object.entries(value as Record<string, unknown>);
+  const result: Record<string, string> = {};
+  for (const [code, label] of entries) {
+    if (typeof label !== "string") continue;
+    const key = code.trim();
+    const text = label.trim();
+    if (key && text) result[key] = text;
+  }
+  return result;
+}
+
+function normalizeDependencies(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== "object") return {};
+  const entries = Object.entries(value as Record<string, unknown>);
+  const result: Record<string, string[]> = {};
+  for (const [key, items] of entries) {
+    if (!Array.isArray(items)) continue;
+    const dependencies = items
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+    if (dependencies.length) result[key] = dependencies;
+  }
+  return result;
+}
+
+
 function normalizeSections(
   value: SettingsSectionKey[] | undefined,
 ): SettingsSectionKey[] {
@@ -131,6 +160,7 @@ export function resolveAkariConfig(
   const language = resolveLanguage(site.lang, akari.languages);
   const messages = mergeMessages(language.messages, akari.messages);
   const appBar = akari.appBar ?? {};
+  const brand = akari.brand ?? {};
   const settings = akari.settings ?? {};
   const toc = akari.toc ?? {};
   const footer = akari.footer ?? {};
@@ -162,11 +192,29 @@ export function resolveAkariConfig(
     lang: site.lang?.trim() || DEFAULT_LANGUAGE,
     commandPrefix: typeof akari.commandPrefix === "string" ? akari.commandPrefix : "",
     chatAvatar: typeof akari.chatAvatar === "string" ? akari.chatAvatar : "",
+    dependencies: normalizeDependencies(akari.dependencies),
+    languages: normalizeLanguages(akari.languages),
+    apiCatalog: akari.apiCatalog ?? { groups: [] },
     messages,
+    brand: {
+      logo: brand.logo ?? appBar.logo ?? themeConfig.logo,
+      logoDark: brand.logoDark ?? appBar.logoDark,
+      avatar: brand.avatar ?? akari.chatAvatar,
+      character: brand.character,
+      credits: brand.credits,
+    },
+    brand: {
+      logo: akari.brand?.logo ?? appBar.logo ?? themeConfig.logo,
+      logoDark: akari.brand?.logoDark ?? appBar.logoDark,
+      avatar: akari.brand?.avatar ?? akari.chatAvatar,
+      character: akari.brand?.character,
+      credits: akari.brand?.credits,
+    },
     appBar: {
       title: appBar.title ?? site.title ?? "Documentation",
       version: appBar.version,
       logo: appBar.logo ?? themeConfig.logo,
+      logoDark: appBar.logoDark,
       showSidebarToggle: appBar.showSidebarToggle ?? true,
       showSettingsToggle: appBar.showSettingsToggle ?? true,
       socialLinks: normalizeSocialLinks(appBar.socialLinks),

@@ -65,10 +65,28 @@ export interface AkariSocialLink {
   label: string;
 }
 
+/** Brand assets the theme can render. Every slot is optional; a site-level
+ * value wins over one supplied by an installed brand package, and the docs
+ * engine falls back to its bundled assets when neither exists. */
+export interface AkariBrandConfig {
+  /** Day-scheme logo. */
+  logo?: string;
+  /** Night-scheme logo; falls back to `logo`. */
+  logoDark?: string;
+  /** Avatar used by command examples. */
+  avatar?: string;
+  /** Character artwork for custom surfaces. */
+  character?: string;
+  /** Credits file or page for custom surfaces. */
+  credits?: string;
+}
+
 export interface AkariAppBarConfig {
   title?: string;
   version?: string;
   logo?: string;
+  /** Logo used while the dark scheme is active; falls back to `logo`. */
+  logoDark?: string;
   showSidebarToggle?: boolean;
   showSettingsToggle?: boolean;
   socialLinks?: AkariSocialLink[];
@@ -623,6 +641,39 @@ export interface ResolvedAkariLanguage {
   markdown: MarkdownLocaleOptions;
 }
 
+export interface AkariApiParameter {
+  name: string;
+  type: string;
+  default: string;
+  description: string;
+}
+
+export interface AkariApiMethod {
+  name: string;
+  kind: "method" | "property";
+  description: string;
+  signature: string;
+  parameters: AkariApiParameter[];
+}
+
+export interface AkariApiEntry {
+  name: string;
+  kind: "class" | "function" | "constant";
+  description: string;
+  signature: string;
+  parameters: AkariApiParameter[];
+  methods?: AkariApiMethod[];
+}
+
+export interface AkariApiGroup {
+  name: string;
+  entries: AkariApiEntry[];
+}
+
+export interface AkariApiCatalog {
+  groups: AkariApiGroup[];
+}
+
 export interface AkariThemeConfig {
   /**
    * Prefix of the documented commands, e.g. `~`. The docs engine fills it from
@@ -634,6 +685,15 @@ export interface AkariThemeConfig {
    * 机器人头像，用于命令对话示例；留空时组件显示机器人图标。
    */
   chatAvatar?: string;
+  /**
+   * 各包的运行依赖，键为包 key 或分发名。由文档引擎从包元数据写入。
+   */
+  dependencies?: Record<string, string[]>;
+  /** 机器人支持的界面语言；由文档引擎从 core 的语言表写入。 */
+  languages?: Record<string, string>;
+  /** API 参考数据；由文档引擎从 core 的公开接口与 docstring 生成。 */
+  apiCatalog?: AkariApiCatalog;
+  brand?: AkariBrandConfig;
   appBar?: AkariAppBarConfig;
   sidebar?: AkariSidebarConfig;
   settings?: AkariSettingsConfig;
@@ -748,11 +808,16 @@ export interface ResolvedAkariThemeConfig {
   commandPrefix: string;
   /** 机器人头像；空串表示未配置。 */
   chatAvatar: string;
+  dependencies: Record<string, string[]>;
+  languages: Record<string, string>;
+  apiCatalog: AkariApiCatalog;
   messages: AkariMessages;
+  brand: AkariBrandConfig;
   appBar: {
     title: string;
     version?: string;
     logo?: string;
+    logoDark?: string;
     showSidebarToggle: boolean;
     showSettingsToggle: boolean;
     socialLinks: AkariSocialLink[];
