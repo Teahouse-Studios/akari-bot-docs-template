@@ -263,19 +263,3 @@ onBeforeUnmount(() => slotObserver?.disconnect())
   </section>
 </template>
 
-<style scoped>
-.command-usage__slot {
-  overflow: hidden;
-}
-
-.command-usage__slot--ready {
-  transition: height var(--md-sys-motion-duration-medium-2, 240ms)
-    var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .command-usage__slot--ready {
-    transition: none;
-  }
-}
-</style>

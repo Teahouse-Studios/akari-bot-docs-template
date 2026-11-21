@@ -219,6 +219,22 @@
   margin: 8px 0 16px;
 }
 
+/* 插槽里的示例会随交互追加消息，高度用过渡补齐，避免整块瞬间撑开 */
+.command-usage__slot {
+  overflow: hidden;
+}
+
+.command-usage__slot--ready {
+  transition: height var(--md-sys-motion-duration-medium-2, 240ms)
+    var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-usage__slot--ready {
+    transition: none;
+  }
+}
+
 .command-usage__meta {
   display: flex;
   flex-wrap: wrap;
@@ -465,6 +481,35 @@
   background-color: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface);
   font-size: 13px;
+}
+
+/* 高度外壳：追加回复与预览图会改变示例高度，过渡避免整块瞬间撑开 */
+.chat-example-shell {
+  overflow: hidden;
+  margin: 16px 0 24px;
+}
+
+.chat-example-shell--empty {
+  margin: 0;
+}
+
+.chat-example-shell--ready {
+  transition: height var(--md-sys-motion-duration-medium-2, 240ms)
+    var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.chat-example-shell__inner {
+  display: flow-root;
+}
+
+.chat-example-shell .chat-example {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-example-shell--ready {
+    transition: none;
+  }
 }
 
 /* 命令对话示例：读者消息靠右，机器人回复靠左，头像与气泡同列 */

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import * as vitepress from "vitepress";
 import MarkdownIt from "markdown-it";
 
@@ -408,6 +408,35 @@ async function runAction(
   status.value = t("chatExampleResultsLoaded");
 }
 
+const hasContent = computed(() => bubbles.value.length > 0 || Boolean(cardView.value));
+
+// 追加回复与预览图会改变示例高度，用过渡补齐，避免整块瞬间撑开。
+const shell = ref<HTMLElement | null>(null);
+
+const shellInner = ref<HTMLElement | null>(null);
+
+const shellHeight = ref(0);
+
+const shellReady = ref(false);
+
+let shellObserver: ResizeObserver | undefined;
+
+function measureShell() {
+  shellHeight.value = shellInner.value?.offsetHeight ?? 0;
+}
+
+onMounted(() => {
+  measureShell();
+  requestAnimationFrame(() => {
+    shellReady.value = true;
+  });
+  if (!shellInner.value || typeof ResizeObserver === "undefined") return;
+  shellObserver = new ResizeObserver(measureShell);
+  shellObserver.observe(shellInner.value);
+});
+
+onBeforeUnmount(() => shellObserver?.disconnect());
+
 function resetExample(): void {
   actionRun += 1;
   groups.value = [];
@@ -420,14 +449,24 @@ function resetExample(): void {
 </script>
 
 <template>
-  <section
-    v-if="bubbles.length || cardView"
-    class="chat-example"
-    :class="{ 'chat-example--fixed-image-width': props.imageWidth > 0 }"
-    :style="imageWidthStyle"
-    :aria-label="t('chatExample')"
-    :aria-busy="pending"
+  <div
+    ref="shell"
+    class="chat-example-shell"
+    :class="{
+      'chat-example-shell--ready': shellReady,
+      'chat-example-shell--empty': !hasContent,
+    }"
+    :style="shellReady ? { height: `${shellHeight}px` } : undefined"
   >
+    <div ref="shellInner" class="chat-example-shell__inner">
+      <section
+        v-if="hasContent"
+        class="chat-example"
+        :class="{ 'chat-example--fixed-image-width': props.imageWidth > 0 }"
+        :style="imageWidthStyle"
+        :aria-label="t('chatExample')"
+        :aria-busy="pending"
+      >
     <div v-if="props.caption || buttons.length" class="chat-example__header">
       <p v-if="props.caption" class="chat-example__caption">{{ props.caption }}</p>
       <button
@@ -573,11 +612,14 @@ function resetExample(): void {
       </div>
     </div>
 
-    <AkariImagePreview
-      v-model:open="previewOpen"
-      :src="previewImage ? imageSrc(previewImage.src) : ''"
-      :alt="previewImage?.alt ?? ''"
-      :origin="previewOrigin"
-    />
-  </section>
+        <AkariImagePreview
+          v-model:open="previewOpen"
+          :src="previewImage ? imageSrc(previewImage.src) : ''"
+          :alt="previewImage?.alt ?? ''"
+          :origin="previewOrigin"
+        />
+      </section>
+    </div>
+  </div>
 </template>
+
