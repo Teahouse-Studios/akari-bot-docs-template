@@ -22,6 +22,9 @@ const props = defineProps<{
   // boolean prop to `false`, so nested items stay text-only without
   // passing anything down.
   showIcon?: boolean;
+  // The breadcrumb of enclosing groups, so sibling groups with the same
+  // first page keep independent open state.
+  parentKey?: string;
 }>();
 
 const { hasActive } = useSidebar();
@@ -36,7 +39,7 @@ const icon = computed(() =>
 );
 // A group's identity across the drawers' rebuilds: its name and first page.
 const groupKey = computed(
-  () => `${props.item.text}\n${findFirstLink(props.item) ?? ""}`,
+  () => `${props.parentKey ?? ""}\n${props.item.text}\n${findFirstLink(props.item) ?? ""}`,
 );
 const groupState = useNavGroupState();
 // As the reader left it; else open when it holds the current page or is
@@ -70,6 +73,23 @@ let shown = false;
 /** The reader opened or closed the group. */
 function remember(isOpen: boolean): void {
   if (!applying && hasChildren.value) groupState.set(groupKey.value, isOpen);
+}
+
+/**
+ * Stop nested opening/closing events from reaching ancestor groups.
+ *
+ * These events bubble. A child sits in this group's shadow slot, so by the
+ * time the event reaches the parent its target is retargeted to this host.
+ * Stopping it here keeps the child's state change from closing its parent.
+ */
+function onGroupOpening(event: Event): void {
+  event.stopPropagation();
+  if (event.composedPath()[0] === groupElement.value) remember(true);
+}
+
+function onGroupClosing(event: Event): void {
+  event.stopPropagation();
+  if (event.composedPath()[0] === groupElement.value) remember(false);
 }
 
 async function setGroupOpen(
@@ -214,8 +234,9 @@ watch(
   <m3e-nav-menu-item
     v-if="hasChildren"
     ref="groupElement"
-    @opening.self="remember(true)"
-    @closing.self="remember(false)"
+    @click.stop
+    @opening="onGroupOpening"
+    @closing="onGroupClosing"
   >
     <m3e-icon v-if="icon" slot="icon" :name="icon"></m3e-icon>
     <span slot="label" class="akari-nav-label">{{ item.text }}</span>
@@ -224,6 +245,7 @@ watch(
       v-for="(child, index) in item.items"
       :key="child.link ?? `${child.text}-${index}`"
       :item="child"
+      :parent-key="groupKey"
     />
   </m3e-nav-menu-item>
 
@@ -232,6 +254,7 @@ watch(
     ref="leafElement"
     :selected="selected"
     :data-akari-settled="settled ? '' : undefined"
+    @click.stop
   >
     <m3e-icon v-if="icon" slot="icon" :name="icon"></m3e-icon>
     <a
