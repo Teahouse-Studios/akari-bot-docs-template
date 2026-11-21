@@ -98,6 +98,18 @@ describe("module fact components", () => {
     expect(html).not.toContain("command-usage__syntax");
   });
 
+  it("CommandUsage 把插槽示例收进高度容器，服务端输出不预设高度", async () => {
+    const html = await renderToString(
+      createSSRApp({
+        render: () =>
+          h(CommandUsage, { usage: "demo" }, { default: () => h("p", "示例消息") }),
+      }),
+    );
+    expect(html).toContain("示例消息");
+    expect(html).toContain("command-usage__slot");
+    expect(html).not.toContain("height:");
+  });
+
   it("ModuleAlias 渲染模块级别名", async () => {
     const html = await render(ModuleAlias, { names: ["wiki_bot", "wbot"] });
     expect(html).toContain('class="module-alias"');

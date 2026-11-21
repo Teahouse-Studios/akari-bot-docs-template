@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, useSlots } from "vue"
 
 import { useOptionalAkariConfig } from "../../composables/useAkariConfig"
 import { paramDocs, usageSegments, type ParamSpec, type UsageSegment } from "./facts"
@@ -161,6 +161,36 @@ const hasMeta = computed(
     platformList.value.length > 0 ||
     excludedList.value.length > 0,
 )
+
+const slots = useSlots()
+
+const hasSlot = computed(() => Boolean(slots.default))
+
+// 插槽里的示例会随交互追加消息，高度用过渡补齐，避免整块瞬间撑开。
+const slotInner = ref<HTMLElement | null>(null)
+
+const slotHeight = ref(0)
+
+const slotReady = ref(false)
+
+let slotObserver: ResizeObserver | undefined
+
+function measureSlot() {
+  slotHeight.value = slotInner.value?.offsetHeight ?? 0
+}
+
+onMounted(() => {
+  if (!hasSlot.value) return
+  measureSlot()
+  requestAnimationFrame(() => {
+    slotReady.value = true
+  })
+  if (!slotInner.value || typeof ResizeObserver === "undefined") return
+  slotObserver = new ResizeObserver(measureSlot)
+  slotObserver.observe(slotInner.value)
+})
+
+onBeforeUnmount(() => slotObserver?.disconnect())
 </script>
 
 <template>
@@ -220,6 +250,32 @@ const hasMeta = computed(
         {{ option.desc }}
       </li>
     </ul>
-    <slot />
+    <div
+      v-if="hasSlot"
+      class="command-usage__slot"
+      :class="{ 'command-usage__slot--ready': slotReady }"
+      :style="slotReady ? { height: `${slotHeight}px` } : undefined"
+    >
+      <div ref="slotInner" class="command-usage__slot-inner">
+        <slot />
+      </div>
+    </div>
   </section>
 </template>
+
+<style scoped>
+.command-usage__slot {
+  overflow: hidden;
+}
+
+.command-usage__slot--ready {
+  transition: height var(--md-sys-motion-duration-medium-2, 240ms)
+    var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-usage__slot--ready {
+    transition: none;
+  }
+}
+</style>
