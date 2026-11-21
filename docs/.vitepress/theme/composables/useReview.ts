@@ -31,6 +31,7 @@ export interface ReviewApi {
   addAnnotation: (quote: string, comment: string) => void;
   removeAnnotation: (id: string) => void;
   clearPage: () => void;
+  clearAll: () => void;
   toggleEnabled: () => void;
   copyExport: () => Promise<void>;
   downloadExport: () => void;
@@ -141,6 +142,12 @@ export function provideReview(): ReviewApi {
     annotations.value = next;
   }
 
+  function clearAll(): void {
+    if (!total.value) return;
+    annotations.value = {};
+    status.value = "已清空全部标注";
+  }
+
   function toggleEnabled(): void {
     enabled.value = !enabled.value;
   }
@@ -213,6 +220,7 @@ export function provideReview(): ReviewApi {
     addAnnotation,
     removeAnnotation,
     clearPage,
+    clearAll,
     toggleEnabled,
     copyExport,
     downloadExport,

@@ -56,6 +56,11 @@ const review = useReview();
         type="button"
         @click="review.clearPage"
       >清空本页</button>
+      <button
+        type="button"
+        :disabled="!review.total.value"
+        @click="review.clearAll"
+      >清空全部标注</button>
     </div>
   </section>
 </template>

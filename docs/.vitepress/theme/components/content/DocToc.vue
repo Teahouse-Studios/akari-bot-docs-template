@@ -17,6 +17,7 @@ import {
   focusHeading,
   onScrollSettled,
   readTocHeadings,
+  resolveTocDepth,
   type TocHeading,
 } from "../../toc";
 
@@ -63,7 +64,7 @@ const minLevel = computed(() =>
 function readHeadings(): void {
   const read = readTocHeadings(
     document.getElementById(AKARI_CONTENT_ID),
-    config.value.toc.maxDepth,
+    resolveTocDepth(frontmatter.value, config.value.toc.maxDepth),
   );
   headingElements = read.elements;
   headings.value = read.headings;

@@ -77,6 +77,20 @@ export function focusHeading(heading: HTMLElement): void {
 // A scroll counts as over once no scroll event has come for this long.
 const SCROLL_IDLE = 200;
 
+/** The deepest heading a page asks for, from its frontmatter `outline`. */
+export function resolveTocDepth(
+  frontmatter: Record<string, unknown>,
+  fallback: number,
+): number {
+  const outline = frontmatter.outline;
+  if (outline === "deep") return 6;
+  if (Array.isArray(outline)) {
+    const depth = Number(outline[1]);
+    if (Number.isInteger(depth)) return Math.min(6, Math.max(1, depth));
+  }
+  return fallback;
+}
+
 /**
  * Calls `settled` once the window's scroll comes to rest: on `scrollend`,
  * or, where that never comes, once scroll events stop for SCROLL_IDLE (from
