@@ -1,13 +1,32 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useData, withBase } from "vitepress";
 
+import { FLUID_TEXTURES, type FluidTexture } from "../../fluid";
 import { useHero } from "../../composables/useHero";
 import { usePagePattern } from "../../composables/usePattern";
 import { heroImageHref } from "../../hero";
+import AkariFluidWall from "./AkariFluidWall.vue";
 
 const { page } = useData();
 const hero = useHero();
+const pattern = usePagePattern();
+const fluid = ref<InstanceType<typeof AkariFluidWall> | null>(null);
+
+function forwardFluidPointer(event: PointerEvent): void {
+  const target = event.target as Element | null;
+  if (target?.closest(".akari-doc-hero__fluid")) return;
+  const host = fluid.value?.$el;
+  if (!(host instanceof HTMLElement)) return;
+  host.dispatchEvent(
+    new PointerEvent(event.type, {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      pointerType: event.pointerType,
+      bubbles: false,
+    }),
+  );
+}
 
 const src = computed(() =>
   hero.value ? heroImageHref(hero.value.src, withBase) : "",
@@ -16,8 +35,24 @@ const darkSrc = computed(() =>
   hero.value?.darkSrc ? heroImageHref(hero.value.darkSrc, withBase) : "",
 );
 
-// The page's pattern, shared with the article; the layout moves the light.
-const pattern = usePagePattern();
+type HeroTexture = Exclude<FluidTexture, "none" | "vine">;
+const HERO_TEXTURES = FLUID_TEXTURES.filter(
+  (texture): texture is HeroTexture => texture !== "none" && texture !== "vine",
+);
+
+// A stable per-page pick keeps server rendering and hydration on one texture.
+function pageSeed(path: string): number {
+  let value = 2166136261;
+  for (let index = 0; index < path.length; index += 1) {
+    value = Math.imul(value ^ path.charCodeAt(index), 16777619);
+  }
+  return value >>> 0;
+}
+
+const fluidTexture = computed<HeroTexture>(() => {
+  const path = page.value.relativePath || page.value.filePath || page.value.title;
+  return HERO_TEXTURES[pageSeed(path) % HERO_TEXTURES.length]!;
+});
 </script>
 
 <template>
@@ -28,18 +63,25 @@ const pattern = usePagePattern();
     the title the app bar takes over once it scrolls away.
   -->
   <header v-if="hero" class="akari-doc-hero">
-    <div class="akari-doc-hero__text">
-      <!--
-        Decoration, below the text: a faint pattern, and a soft light that
-        brings it out around the pointer while it rests on the card.
-      -->
-      <template v-if="pattern">
-        <span class="akari-doc-hero__pattern" aria-hidden="true"></span>
-        <span class="akari-doc-hero__light" aria-hidden="true">
-          <span class="akari-doc-hero__glow"></span>
-          <span class="akari-doc-hero__focus"></span>
-        </span>
-      </template>
+    <div
+      class="akari-doc-hero__text"
+      @pointermove="forwardFluidPointer"
+      @pointerdown="forwardFluidPointer"
+    >
+      <AkariFluidWall
+        ref="fluid"
+        class="akari-doc-hero__fluid"
+        height="100%"
+        :texture="fluidTexture"
+        :texture-opacity="0.35"
+        :grid="0"
+        :data-texture="fluidTexture"
+        aria-hidden="true"
+      />
+      <!-- A soft light under the pointer, below the text. -->
+      <span class="akari-doc-hero__light" aria-hidden="true">
+        <span class="akari-doc-hero__glow"></span>
+      </span>
       <time
         v-if="hero.date?.datetime"
         class="akari-doc-hero__date"
@@ -58,7 +100,7 @@ const pattern = usePagePattern();
       :data-fit="hero.fit"
       :style="hero.background ? { '--_background': hero.background } : undefined"
     >
-      <!-- The same decoration, below the image: it shows where the image is transparent. -->
+      <!-- The image card keeps the page pattern and its pointer focus. -->
       <template v-if="pattern">
         <span class="akari-doc-hero__pattern" aria-hidden="true"></span>
         <span class="akari-doc-hero__light" aria-hidden="true">
@@ -138,10 +180,7 @@ const pattern = usePagePattern();
   box-sizing: border-box;
   min-height: clamp(240px, 32cqi, 400px);
   padding: clamp(24px, 4.5cqi, 56px);
-  background-color: var(
-    --akari-doc-hero-text-color,
-    var(--md-sys-color-surface-container)
-  );
+  background-color: transparent;
   color: var(--md-sys-color-on-surface);
 }
 
@@ -363,6 +402,12 @@ const pattern = usePagePattern();
   .akari-doc-hero__media {
     aspect-ratio: 16 / 10;
   }
+}
+.akari-doc-hero__fluid {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
 }
 </style>
 

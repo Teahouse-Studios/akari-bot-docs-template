@@ -337,7 +337,7 @@ const moteColorRgb = computed(() => {
 const moteBlend = computed<VineMoteBlend>(() => {
   const value = props.moteBlend?.trim();
   if (value && value !== "auto") return value as VineMoteBlend;
-  return scheme.value === "light" ? "normal" : "additive";
+  return "additive";
 });
 const underlayBlend = computed<VineUnderlayBlend>(() => {
   const value = props.underlayBlend?.trim();

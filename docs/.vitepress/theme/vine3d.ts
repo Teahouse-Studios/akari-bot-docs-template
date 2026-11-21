@@ -103,7 +103,7 @@ export type Vine3dOptions = {
   wallShadowBlur?: number;
   /** Blur radius of the cast shadow, in CSS pixels. 0 keeps the hard edge. */
   shadowBlur?: number;
-  /** Whether the wall sits on a light page; light pages use normal-blended motes. */
+  /** Whether the wall sits on a light page. Motes stay additive so they read as light on both grounds. */
   lightWall?: boolean;
   /** Colour of the additive wash beneath the vine fill. Defaults to white. */
   underlayColor?: FluidRgb;
@@ -115,7 +115,7 @@ export type Vine3dOptions = {
   mote?: number;
   /** Fixed mote colour. Defaults to a pink tint of the flower colour. */
   moteColor?: FluidRgb;
-  /** Blend mode for the drifting motes. Defaults to normal on light walls, additive on dark. */
+  /** Blend mode for the drifting motes. Defaults to additive. */
   moteBlend?: VineMoteBlend;
   /**
    * Restrict this renderer to one half of the garden. A second canvas can then
@@ -1438,7 +1438,7 @@ export function createVine3d(
   let currentBase = baseColor;
   let baseAlpha = THREE.MathUtils.clamp(options.colorAlpha ?? 1, 0, 1);
   let currentMoteColor = options.moteColor ?? null;
-  let currentMoteBlend = options.moteBlend ?? (options.lightWall ? "normal" : "additive");
+  let currentMoteBlend = options.moteBlend ?? "additive";
   const strongFill = options.strongFill ?? false;
   let fillEmphasis = strongFill;
   let currentPalette: VinePalette = options.colors ?? {};
@@ -1819,12 +1819,12 @@ void main() {
       } else {
         particleMaterial.uniforms.u_color.value.setRGB(
           lightWall ? 1 : 1,
-          lightWall ? 0.24 : 0.62,
-          lightWall ? 0.52 : 0.8,
+          lightWall ? 0.62 : 0.62,
+          lightWall ? 0.82 : 0.8,
         );
       }
       particleMaterial.uniforms.u_opacity.value = (fillEmphasis ? 0.95 : lightWall ? 0.95 : 0.95) * paletteAlpha;
-      const blending = UNDERLAY_BLENDING[currentMoteBlend] ?? (lightWall ? THREE.NormalBlending : THREE.AdditiveBlending);
+      const blending = UNDERLAY_BLENDING[currentMoteBlend] ?? THREE.AdditiveBlending;
       if (particleMaterial.blending !== blending) {
         particleMaterial.blending = blending;
         particleMaterial.needsUpdate = true;
