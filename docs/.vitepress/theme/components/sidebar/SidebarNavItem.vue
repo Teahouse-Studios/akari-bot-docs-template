@@ -278,12 +278,20 @@ watch(
 </template>
 
 <style scoped>
+/*
+ * Long labels — a module's dotted path, say — take a second line at a
+ * slightly smaller size instead of ending in an ellipsis after a dozen
+ * characters. Two lines at this leading still fit the drawer's rows.
+ */
 .akari-nav-label {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  font-size: 0.8125rem;
+  line-height: 1.3;
 }
 </style>
