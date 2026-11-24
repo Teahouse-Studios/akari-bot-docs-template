@@ -367,6 +367,18 @@
   transition-delay: 0s;
 }
 
+@media (max-width: 640px) {
+  /*
+   * The tooltip is absolutely positioned from the parameter's inline start.
+   * A command near the right edge can therefore push the document wider than
+   * the viewport even while the tooltip is hidden. The parameter list below
+   * the usage line already carries the same description on small screens.
+   */
+  .command-usage__tip {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .command-usage__param,
   .command-usage__tip {
