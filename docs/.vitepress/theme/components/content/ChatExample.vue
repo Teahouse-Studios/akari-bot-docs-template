@@ -222,6 +222,8 @@ const canReset = computed(
 
 // 头像由文档引擎按品牌资源包、站点图标依次解析；主题单独使用时退回机器人图标。
 const avatar = computed(() => props.botAvatar || akari?.value.chatAvatar || "");
+// 配置中的资源路径不含站点基路径，渲染时由 withBase 补上。项目站点部署在子路径时，头像地址随之指向该子路径。
+const avatarSrc = computed(() => (avatar.value ? imageSrc(avatar.value) : ""));
 
 function segments(text: string) {
   return chatSegments(text);
@@ -508,7 +510,7 @@ function resetExample(): void {
           class="chat-example__avatar chat-example__avatar--bot"
           aria-hidden="true"
         >
-          <img v-if="avatar" :src="avatar" alt="" loading="lazy" />
+          <img v-if="avatar" :src="avatarSrc" alt="" loading="lazy" />
           <m3e-icon v-else name="smart_toy"></m3e-icon>
         </span>
         <div
@@ -589,7 +591,7 @@ function resetExample(): void {
       class="chat-example__row chat-example__row--bot chat-example__row--card"
     >
       <span class="chat-example__avatar chat-example__avatar--bot" aria-hidden="true">
-        <img v-if="avatar" :src="avatar" alt="" loading="lazy" />
+        <img v-if="avatar" :src="avatarSrc" alt="" loading="lazy" />
         <m3e-icon v-else name="smart_toy"></m3e-icon>
       </span>
       <WikiCard v-bind="cardView" />
@@ -601,7 +603,7 @@ function resetExample(): void {
       aria-hidden="true"
     >
       <span class="chat-example__avatar chat-example__avatar--bot">
-        <img v-if="avatar" :src="avatar" alt="" loading="lazy" />
+        <img v-if="avatar" :src="avatarSrc" alt="" loading="lazy" />
         <m3e-icon v-else name="smart_toy"></m3e-icon>
       </span>
       <div class="chat-example__bubble chat-example__bubble--loading">
