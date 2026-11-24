@@ -3059,7 +3059,7 @@ html.dark .akari-fluid-wall {
   inline-size: 100%;
   block-size: 100%;
   opacity: 0;
-  transition: opacity 900ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 450ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .akari-fluid-wall.is-painted .akari-fluid-wall__canvas canvas {
@@ -3073,6 +3073,15 @@ html.dark .akari-fluid-wall {
 
 .akari-fluid-wall__vine-outside {
   mix-blend-mode: var(--_vine-pop-blend, normal);
+}
+
+.akari-fluid-wall__vine-outside--portal,
+.akari-fluid-wall__vine-bloom--outside {
+  filter: opacity(var(--akari-page-opacity, 1));
+  transform: translate(
+    var(--akari-page-translate-x, 0px),
+    var(--akari-page-translate-y, 0px)
+  );
 }
 
 .akari-fluid-wall__vine-outside--portal {

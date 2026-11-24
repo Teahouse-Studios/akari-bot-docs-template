@@ -74,8 +74,21 @@ const activeCategoryIndex = computed(() =>
 
 // Standard drawer: pinned beside the rail on extra-large windows whenever the
 // current page belongs to a category, taking its width from the content.
+// The home page has no active category. On a wide window, keep the last
+// category's drawer in place instead of collapsing it and shifting the page
+// while the home page fades in.
+const homeKeepsPinned = computed(
+  () =>
+    pinnable.value &&
+    route.path === "/" &&
+    activeCategoryIndex.value < 0 &&
+    pinnedShown.value >= 0,
+);
+
 const pinnedOpen = computed(
-  () => pinnable.value && activeCategoryIndex.value >= 0,
+  () =>
+    pinnable.value &&
+    (activeCategoryIndex.value >= 0 || homeKeepsPinned.value),
 );
 
 // Modal drawer: slides over the content from behind the rail.
@@ -363,7 +376,7 @@ onUnmounted(() => {
     -->
     <div
       class="akari-desktop-nav__rail"
-      :data-category="activeCategoryIndex >= 0 ? '' : undefined"
+      :data-category="pinnedOpen ? '' : undefined"
       :data-overlay="overlayOpen ? '' : undefined"
     >
       <SidebarRail
@@ -400,7 +413,7 @@ onUnmounted(() => {
     <div
       :id="pinnedOpen ? DRAWER_ID : undefined"
       class="akari-nav-drawer akari-nav-drawer--pinned"
-      :data-category="activeCategoryIndex >= 0 ? '' : undefined"
+      :data-category="pinnedOpen ? '' : undefined"
     >
       <div class="akari-nav-drawer__surface">
         <Transition name="akari-nav-swap" mode="out-in">

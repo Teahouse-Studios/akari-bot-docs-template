@@ -56,9 +56,39 @@ export function usePageTransition(
   const previousAfterLoad = router.onAfterPageLoad;
 
   let generation = 0;
+  let layerFrame = 0;
   let leaving: Promise<void> = Promise.resolve();
   // Path of the latest page load until it is on screen.
   let target: string | null = null;
+
+  /**
+   * Teleported vine canvases sit outside the page surface, so mirror the
+   * surface's current opacity and translation onto them while it moves.
+   * Without this they keep their old screen position and stay fully opaque
+   * during the entering fade.
+   */
+  function trackPageLayer(surface: HTMLElement): void {
+    cancelAnimationFrame(layerFrame);
+    const startedAt = performance.now();
+    const tick = (): void => {
+      const style = getComputedStyle(surface);
+      const root = document.documentElement;
+      root.style.setProperty("--akari-page-opacity", style.opacity);
+      let x = 0;
+      let y = 0;
+      if (style.transform && style.transform !== "none") {
+        const matrix = new DOMMatrixReadOnly(style.transform);
+        x = matrix.m41;
+        y = matrix.m42;
+      }
+      root.style.setProperty("--akari-page-translate-x", `${x}px`);
+      root.style.setProperty("--akari-page-translate-y", `${y}px`);
+      if (performance.now() - startedAt < 900) {
+        layerFrame = requestAnimationFrame(tick);
+      }
+    };
+    tick();
+  }
 
   function leave(): Promise<void> {
     const surface = element.value;
@@ -66,6 +96,7 @@ export function usePageTransition(
 
     surface.classList.remove("is-entering");
     surface.classList.add("is-leaving");
+    trackPageLayer(surface);
     return fadeSettled(surface);
   }
 
@@ -80,7 +111,9 @@ export function usePageTransition(
     // Commit the lowered, transparent start state before releasing it.
     void surface.getBoundingClientRect();
     requestAnimationFrame(() => {
-      if (current === generation) surface.classList.remove("is-entering");
+      if (current !== generation) return;
+      surface.classList.remove("is-entering");
+      trackPageLayer(surface);
     });
   }
 
@@ -114,6 +147,7 @@ export function usePageTransition(
   onContentUpdated(enter);
 
   onUnmounted(() => {
+    cancelAnimationFrame(layerFrame);
     router.onBeforePageLoad = previousBeforeLoad;
     router.onAfterPageLoad = previousAfterLoad;
   });
