@@ -265,6 +265,10 @@ function reload(): void {
 
 .dock-demo__stage {
   display: grid;
+  /* The implicit column would size to the dock's max-content width, which pushes
+     the demo box outside the grid once the column gets narrow (the hero variant
+     is the widest). Pin it to the container so the box can shrink instead. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   min-block-size: 220px;
   padding: 32px 16px;
@@ -296,13 +300,17 @@ function reload(): void {
 .dock-demo__box {
   display: flex;
   justify-content: center;
+  box-sizing: border-box;
   width: min(100%, 460px);
+  max-width: 100%;
+  min-inline-size: 0;
   padding: 10px;
   border: 1px dashed var(--md-sys-color-outline);
   border-radius: var(--md-sys-shape-corner-medium, 12px);
 }
 
 .dock-demo__box :deep(.akari-search-dock-anchor) {
+  min-width: 0;
   margin-inline: auto;
 }
 

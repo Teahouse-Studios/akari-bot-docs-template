@@ -119,6 +119,14 @@ function onInput(event: Event): void {
   setQuery((event.target as HTMLInputElement).value);
 }
 
+/**
+ * Result rows are `m3e-list-action` (`LinkButton`): a real click lands inside its
+ * shadow tree, where the element's own handler calls `stopImmediatePropagation()`
+ * on the host and then navigates through an `<a>` it appends to `document.body`.
+ * A bubbling `@click` therefore never runs, so the template binds `.capture`
+ * (the capture phase runs before the host's bubble listener); without it the
+ * dialog stays open after the route changes.
+ */
 function onResultClick(event: MouseEvent, result: AkariSearchResult): void {
   event.preventDefault();
   selectResult(result);
@@ -252,7 +260,7 @@ function parts(text: string | undefined, result: AkariSearchResult) {
                 :href="hrefFor(result)"
                 class="akari-search-result"
                 :class="{ 'is-active': index === activeIndex }"
-                @click="onResultClick($event, result)"
+                @click.capture="onResultClick($event, result)"
                 @mouseenter="activeIndex = index"
               >
                 <m3e-icon slot="leading" name="article"></m3e-icon>

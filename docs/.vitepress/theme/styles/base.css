@@ -469,12 +469,18 @@ html[data-akari-gpu-tier="good"] m3e-app-bar {
   );
 }
 
-html[data-akari-gpu-tier="good"] .akari-doc > .akari-surface-cap {
+/*
+ * Every surface loses the mask together, the document and the page footer
+ * alike: the bar above them is a fade, so there is no straight cut to round
+ * off. Leaving the footer's cap in place drew its notch under a bar that no
+ * longer cuts the surface.
+ */
+html[data-akari-gpu-tier="good"] .akari-surface-cap {
   background: none;
 }
 
-html[data-akari-gpu-tier="good"] .akari-doc > .akari-surface-cap::before,
-html[data-akari-gpu-tier="good"] .akari-doc > .akari-surface-cap::after {
+html[data-akari-gpu-tier="good"] .akari-surface-cap::before,
+html[data-akari-gpu-tier="good"] .akari-surface-cap::after {
   display: none;
 }
 
@@ -660,26 +666,12 @@ m3e-badge {
 /* Compact windows: no rail, navigation moves into a modal drawer. */
 @media (max-width: 959.98px) {
   /*
-   * While the start drawer is open, put the bar's surface color underneath
-   * it. The bar's own gradient stays on top: its transparent tail now reads
-   * as the same solid surface, so content no longer shows through, and the
-   * layer fades in and out with the drawer instead of snapping.
+   * Compact windows keep the app bar opaque: the top bar transition is a
+   * desktop treatment, and the drawer below already starts from the same
+   * surface color. No extra background layer or fade is needed here.
    */
-  .akari-frame__bar::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    background-color: var(--md-sys-color-surface-container-low, Canvas);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity
-      var(--md-sys-motion-duration-short-4, 200ms)
-      var(--md-sys-motion-easing-standard, ease);
-  }
-
-  html:has(.akari-drawers[start]) .akari-frame__bar::before {
-    opacity: 1;
+  html[data-akari-gpu-tier="good"] m3e-app-bar {
+    background: var(--md-sys-color-surface-container-low, Canvas);
   }
 
   .akari-main {

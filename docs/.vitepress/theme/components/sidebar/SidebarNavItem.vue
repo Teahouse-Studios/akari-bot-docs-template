@@ -6,7 +6,7 @@ import { useNavGroupState } from "../../composables/useNavGroupState";
 import { usePageHref } from "../../composables/usePageHref";
 import { useSidebar } from "../../composables/useSidebar";
 import { nextLayoutFrame, whenAkariReady } from "../../ready";
-import { findFirstLink, isExternalLink, sidebarIcon } from "../../sidebar";
+import { findFirstLink, isExternalLink } from "../../sidebar";
 import type { AkariSidebarItem } from "../../types";
 
 interface NavMenuItemElement extends HTMLElement {
@@ -17,10 +17,9 @@ interface NavMenuItemElement extends HTMLElement {
 
 const props = defineProps<{
   item: AkariSidebarItem;
-  // A nested item shows the icon it declares; only the top level falls
-  // back to the category icon, mirroring the rail. Vue casts an absent
-  // boolean prop to `false`, so nested items stay text-only without
-  // passing anything down.
+  // Only the first level of a menu carries icons, mirroring the rail.
+  // Vue casts an absent boolean prop to `false`, so nested items stay
+  // text-only without passing anything down.
   showIcon?: boolean;
   // The breadcrumb of enclosing groups, so sibling groups with the same
   // first page keep independent open state.
@@ -35,33 +34,29 @@ const leafElement = ref<NavMenuItemElement | null>(null);
 
 const hasChildren = computed(() => (props.item.items?.length ?? 0) > 0);
 const icon = computed(() =>
-  sidebarIcon(props.item, props.showIcon ? "category" : undefined),
+  props.showIcon ? (props.item.icon ?? "category") : undefined,
 );
 // A group's identity across the drawers' rebuilds: its name and first page.
 const groupKey = computed(
   () => `${props.parentKey ?? ""}\n${props.item.text}\n${findFirstLink(props.item) ?? ""}`,
 );
 const groupState = useNavGroupState();
-// As the reader left it; else open when it holds the current page or is
-// set to start open. Resolve to `undefined` instead of `false`: Vue's
-// hydration path can write `open="false"` / `selected="false"` before the
-// custom element upgrades, and Lit's Boolean converter treats any present
-// attribute as true.
+// Open when it holds the current page, then as the reader left it, then
+// open when it is set to start open. Resolve to `undefined` instead of
+// `false`: Vue's hydration path can write `open="false"` / `selected="false"`
+// before the custom element upgrades, and Lit's Boolean converter treats any
+// present attribute as true.
+//
+// Holding the current page is read from the route rather than written down:
+// it opens the group on arrival and, once the reader moves on, lets the
+// group fall back to its default instead of staying expanded for the rest
+// of the session.
 const open = computed(() => {
+  if (hasActive(props.item)) return true;
   const left = groupState.get(groupKey.value);
   if (left !== undefined) return left ? true : undefined;
-  return hasActive(props.item) || props.item.collapsed === false
-    ? true
-    : undefined;
+  return props.item.collapsed === false ? true : undefined;
 });
-// Going to a page in a group opens it, however it was left.
-watch(
-  () => hasChildren.value && hasActive(props.item),
-  (active) => {
-    if (active) groupState.set(groupKey.value, true);
-  },
-  { immediate: true },
-);
 
 // The theme opening or closing a group itself is not the reader's choice.
 let applying = false;
@@ -234,7 +229,6 @@ watch(
   <m3e-nav-menu-item
     v-if="hasChildren"
     ref="groupElement"
-    @click.stop
     @opening="onGroupOpening"
     @closing="onGroupClosing"
   >
@@ -254,7 +248,6 @@ watch(
     ref="leafElement"
     :selected="selected"
     :data-akari-settled="settled ? '' : undefined"
-    @click.stop
   >
     <m3e-icon v-if="icon" slot="icon" :name="icon"></m3e-icon>
     <a

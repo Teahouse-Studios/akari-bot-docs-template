@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { watch } from "vue";
+import { useRoute } from "vitepress";
+
 import { useAkariI18n } from "../../composables/useI18n";
+import { resetNavGroupState } from "../../composables/useNavGroupState";
 import { useSidebar } from "../../composables/useSidebar";
 import LocaleSwitcher from "../shell/LocaleSwitcher.vue";
 import SchemeToggle from "../shell/SchemeToggle.vue";
@@ -7,6 +11,14 @@ import SidebarNavItem from "./SidebarNavItem.vue";
 
 const { items } = useSidebar();
 const { t } = useAkariI18n();
+const route = useRoute();
+
+// Each page starts from its own default — the group holding it open, the
+// rest closed — instead of carrying the groups the reader expanded on the
+// previous one. This list is the whole tree, so without it the drawer would
+// end up with every category expanded. Before the items react, so they all
+// read the same state.
+watch(() => route.path, () => resetNavGroupState(), { flush: "pre" });
 </script>
 
 <template>
