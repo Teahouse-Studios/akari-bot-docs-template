@@ -4,7 +4,7 @@ import { computed } from "vue";
 import { useAkariConfig } from "../../composables/useAkariConfig";
 
 const config = useAkariConfig();
-const languages = computed(() => Object.values(config.value.languages));
+const languages = computed(() => Object.values(config.value.supportedLanguages));
 
 function separator(index: number): string {
   return index === languages.value.length - 2 ? " 与 " : "、";

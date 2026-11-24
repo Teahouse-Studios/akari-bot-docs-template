@@ -690,7 +690,7 @@ export interface AkariThemeConfig {
    */
   dependencies?: Record<string, string[]>;
   /** 机器人支持的界面语言；由文档引擎从 core 的语言表写入。 */
-  languages?: Record<string, string>;
+  supportedLanguages?: Record<string, string>;
   /** API 参考数据；由文档引擎从 core 的公开接口与 docstring 生成。 */
   apiCatalog?: AkariApiCatalog;
   brand?: AkariBrandConfig;
@@ -809,7 +809,7 @@ export interface ResolvedAkariThemeConfig {
   /** 机器人头像；空串表示未配置。 */
   chatAvatar: string;
   dependencies: Record<string, string[]>;
-  languages: Record<string, string>;
+  supportedLanguages: Record<string, string>;
   apiCatalog: AkariApiCatalog;
   messages: AkariMessages;
   brand: AkariBrandConfig;

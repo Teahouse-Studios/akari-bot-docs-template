@@ -37,7 +37,7 @@ export function defineAkariThemeConfig(config: AkariThemeConfig): AkariThemeConf
   return config;
 }
 
-function normalizeLanguages(value: unknown): Record<string, string> {
+function normalizeSupportedLanguages(value: unknown): Record<string, string> {
   if (!value || typeof value !== "object") return {};
   const entries = Object.entries(value as Record<string, unknown>);
   const result: Record<string, string> = {};
@@ -193,7 +193,7 @@ export function resolveAkariConfig(
     commandPrefix: typeof akari.commandPrefix === "string" ? akari.commandPrefix : "",
     chatAvatar: typeof akari.chatAvatar === "string" ? akari.chatAvatar : "",
     dependencies: normalizeDependencies(akari.dependencies),
-    languages: normalizeLanguages(akari.languages),
+    supportedLanguages: normalizeSupportedLanguages(akari.supportedLanguages),
     apiCatalog: akari.apiCatalog ?? { groups: [] },
     messages,
     brand: {
@@ -202,13 +202,6 @@ export function resolveAkariConfig(
       avatar: brand.avatar ?? akari.chatAvatar,
       character: brand.character,
       credits: brand.credits,
-    },
-    brand: {
-      logo: akari.brand?.logo ?? appBar.logo ?? themeConfig.logo,
-      logoDark: akari.brand?.logoDark ?? appBar.logoDark,
-      avatar: akari.brand?.avatar ?? akari.chatAvatar,
-      character: akari.brand?.character,
-      credits: akari.brand?.credits,
     },
     appBar: {
       title: appBar.title ?? site.title ?? "Documentation",
