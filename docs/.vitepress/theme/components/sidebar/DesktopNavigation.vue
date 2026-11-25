@@ -75,15 +75,42 @@ const activeCategoryIndex = computed(() =>
 // Standard drawer: pinned beside the rail on extra-large windows whenever the
 // current page belongs to a category, taking its width from the content.
 // The home page has no active category. On a wide window, keep the last
-// category's drawer in place instead of collapsing it and shifting the page
-// while the home page fades in.
+// category's drawer in place while the home page fades in instead of
+// collapsing it and shifting the page, then release it once the fade is over.
+// A drawer left in place would hold the content's left column for good.
+const homeSettled = ref(true);
+let homeTimer: ReturnType<typeof setTimeout> | undefined;
+
 const homeKeepsPinned = computed(
   () =>
     pinnable.value &&
     route.path === "/" &&
     activeCategoryIndex.value < 0 &&
+    !homeSettled.value &&
     pinnedShown.value >= 0,
 );
+
+// Length of the home page's entering fade, in milliseconds. It collapses to
+// zero when motion is reduced or the GPU tier drops the duration tokens.
+function homeFadeDuration(): number {
+  if (typeof window === "undefined") return 0;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return 0;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--md-sys-motion-duration-medium-1")
+    .trim();
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return 250;
+  return raw.endsWith("s") && !raw.endsWith("ms") ? value * 1000 : value;
+}
+
+function scheduleHomeSettle(): void {
+  if (homeTimer !== undefined) clearTimeout(homeTimer);
+  homeSettled.value = false;
+  homeTimer = setTimeout(() => {
+    homeTimer = undefined;
+    homeSettled.value = true;
+  }, homeFadeDuration());
+}
 
 const pinnedOpen = computed(
   () =>
@@ -334,9 +361,15 @@ function onDrawerNavigate(): void {
 
 watch(
   () => route.path,
-  () => {
+  (path) => {
     pendingIndex.value = -1;
     closeDrawer();
+    if (homeTimer !== undefined) {
+      clearTimeout(homeTimer);
+      homeTimer = undefined;
+    }
+    if (path === "/") scheduleHomeSettle();
+    else homeSettled.value = true;
   },
 );
 
@@ -353,6 +386,10 @@ onUnmounted(() => {
   pinnedMedia?.removeEventListener("change", updateMode);
   cancelOpen();
   cancelClose();
+  if (homeTimer !== undefined) {
+    clearTimeout(homeTimer);
+    homeTimer = undefined;
+  }
   detachOutside();
 });
 </script>

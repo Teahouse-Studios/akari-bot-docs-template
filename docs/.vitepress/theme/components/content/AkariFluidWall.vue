@@ -805,17 +805,57 @@ function updateVinePopPortal(): void {
   }
   const rect = element.getBoundingClientRect();
   const { left, top, right, bottom } = vineBleed.value;
-  vinePopPortal.value = {
-    left: rect.left + window.scrollX - left,
-    top: rect.top + window.scrollY - top,
-    width: rect.width + left + right,
-    height: rect.height + top + bottom,
+  const width = rect.width + left + right;
+  const height = rect.height + top + bottom;
+  const current = vinePopPortal.value;
+  // The canvas mirrors the page surface's translation through a CSS variable,
+  // so the measurement below drops that translation: the rect already carries
+  // it while the page moves, and keeping both would count it twice.
+  const rootStyle = document.documentElement.style;
+  const pageX = Number.parseFloat(rootStyle.getPropertyValue("--akari-page-translate-x")) || 0;
+  const pageY = Number.parseFloat(rootStyle.getPropertyValue("--akari-page-translate-y")) || 0;
+  // The corner only changes when the box does, so a sliding wall measured every
+  // frame does not have to resolve its style again.
+  const radius =
+    current && current.width === width && current.height === height
+      ? current.radius
+      : Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0;
+  const next = {
+    left: rect.left + window.scrollX - left - pageX,
+    top: rect.top + window.scrollY - top - pageY,
+    width,
+    height,
     wallWidth: rect.width,
     wallHeight: rect.height,
-    radius: Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0,
+    radius,
     bleedLeft: left,
     bleedTop: top,
   };
+  if (
+    current &&
+    current.left === next.left &&
+    current.top === next.top &&
+    current.width === next.width &&
+    current.height === next.height &&
+    current.wallWidth === next.wallWidth &&
+    current.wallHeight === next.wallHeight &&
+    current.radius === next.radius &&
+    current.bleedLeft === next.bleedLeft &&
+    current.bleedTop === next.bleedTop
+  ) {
+    return;
+  }
+  vinePopPortal.value = next;
+}
+
+/**
+ * Keeps the pop-out canvas on the wall while the layout moves it without
+ * resizing it: a pinned drawer opening or closing slides a width-capped wall
+ * sideways, and no resize observer fires for that.
+ */
+function syncVinePopPortal(): void {
+  if (overlay.value !== "vine" || !vinePopPortal.value) return;
+  updateVinePopPortal();
 }
 
 function roundedRectPath(x: number, y: number, width: number, height: number, radius: number): string {
@@ -2228,6 +2268,7 @@ function tick(now: number): void {
     if (rippleRampStart < 0) rippleRampStart = elapsed;
     rippleGain.value = Math.min(1, (elapsed - rippleRampStart) / 1.2);
   }
+  syncVinePopPortal();
   draw();
 }
 
