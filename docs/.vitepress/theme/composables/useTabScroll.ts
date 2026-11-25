@@ -24,14 +24,22 @@ function contentWidth(nav: HTMLElement): number {
  * Lets a tab bar too narrow for all its tabs scroll sideways
  * (`data-scrolls`), and keeps the current tab in view there. It scrolls the
  * bar as little as it takes to show the current tab whole: when the bar
- * first shows, when the current tab changes, and when the bar's width
- * does. Once the reader scrolls the bar themselves (wheel, scrollbar,
- * touch, keys), it leaves the bar alone until the current tab changes
- * again.
+ * first shows, when its tabs change (another group), when the current tab
+ * changes, and when the bar's width does. Once the reader scrolls the bar
+ * themselves (wheel, scrollbar, touch, keys), it leaves the bar alone until
+ * the group or the current tab changes.
+ *
+ * `group` is the tab group of the page: moving to another article swaps the
+ * tabs under the same bar, without the bar being mounted again or changing
+ * width, so neither the mount nor the observer below would notice. The bar
+ * would then keep the `data-scrolls` of the page it was on — no scrollbar
+ * and no sideways scrolling on a page whose tabs run past its edge, until a
+ * reload. A tab of the same group keeps it (and glides, see `current`).
  */
 export function useTabScroll(
   bar: Ref<HTMLElement | null>,
   current: () => number,
+  group: () => unknown,
 ): void {
   let touched = false;
   let observer: ResizeObserver | undefined;
@@ -109,6 +117,19 @@ export function useTabScroll(
     () => {
       touched = false;
       reveal(true);
+    },
+    { flush: "post" },
+  );
+
+  watch(
+    group,
+    () => {
+      // Another group: fit its tabs, and show its current one from the start.
+      touched = false;
+      void nextTick(() => {
+        fit();
+        reveal(false);
+      });
     },
     { flush: "post" },
   );

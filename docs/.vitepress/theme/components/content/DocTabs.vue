@@ -17,7 +17,11 @@ const bar = ref<HTMLElement | null>(null);
 
 useTabsDock(bar, tabs, () => settings.motion);
 useTabIndicator(bar, () => tabs.current.value);
-useTabScroll(bar, () => tabs.current.value);
+useTabScroll(
+  bar,
+  () => tabs.current.value,
+  () => tabs.group.value,
+);
 </script>
 
 <template>
