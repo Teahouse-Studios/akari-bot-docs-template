@@ -400,6 +400,7 @@ const vinePopBloomStyle = computed(() => {
   // reaches it; carry the bloom strength on the element itself.
   return {
     left: `${portal.left}px`,
+    right: "auto",
     top: `${portal.top}px`,
     width: `${portal.width}px`,
     height: `${portal.height}px`,
@@ -411,6 +412,7 @@ const vinePopBudStyle = computed(() => {
   if (!portal) return undefined;
   return {
     left: `${portal.left}px`,
+    right: "auto",
     top: `${portal.top}px`,
     width: `${portal.width}px`,
     height: `${portal.height}px`,
@@ -755,6 +757,7 @@ const vineCanvasStyle = computed(() => {
   const radius = wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0;
   return {
     left: `${-left}px`,
+    right: "auto",
     top: `${-top}px`,
     width: `calc(100% + ${left + right}px)`,
     height: `calc(100% + ${top + bottom}px)`,
@@ -773,6 +776,7 @@ const vineBloomBoxStyle = computed(() => {
   const radius = wall.value ? Number.parseFloat(getComputedStyle(wall.value).borderTopLeftRadius) || 0 : 0;
   return {
     left: `${-left}px`,
+    right: "auto",
     top: `${-top}px`,
     width: `calc(100% + ${left + right}px)`,
     height: `calc(100% + ${top + bottom}px)`,
@@ -885,6 +889,7 @@ const vinePopOutsideCanvasStyle = computed(() => {
   if (!portal) return undefined;
   return {
     left: `${portal.left}px`,
+    right: "auto",
     top: `${portal.top}px`,
     width: `${portal.width}px`,
     height: `${portal.height}px`,
@@ -1228,6 +1233,7 @@ function replanVineScene(): void {
     ghost.height = element.height;
     Object.assign(ghost.style, {
       left: `${-left}px`,
+      right: "auto",
       top: `${-top}px`,
       width: `calc(100% + ${left + right}px)`,
       height: `calc(100% + ${top + bottom}px)`,
@@ -3133,6 +3139,12 @@ html.dark .akari-fluid-wall {
   pointer-events: none;
 }
 
+/*
+ * Once a bleed or a portal box is measured, these layers take an inline
+ * `left` and `width` and set `right: auto` with them: with `inset: 0` still
+ * in force, a right-to-left page would drop `left` for `right` and pin the
+ * vines to the right edge.
+ */
 .akari-fluid-wall__vine-canvas,
 .akari-fluid-wall__vine-outside {
   position: absolute;
