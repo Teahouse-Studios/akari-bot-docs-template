@@ -64,6 +64,20 @@ let applying = false;
 // its list on a category switch — at once; later changes, such as going to
 // a page in it, animate.
 let shown = false;
+// A group taller than this changes state in a single step. Its height
+// transition would drag thousands of pixels past the viewport in a quarter
+// of a second — a smear of text — and it lays out every row on each frame,
+// which is what reads as jank on a long list. The reader only ever sees the
+// first screenful of such a group anyway.
+const ANIMATE_MAX_HEIGHT = 600;
+
+/** The laid-out height of a group's content, open or closed. */
+function contentHeight(element: NavMenuItemElement): number {
+  const collapsible = element.shadowRoot?.querySelector("m3e-collapsible");
+  // A closed collapsible keeps `height: 0` but still reports its content's
+  // scroll extent, so this is measurable before the change.
+  return collapsible?.scrollHeight ?? 0;
+}
 
 /** The reader opened or closed the group. */
 function remember(isOpen: boolean): void {
@@ -90,33 +104,25 @@ function onGroupClosing(event: Event): void {
 async function setGroupOpen(
   element: NavMenuItemElement,
   value: boolean,
+  instant = false,
 ): Promise<void> {
   applying = true;
+  // Zero durations for the collapsible and the toggle arrow (base.css).
+  if (instant) element.setAttribute("data-akari-instant", "");
   try {
     element.open = value;
     await element.updateComplete;
+    if (instant) {
+      const collapsible = element.shadowRoot?.querySelector<
+        HTMLElement & { updateComplete?: Promise<unknown> }
+      >("m3e-collapsible");
+      await collapsible?.updateComplete;
+      // The collapsible sizes itself to its content on the `transitionend`
+      // that ends its opening, which a zero duration never fires. (Not m3e's
+      // `noAnimate`: turning it back off replays the animation.)
+      collapsible?.dispatchEvent(new Event("transitionend"));
+    }
     await nextLayoutFrame();
-  } finally {
-    applying = false;
-  }
-}
-
-/** Opens a group before the next paint, without animating. */
-async function openGroupAtOnce(element: NavMenuItemElement): Promise<void> {
-  applying = true;
-  // Zero durations for the collapsible and the toggle arrow (base.css).
-  element.setAttribute("data-akari-instant", "");
-  try {
-    element.open = true;
-    await element.updateComplete;
-    const collapsible = element.shadowRoot?.querySelector<
-      HTMLElement & { updateComplete?: Promise<unknown> }
-    >("m3e-collapsible");
-    await collapsible?.updateComplete;
-    // The collapsible sizes itself to its content on the `transitionend`
-    // that ends its opening, which a zero duration never fires. (Not m3e's
-    // `noAnimate`: turning it back off replays the opening animation.)
-    collapsible?.dispatchEvent(new Event("transitionend"));
   } finally {
     element.removeAttribute("data-akari-instant");
     applying = false;
@@ -167,12 +173,12 @@ async function applyGroupState(): Promise<void> {
   if (animate) await nextLayoutFrame();
 
   const shouldOpen = !!open.value;
+  // A long group changes state at once, animated or not.
+  const instant = !animate || contentHeight(element) > ANIMATE_MAX_HEIGHT;
 
   if (shouldOpen) {
     if (!element.open) {
-      await (animate
-        ? setGroupOpen(element, true)
-        : openGroupAtOnce(element));
+      await setGroupOpen(element, true, instant);
     } else {
       const collapsible =
         element.shadowRoot?.querySelector("m3e-collapsible");
@@ -180,12 +186,12 @@ async function applyGroupState(): Promise<void> {
       // The collapsible can stay at height 0 when `open` was set before its
       // slot children upgraded. Replaying the public property re-measures it.
       if (collapsible && collapsible.getBoundingClientRect().height === 0) {
-        await setGroupOpen(element, false);
-        await setGroupOpen(element, true);
+        await setGroupOpen(element, false, instant);
+        await setGroupOpen(element, true, instant);
       }
     }
   } else if (element.open) {
-    await setGroupOpen(element, false);
+    await setGroupOpen(element, false, instant);
   }
 }
 

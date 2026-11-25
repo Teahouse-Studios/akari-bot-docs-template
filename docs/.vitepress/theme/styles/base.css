@@ -674,6 +674,23 @@ m3e-badge {
     background: var(--md-sys-color-surface-container-low, Canvas);
   }
 
+  /*
+   * The opaque bar cuts the surface again, so compact windows keep the
+   * rounded scroll mask that the desktop gradient replaced.
+   */
+  html[data-akari-gpu-tier="good"] .akari-surface-cap {
+    background: linear-gradient(
+        var(--akari-doc-edge-color),
+        var(--akari-doc-edge-color)
+      )
+      var(--_r) 0 / calc(100% - 2 * var(--_r)) 1px no-repeat;
+  }
+
+  html[data-akari-gpu-tier="good"] .akari-surface-cap::before,
+  html[data-akari-gpu-tier="good"] .akari-surface-cap::after {
+    display: block;
+  }
+
   .akari-main {
     padding: var(--akari-doc-top-space) 8px 0;
     --akari-doc-top-space: 8px;
