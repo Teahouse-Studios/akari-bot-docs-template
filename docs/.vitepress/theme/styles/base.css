@@ -326,9 +326,13 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
 /*
  * Icons that draw lines of text, ragged on the right, read as a page in the
  * layout's direction. Matching on the attribute needs it in the DOM, so
- * components bind a dynamic icon name with `:name.attr`.
+ * components bind a dynamic icon name with `:name.attr`. In navigation the
+ * icon names an entry rather than drawing a page — a category may carry the
+ * same glyph, as the command line one does — so it keeps its own direction.
  */
-:root[dir="rtl"] m3e-icon[name="article"] {
+:root[dir="rtl"]
+  :not(m3e-nav-menu-item, m3e-nav-item, .akari-rail__icon)
+  > m3e-icon[name="article"] {
   transform: scaleX(-1);
 }
 
