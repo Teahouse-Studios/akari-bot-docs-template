@@ -107,7 +107,7 @@ function onPointerLeave(index: number, event: PointerEvent): void {
         @click="emit('activate', index, $event)"
       >
         <span slot="icon" class="akari-rail__icon">
-          <m3e-icon :name="item.icon ?? 'category'"></m3e-icon>
+          <m3e-icon :name.attr="item.icon ?? 'category'"></m3e-icon>
           <m3e-badge v-if="item.badge" class="akari-rail__badge">
             {{ item.badge }}
           </m3e-badge>

@@ -703,11 +703,10 @@
   justify-content: space-between;
 }
 
+/* A block, not a flex box: in a flex box the text sits in an anonymous item,
+ * which `unicode-bidi: plaintext` from base.css never reaches. */
 .chat-example__caption {
-  display: flex;
   flex: 1;
-  gap: 6px;
-  align-items: center;
   margin: 0;
   color: var(--md-sys-color-on-surface-variant);
   font-size: 12px;

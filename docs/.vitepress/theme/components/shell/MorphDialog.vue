@@ -98,7 +98,7 @@ watch(
             :data-outlined="outlinedIcon ? '' : undefined"
             aria-hidden="true"
           >
-            <m3e-icon :name="props.icon"></m3e-icon>
+            <m3e-icon :name.attr="props.icon"></m3e-icon>
           </span>
           <h2 :id="titleId" ref="heading" class="akari-dialog__title">
             {{ title }}

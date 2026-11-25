@@ -197,7 +197,7 @@ onBeforeUnmount(() => slotObserver?.disconnect())
   <section class="command-usage">
     <p v-if="hasMeta" class="command-usage__meta">
       <span v-if="props.type" class="meta-badge" :class="`meta-badge--${props.type}`">
-        <m3e-icon class="meta-badge__icon" :name="typeIcons[props.type] || 'terminal'"></m3e-icon>
+        <m3e-icon class="meta-badge__icon" :name.attr="typeIcons[props.type] || 'terminal'"></m3e-icon>
         {{ typeLabels[props.type] || props.type }}
       </span>
       <span

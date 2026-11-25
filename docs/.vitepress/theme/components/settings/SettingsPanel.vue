@@ -218,7 +218,7 @@ function onTextSizeChange(event: Event): void {
             :key="option.value"
             :checked.prop="settings.direction === option.value"
             :value="option.value"
-          ><m3e-icon slot="icon" :name="option.icon"></m3e-icon>{{ t(option.message) }}</m3e-button-segment>
+          ><m3e-icon slot="icon" :name.attr="option.icon"></m3e-icon>{{ t(option.message) }}</m3e-button-segment>
         </m3e-segmented-button>
       </SettingsSection>
 

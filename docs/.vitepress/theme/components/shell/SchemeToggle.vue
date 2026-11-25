@@ -66,7 +66,7 @@ async function step(): Promise<void> {
       :aria-label="label"
       @click="step"
     >
-      <m3e-icon :name="option.icon"></m3e-icon>
+      <m3e-icon :name.attr="option.icon"></m3e-icon>
     </m3e-icon-button>
     <m3e-tooltip :for="`${idPrefix}-button`" :position="tooltipPosition">
       {{ label }}

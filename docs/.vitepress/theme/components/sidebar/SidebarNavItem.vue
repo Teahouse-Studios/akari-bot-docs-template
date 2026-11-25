@@ -238,7 +238,7 @@ watch(
     @opening="onGroupOpening"
     @closing="onGroupClosing"
   >
-    <m3e-icon v-if="icon" slot="icon" :name="icon"></m3e-icon>
+    <m3e-icon v-if="icon" slot="icon" :name.attr="icon"></m3e-icon>
     <span slot="label" class="akari-nav-label">{{ item.text }}</span>
     <m3e-badge v-if="item.badge" slot="badge">{{ item.badge }}</m3e-badge>
     <SidebarNavItem
@@ -255,7 +255,7 @@ watch(
     :selected="selected"
     :data-akari-settled="settled ? '' : undefined"
   >
-    <m3e-icon v-if="icon" slot="icon" :name="icon"></m3e-icon>
+    <m3e-icon v-if="icon" slot="icon" :name.attr="icon"></m3e-icon>
     <a
       v-if="internalHref"
       slot="label"

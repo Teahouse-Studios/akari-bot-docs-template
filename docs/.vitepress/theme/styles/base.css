@@ -323,6 +323,15 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   text-align: match-parent;
 }
 
+/*
+ * Icons that draw lines of text, ragged on the right, read as a page in the
+ * layout's direction. Matching on the attribute needs it in the DOM, so
+ * components bind a dynamic icon name with `:name.attr`.
+ */
+:root[dir="rtl"] m3e-icon[name="article"] {
+  transform: scaleX(-1);
+}
+
 .akari-doc[data-axis].is-leaving,
 .akari-doc[data-axis].is-entering {
   opacity: 1;
