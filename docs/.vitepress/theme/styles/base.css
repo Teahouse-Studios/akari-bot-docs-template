@@ -297,11 +297,11 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   --akari-doc-axis-shift: -30px;
 }
 
-:root[dir="rtl"] .akari-doc[data-axis] > .akari-doc__page {
+.akari-doc[dir="rtl"][data-axis] > .akari-doc__page {
   --akari-doc-axis-shift: -30px;
 }
 
-:root[dir="rtl"] .akari-doc[data-axis="backward"] > .akari-doc__page {
+.akari-doc[dir="rtl"][data-axis="backward"] > .akari-doc__page {
   --akari-doc-axis-shift: 30px;
 }
 

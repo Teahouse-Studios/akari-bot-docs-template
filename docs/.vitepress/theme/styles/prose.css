@@ -341,7 +341,7 @@
 }
 
 /* The arrow points the way the text runs. */
-:root[dir="rtl"] .akari-prose a[target="_blank"]::before {
+.akari-doc[dir="rtl"] .akari-prose a[target="_blank"]::before {
   transform: scaleX(-1);
 }
 

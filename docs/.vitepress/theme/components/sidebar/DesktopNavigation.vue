@@ -627,7 +627,7 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.akari-nav-drawer--modal:dir(rtl) {
+:root[dir="rtl"] .akari-nav-drawer--modal {
   clip-path: inset(
     calc(0px - var(--_shadow-room)) 0 calc(0px - var(--_shadow-room))
       calc(0px - var(--_shadow-room))
@@ -655,7 +655,7 @@ onUnmounted(() => {
     visibility var(--md-sys-motion-spring-fast-spatial, 350ms cubic-bezier(0.27, 1.06, 0.18, 1));
 }
 
-.akari-nav-drawer__panel:dir(rtl) {
+:root[dir="rtl"] .akari-nav-drawer__panel {
   --_hidden-offset: 100%;
 }
 
@@ -722,7 +722,7 @@ onUnmounted(() => {
     transform: translateX(-100%);
   }
 
-  .akari-desktop-nav__rail:dir(rtl) > .akari-rail {
+  :root[dir="rtl"] .akari-desktop-nav__rail > .akari-rail {
     transform: translateX(100%);
   }
 }

@@ -139,7 +139,7 @@ function navigate(href: string | undefined, event: Event): void {
 }
 
 /* The arrows point the way the pages run. */
-.akari-doc-pager__label m3e-icon:dir(rtl) {
+.akari-doc[dir="rtl"] .akari-doc-pager__label m3e-icon {
   transform: scaleX(-1);
 }
 
