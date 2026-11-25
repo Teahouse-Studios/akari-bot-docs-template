@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useData, withBase } from "vitepress";
+import { computed, onMounted, ref } from "vue";
+import { onContentUpdated, useData, withBase } from "vitepress";
 
-import { FLUID_TEXTURES, type FluidTexture } from "../../fluid";
+import { FLUID_HERO_TEXTURES, randomFluidHeroTexture, type FluidHeroTexture } from "../../fluid";
 import { useHero } from "../../composables/useHero";
 import { usePagePattern } from "../../composables/usePattern";
 import { heroImageHref } from "../../hero";
@@ -35,12 +35,8 @@ const darkSrc = computed(() =>
   hero.value?.darkSrc ? heroImageHref(hero.value.darkSrc, withBase) : "",
 );
 
-type HeroTexture = Exclude<FluidTexture, "none" | "vine">;
-const HERO_TEXTURES = FLUID_TEXTURES.filter(
-  (texture): texture is HeroTexture => texture !== "none" && texture !== "vine",
-);
-
-// A stable per-page pick keeps server rendering and hydration on one texture.
+// The server and the hydrating client settle on this per-page pick, so no
+// texture swap takes place while the page comes up.
 function pageSeed(path: string): number {
   let value = 2166136261;
   for (let index = 0; index < path.length; index += 1) {
@@ -49,10 +45,24 @@ function pageSeed(path: string): number {
   return value >>> 0;
 }
 
-const fluidTexture = computed<HeroTexture>(() => {
+const fallbackTexture = computed<FluidHeroTexture>(() => {
   const path = page.value.relativePath || page.value.filePath || page.value.title;
-  return HERO_TEXTURES[pageSeed(path) % HERO_TEXTURES.length]!;
+  return FLUID_HERO_TEXTURES[pageSeed(path) % FLUID_HERO_TEXTURES.length]!;
 });
+
+// Drawn in the browser only, like the page pattern: each view of a hero gets
+// one of the still textures, and reloading the page draws a new one.
+const drawnTexture = ref<FluidHeroTexture | null>(null);
+const fluidTexture = computed<FluidHeroTexture>(
+  () => drawnTexture.value ?? fallbackTexture.value,
+);
+
+function drawTexture(): void {
+  drawnTexture.value = randomFluidHeroTexture();
+}
+
+onMounted(drawTexture);
+onContentUpdated(drawTexture);
 </script>
 
 <template>

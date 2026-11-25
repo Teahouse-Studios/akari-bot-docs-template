@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   FLUID_FALLBACK_TOKENS,
+  FLUID_HERO_TEXTURES,
   FLUID_LOOPS,
   FLUID_TEXTURE_SIZES,
   FLUID_TEXTURE_WEIGHTS,
@@ -21,6 +22,7 @@ import {
   ribbonLacePath,
   ribbonScallopPath,
   mixFluid,
+  randomFluidHeroTexture,
   resolveFluid,
   type FluidRgb,
 } from "../docs/.vitepress/theme/fluid";
@@ -389,5 +391,24 @@ describe("fluidSeedOffset", () => {
       expect(Math.abs(x)).toBeLessThanOrEqual(16);
       expect(Math.abs(y)).toBeLessThanOrEqual(16);
     }
+  });
+});
+
+describe("randomFluidHeroTexture", () => {
+  it("spreads the whole range over the hero textures", () => {
+    expect(randomFluidHeroTexture(() => 0)).toBe(FLUID_HERO_TEXTURES[0]);
+    expect(randomFluidHeroTexture(() => 0.999999)).toBe(FLUID_HERO_TEXTURES.at(-1));
+    // Math.random never returns 1, but a stand-in might.
+    expect(randomFluidHeroTexture(() => 1)).toBe(FLUID_HERO_TEXTURES.at(-1));
+    const seen = new Set(
+      FLUID_HERO_TEXTURES.map((_, i) =>
+        randomFluidHeroTexture(() => (i + 0.5) / FLUID_HERO_TEXTURES.length),
+      ),
+    );
+    expect(seen.size).toBe(FLUID_HERO_TEXTURES.length);
+  });
+
+  it("leaves out the empty wall and the vine", () => {
+    expect(FLUID_HERO_TEXTURES).toEqual(["sakura", "petals", "stars", "lace", "dots"]);
   });
 });

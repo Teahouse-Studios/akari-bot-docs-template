@@ -297,6 +297,23 @@ export type FluidVariant = (typeof FLUID_VARIANTS)[number];
 export const FLUID_TEXTURES = ["none", "sakura", "petals", "stars", "lace", "vine", "dots"] as const;
 export type FluidTexture = (typeof FLUID_TEXTURES)[number];
 
+/**
+ * Textures a page hero may draw: the ones that read as a still overlay. `none`
+ * leaves the wall bare and `vine` is the growing scene, which the hero keeps
+ * for pages that ask for it.
+ */
+export type FluidHeroTexture = Exclude<FluidTexture, "none" | "vine">;
+
+export const FLUID_HERO_TEXTURES = FLUID_TEXTURES.filter(
+  (texture): texture is FluidHeroTexture => texture !== "none" && texture !== "vine",
+);
+
+/** One of the hero textures, at random. */
+export function randomFluidHeroTexture(random = Math.random): FluidHeroTexture {
+  const index = Math.floor(random() * FLUID_HERO_TEXTURES.length);
+  return FLUID_HERO_TEXTURES[Math.min(index, FLUID_HERO_TEXTURES.length - 1)]!;
+}
+
 /** Which way the sakura overlay is painted: dark strokes, or lit petals. */
 export const FLUID_TEXTURE_TONES = ["auto", "ink", "light"] as const;
 
