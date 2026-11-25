@@ -127,6 +127,10 @@ const review = useReview();
   background: var(--md-sys-color-on-primary);
 }
 
+:root[dir="rtl"] .akari-review-settings__switch[aria-checked="true"] .akari-review-settings__track i {
+  transform: translateX(-14px);
+}
+
 .akari-review-settings__hint,
 .akari-review-settings__status {
   margin: 0;

@@ -48,6 +48,8 @@ export function provideAkariSettings(
 
     const root = document.documentElement;
     root.dir = state.direction === "auto" ? dir.value : state.direction;
+    // Text laid out against its language's direction; see base.css.
+    root.toggleAttribute("data-akari-dir-override", root.dir !== dir.value);
     root.style.fontSize = state.textSize;
   }
 

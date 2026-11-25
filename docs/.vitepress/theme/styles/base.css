@@ -297,12 +297,35 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
   --akari-doc-axis-shift: -30px;
 }
 
-.akari-doc[dir="rtl"][data-axis] > .akari-doc__page {
+:root[dir="rtl"] .akari-doc[data-axis] > .akari-doc__page {
   --akari-doc-axis-shift: -30px;
 }
 
-.akari-doc[dir="rtl"][data-axis="backward"] > .akari-doc__page {
+:root[dir="rtl"] .akari-doc[data-axis="backward"] > .akari-doc__page {
   --akari-doc-axis-shift: 30px;
+}
+
+/*
+ * The reader chose a direction the page's language does not run in. The
+ * layout follows the choice, but each run of text keeps the order of its own
+ * language: under a right-to-left base, the neutral marks at either end of an
+ * English paragraph (a full stop, a bracket, a colon) would otherwise land on
+ * the opposite end. `plaintext` takes each paragraph's direction from its
+ * first strong character; `match-parent` keeps it aligned with the layout
+ * rather than with that direction. Zero specificity, so a component's own
+ * alignment still wins.
+ */
+:where(:root[data-akari-dir-override]) :where(
+    p, li, dt, dd, h1, h2, h3, h4, h5, h6,
+    th, td, caption, figcaption, summary, legend, label,
+    .akari-nav-label
+  ) {
+  unicode-bidi: plaintext;
+  text-align: match-parent;
+}
+
+:where(:root[data-akari-dir-override]) :where(a, button) {
+  unicode-bidi: plaintext;
 }
 
 .akari-doc[data-axis].is-leaving,
