@@ -628,9 +628,14 @@ html:lang(ar-SA) .akari-boot__noscript::after {
  * of components as often as in paragraphs. Code keeps one direction for the
  * whole block, as its tokens each carry a span of their own. Zero
  * specificity, so a component's own direction and alignment still win.
+ * Chromium parses only the prefixed `-webkit-match-parent` and drops the
+ * standard keyword; without the prefixed one it falls back to `start`, which
+ * under `plaintext` follows the text, not the layout. Firefox reads only the
+ * standard keyword, so both stay, the standard one last.
  */
 :where(:root[data-akari-dir-override]) :where(body *):not(:where(pre, pre *, code *, svg *)) {
   unicode-bidi: plaintext;
+  text-align: -webkit-match-parent;
   text-align: match-parent;
 }
 
