@@ -242,7 +242,7 @@ describe("akariContent", () => {
     docs = await mkdtemp(path.join(tmpdir(), "akari-content-"));
     await write(
       "config.ts",
-      `export default { rootLanguage: "zh-CN", themeConfig: { akari: { sidebar: { categories: { start: { icon: "rocket_launch" } } }, fonts: { google: ["Inter:wght@100..900"], family: ["Inter", "sans-serif"] } } } };`,
+      `export default { rootLanguage: "zh-CN", themeConfig: { akari: { sidebar: { categories: { start: { icon: "rocket_launch" } } }, fonts: { google: ["Inter:wght@100..900"], family: ["Inter", "sans-serif"] }, images: { webp: true } } } };`,
     );
     await write(
       "zh-CN/config.ts",
@@ -286,6 +286,14 @@ describe("akariContent", () => {
     expect(content.site.lang).toBe("zh-CN");
     // Searching locally, so VitePress builds its index for the theme.
     expect(content.site.themeConfig).toMatchObject({ search: { provider: "local" } });
+  });
+
+  it("hands a build the shared config, which no page-level merge reaches", async () => {
+    // VitePress layers `config.ts` over each page as it renders; the build
+    // reads its config before that, so the hook gets it from here.
+    const content = await akariContent(docs, { warn() {} });
+
+    expect(content.config).toMatchObject({ images: { webp: true } });
   });
 
   it("takes what a language's config leaves out from the language", async () => {

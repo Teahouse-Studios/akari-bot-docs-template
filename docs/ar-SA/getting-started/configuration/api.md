@@ -28,6 +28,7 @@ function defineAkariConfig(config: AkariSiteConfig): AkariDirectoryConfig;
 | `head` | `HeadConfig[]` | `[]` | وسوم `<head>` إضافية، تُدمج مع المستوى الأعلى |
 | `logo` | `string` | لا يوجد | صورة العلامة في شريط التطبيق والتذييل |
 | `markdown` | `MarkdownLocaleOptions` | قيمة حزمة اللغة | نصوص اللغة في Markdown، مثل تلميح زر نسخ كتلة الشيفرة، وتُطبَّق فوق نصوص حزمة اللغة |
+| `images` | `AkariImagesConfig` | لا شيء | ما يفعله البناء بصور الموقع: `webp` يحوّل كل صورة نقطية تشير إليها الصفحات المبنية إلى WebP، وتشير الصفحات إلى ملف WebP |
 
 الحقول `lang` و`label` و`dir` و`markdown` تصف اللغة، ومكانها تهيئة اللغة. أما بقية الحقول فيمكن وضعها في التهيئة المشتركة قيمًا افتراضية، ويمكن لتهيئة اللغة تجاوزها.
 
@@ -107,6 +108,7 @@ function akariContent(
 | `route` | `(page: string) => string` | مسار الملف المصدري ← مسار الصفحة، فمثلًا يصبح `zh-CN/theme/layout/index.md` المسار `/zh-CN/theme/layout` |
 | `rewrite` | `(page: string) => string` | مسار الملف المصدري ← مسار التقديم في VitePress، مثل `zh-CN/theme/layout/index.md` ← `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | مجلدات اللغات، واللغة الجذرية أولًا. `key` هو مفتاح locale في VitePress (`root` للغة الجذرية)؛ و`prefix` هو بادئة المسار |
+| `config` | `AkariSiteConfig \| undefined` | التهيئة المشتركة كما يكتبها `config.ts`، لما يقرأه البناء قبل وجود أي صفحة، مثل `images` |
 
 ## akariHead
 

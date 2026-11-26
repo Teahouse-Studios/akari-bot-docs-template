@@ -713,6 +713,25 @@ export interface AkariThemeConfig {
 }
 
 /**
+ * What a build does with the images the built pages end up pointing at. The
+ * theme itself never reads this: it is a build-time concern, not a client one,
+ * so it sits outside `AkariThemeConfig`.
+ */
+export interface AkariImagesConfig {
+  /**
+   * Convert every raster image the built pages use into WebP, and point the
+   * pages at it. Off by default: a WebP of a photograph is typically a third
+   * of the PNG, but some of the web still asks for the original format, and
+   * the conversion costs a little build time.
+   *
+   * Only a build is affected — the dev server keeps serving the files as they
+   * are. See `media-webp.ts` for the encoder settings this leaves at their
+   * defaults.
+   */
+  webp?: boolean;
+}
+
+/**
  * A config file of the docs, written with `defineAkariConfig`:
  * `docs/config.ts` holds what every language shares, and the `config.ts`
  * in a language folder (`docs/zh-CN/config.ts`) what that language changes.
@@ -750,6 +769,8 @@ export interface AkariSiteConfig extends Omit<AkariThemeConfig, "components"> {
    * button, laid over the language's own.
    */
   markdown?: MarkdownLocaleOptions;
+  /** What a build does with the images the site uses. */
+  images?: AkariImagesConfig;
 }
 
 /**

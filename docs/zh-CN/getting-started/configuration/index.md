@@ -56,6 +56,7 @@ export default defineAkariConfig({
   },
   settings: { storageKey: "akari-docs-settings" },
   search: { maxResults: 8 },
+  images: { webp: true },
   footer: { copyright: "Vitepress Theme Akari Docs" },
 });
 ```
@@ -96,6 +97,7 @@ export default defineAkariConfig({
 | 关闭搜索或接入搜索后端 | 共用配置 | `search` |
 | 改页尾的说明与版权 | 语言配置 / 共用配置 | `footer.message`、`footer.copyright` |
 | 改写界面文字 | 语言配置 | `messages` |
+| 把站点用到的图片转换成 WebP | 共用配置 | `images.webp` |
 | 新增一种语言 | 新的语言文件夹 | 见[国际化](/zh-CN/theme/i18n) |
 
 全部字段的类型与默认值见[接口](/zh-CN/getting-started/configuration/api)。配置怎样叠加、怎样生成语言与导航，见[技术细节](/zh-CN/getting-started/configuration/details)。

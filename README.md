@@ -35,6 +35,11 @@ npm run preview
 
 The production output is in `docs/.vitepress/dist`.
 
+`images.webp: true` in `docs/config.ts` makes a build convert every raster
+image the built pages point at into WebP, and point them at it (typically
+60–80% smaller). It is off by default, and only a build is affected: the dev
+server keeps serving the images as they are.
+
 ## Configuration docs
 
 For more configuration documentation for this theme, see [here](https://vitepress-theme-akari-docs.vercel.app/).

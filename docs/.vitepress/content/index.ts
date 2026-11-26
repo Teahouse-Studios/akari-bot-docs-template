@@ -18,6 +18,7 @@ import type {
   AkariDirectoryConfig,
   AkariSidebarCategory,
   AkariSidebarItem,
+  AkariSiteConfig,
 } from "../theme/types";
 import {
   buildSidebar,
@@ -107,6 +108,12 @@ function sidebarConfig(config: AkariDirectoryConfig | undefined) {
 export interface AkariContent {
   /** The language folders, the root one first. */
   languages: ContentLanguage[];
+  /**
+   * The config every language shares, as `config.ts` at the top writes it:
+   * VitePress layers it over each page, but a build needs some of it — the
+   * `images` section — before any page exists.
+   */
+  config: AkariSiteConfig | undefined;
   /** Where VitePress serves a page of the docs, from its path in them. */
   rewrite(page: string): string;
   /** The route of a page of the docs, from its path in them. */
@@ -251,6 +258,7 @@ export async function akariContent(
 
   return {
     languages,
+    config: shared?.themeConfig?.akari,
     rewrite,
     route: (page) => pageRoute(rewrite(page)),
     site: {

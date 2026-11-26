@@ -80,14 +80,6 @@ m3e-app-bar {
   --m3e-app-bar-container-color: var(--md-sys-color-surface-container-low);
 }
 
-/* From medium windows up the rail carries the mark, so the title sits closer. */
-@media (min-width: 960px) {
-  m3e-app-bar {
-    --m3e-app-bar-padding-left: 0px;
-    --m3e-app-bar-small-heading-padding-left: 0px;
-  }
-}
-
 /*
  * Edge of the document and footer surfaces. At rest they have none; once the
  * content slides under the app bar a faint outline fades in. The strength is
@@ -146,25 +138,338 @@ m3e-app-bar:not(:defined) {
 /*
  * Until the m3e components register, every component that has not upgraded
  * yet stays hidden. m3e-theme wraps the whole app, so the page shows only
- * the background and then appears in its finished layout in a single frame.
- * If the components never load (no JavaScript, failed request), the content
- * is revealed as plain HTML after a few seconds.
+ * the boot screen (below) and then appears in its finished layout in a
+ * single frame. Nothing is ever revealed half-upgraded: an un-upgraded
+ * `m3e-app-bar` has no shadow styles, so revealing it would be worse than
+ * waiting. A boot that never finishes is covered by the boot screen's
+ * watchdog and retry button, not by revealing the broken page.
  */
 html:not([data-akari-ready]) :not(:defined) {
   visibility: hidden;
-  animation: akari-doc-reveal 0s linear 3s forwards;
 }
 
-@keyframes akari-doc-reveal {
-  to {
-    visibility: visible;
-  }
-}
-
-/* Navigation that only works once upgraded never shows in the fallback. */
+/* Navigation that only works once upgraded never shows before ready. */
 html:not([data-akari-ready]) .akari-desktop-nav,
 html:not([data-akari-ready]) .akari-sidebar-slot {
   display: none;
+}
+
+/*
+ * Boot screen. Plain markup at the end of the body (theme/boot.ts appends it
+ * at build time), so it paints with this stylesheet alone: no JavaScript, no
+ * m3e component, nothing to hydrate. It copies the shell's proportions —
+ * 64px bar, 96px rail, document column — and leaves in the frame the app
+ * arrives.
+ *
+ * Its colors cannot come from the runtime palette: `--md-sys-color-*` only
+ * exists once m3e-theme has upgraded. bootColors.ts derives them from the
+ * site's theme seed while the site is built and appends them to this file as
+ * plain literals, so the first paint is already painted in the theme's color.
+ */
+
+#akari-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--akari-boot-foreground, var(--akari-doc-page-foreground, CanvasText));
+  background: var(--akari-boot-background, var(--akari-doc-page-background, Canvas));
+  pointer-events: none;
+}
+
+/*
+ * Ready: the app is already painted underneath, so fading this layer out is
+ * the hand-off. Visibility flips only after the fade, keeping the skeleton
+ * out of the way for good once it is gone.
+ */
+html[data-akari-ready] #akari-boot {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 260ms cubic-bezier(0.2, 0, 0, 1),
+    visibility 0s linear 260ms;
+}
+
+/* Nothing keeps animating while it fades or after it is gone. */
+html[data-akari-ready] #akari-boot *,
+html[data-akari-ready] #akari-boot *::after {
+  animation-play-state: paused;
+}
+
+.akari-boot__bar {
+  display: flex;
+  flex: none;
+  gap: 16px;
+  align-items: center;
+  height: var(--akari-doc-app-bar-height);
+  padding: 0 24px;
+}
+
+.akari-boot__mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.akari-boot__brand {
+  width: 144px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.akari-boot__spacer {
+  flex: 1;
+}
+
+.akari-boot__pill {
+  width: 56px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.akari-boot__frame {
+  display: grid;
+  flex: 1;
+  grid-template-columns: var(--akari-doc-rail-width) minmax(0, 1fr);
+  width: 100%;
+  max-width: var(--akari-doc-max-width);
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.akari-boot__rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.akari-boot__rail span {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+}
+
+.akari-boot__doc {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: var(--akari-doc-top-space) var(--akari-doc-padding);
+}
+
+.akari-boot__title {
+  width: min(420px, 60%);
+  height: 44px;
+  border-radius: 14px;
+}
+
+.akari-boot__line {
+  width: 100%;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.akari-boot__line--short {
+  width: 68%;
+}
+
+.akari-boot__cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 10px 0;
+}
+
+.akari-boot__cards span {
+  height: 92px;
+  border-radius: 20px;
+}
+
+/*
+ * The blocks wear a tint of the theme's primary color. The sweep is one
+ * pseudo-element moved with `transform`: the compositor animates it without
+ * repainting the block, and the block's own paint is a single solid color.
+ */
+.akari-boot__mark,
+.akari-boot__brand,
+.akari-boot__pill,
+.akari-boot__rail span,
+.akari-boot__title,
+.akari-boot__line,
+.akari-boot__cards span {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--akari-boot-block, color-mix(in srgb, currentColor 8%, transparent));
+}
+
+.akari-boot__mark::after,
+.akari-boot__brand::after,
+.akari-boot__pill::after,
+.akari-boot__rail span::after,
+.akari-boot__title::after,
+.akari-boot__line::after,
+.akari-boot__cards span::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background-image: linear-gradient(
+    100deg,
+    transparent,
+    var(--akari-boot-shine, color-mix(in srgb, currentColor 20%, transparent)) 50%,
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: akari-boot-sweep 1.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes akari-boot-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(350%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .akari-boot__mark::after,
+  .akari-boot__brand::after,
+  .akari-boot__pill::after,
+  .akari-boot__rail span::after,
+  .akari-boot__title::after,
+  .akari-boot__line::after,
+  .akari-boot__cards span::after {
+    display: none;
+  }
+
+  html[data-akari-ready] #akari-boot {
+    transition: none;
+  }
+}
+
+@media (max-width: 959.98px) {
+  .akari-boot__frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .akari-boot__rail {
+    display: none;
+  }
+
+  .akari-boot__doc {
+    padding: var(--akari-doc-top-space) 20px;
+  }
+
+  .akari-boot__cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * Stalled: the watchdog (theme/head.ts) waited its timeout without the app
+ * becoming ready. Freeze the shimmer and offer a reload; the button is the
+ * only interactive thing on an otherwise inert screen.
+ */
+html[data-akari-boot-stalled] #akari-boot *,
+html[data-akari-boot-stalled] #akari-boot *::after {
+  animation-play-state: paused;
+}
+
+html[data-akari-boot-stalled] .akari-boot__mark::after,
+html[data-akari-boot-stalled] .akari-boot__brand::after,
+html[data-akari-boot-stalled] .akari-boot__pill::after,
+html[data-akari-boot-stalled] .akari-boot__rail span::after,
+html[data-akari-boot-stalled] .akari-boot__title::after,
+html[data-akari-boot-stalled] .akari-boot__line::after,
+html[data-akari-boot-stalled] .akari-boot__cards span::after {
+  display: none;
+}
+
+html[data-akari-boot-stalled] .akari-boot__bar,
+html[data-akari-boot-stalled] .akari-boot__frame {
+  opacity: 0.4;
+}
+
+#akari-boot-retry {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  color: var(--akari-boot-foreground);
+  cursor: pointer;
+  background: color-mix(in srgb, var(--akari-boot-foreground) 6%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--akari-boot-foreground) 18%, transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+#akari-boot-retry svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+html[data-akari-boot-stalled] #akari-boot-retry {
+  display: grid;
+}
+
+/*
+ * No JavaScript: the skeleton would shimmer forever, so head.ts hides it and
+ * this leaves one sentence explaining why the page is empty. The noscript
+ * element itself is the flex child, so it is what has to fill the screen.
+ */
+#akari-boot > noscript {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+}
+
+.akari-boot__noscript {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.akari-boot__noscript::after {
+  content: "JavaScript is required to load this site.";
+}
+
+html:lang(zh-CN) .akari-boot__noscript::after {
+  content: "需要启用 JavaScript 才能加载此站点。";
+}
+
+html:lang(ja-JP) .akari-boot__noscript::after {
+  content: "このサイトの表示には JavaScript が必要です。";
+}
+
+html:lang(ko-KR) .akari-boot__noscript::after {
+  content: "이 사이트를 불러오려면 JavaScript가 필요합니다.";
+}
+
+html:lang(fr-FR) .akari-boot__noscript::after {
+  content: "JavaScript est requis pour charger ce site.";
+}
+
+html:lang(ar-SA) .akari-boot__noscript::after {
+  content: "يلزم تمكين JavaScript لتحميل هذا الموقع.";
 }
 
 /*
@@ -303,37 +608,6 @@ html:not([data-akari-ready]) .akari-sidebar-slot {
 
 :root[dir="rtl"] .akari-doc[data-axis="backward"] > .akari-doc__page {
   --akari-doc-axis-shift: 30px;
-}
-
-/*
- * The reader chose a direction the page's language does not run in. The
- * layout follows the choice, but each run of text keeps the order of its own
- * language: under a right-to-left base, the neutral marks at either end of an
- * English paragraph (a full stop, a bracket, a colon) would otherwise land on
- * the opposite end. `plaintext` takes each paragraph's direction from its
- * first strong character; `match-parent` keeps it aligned with the layout
- * rather than with that direction. `unicode-bidi` is not inherited, so the
- * rule takes every element: text sits in plain `div`s, flex items and labels
- * of components as often as in paragraphs. Code keeps one direction for the
- * whole block, as its tokens each carry a span of their own. Zero
- * specificity, so a component's own direction and alignment still win.
- */
-:where(:root[data-akari-dir-override]) :where(body *):not(:where(pre, pre *, code *, svg *)) {
-  unicode-bidi: plaintext;
-  text-align: match-parent;
-}
-
-/*
- * Icons that draw lines of text, ragged on the right, read as a page in the
- * layout's direction. Matching on the attribute needs it in the DOM, so
- * components bind a dynamic icon name with `:name.attr`. In navigation the
- * icon names an entry rather than drawing a page — a category may carry the
- * same glyph, as the command line one does — so it keeps its own direction.
- */
-:root[dir="rtl"]
-  :not(m3e-nav-menu-item, m3e-nav-item, .akari-rail__icon)
-  > m3e-icon[name="article"] {
-  transform: scaleX(-1);
 }
 
 .akari-doc[data-axis].is-leaving,

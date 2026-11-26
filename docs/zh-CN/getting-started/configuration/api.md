@@ -28,6 +28,7 @@ function defineAkariConfig(config: AkariSiteConfig): AkariDirectoryConfig;
 | `head` | `HeadConfig[]` | `[]` | 额外的 `<head>` 标签，与上层合并 |
 | `logo` | `string` | 无 | 顶栏与页尾的品牌图片 |
 | `markdown` | `MarkdownLocaleOptions` | 语言包的 | 这种语言在 Markdown 中的文字，例如代码块复制按钮的提示，会叠在语言包之上 |
+| `images` | `AkariImagesConfig` | 无 | 构建时如何处理站点用到的图片：`webp` 会把构建后页面引用到的所有位图转换成 WebP，并让页面指向它 |
 
 `lang`、`label`、`dir` 与 `markdown` 描述一种语言，写在语言配置中。其余字段都可以写在共用配置中作为默认值，再由语言配置覆写。
 
@@ -107,6 +108,7 @@ function akariContent(
 | `route` | `(page: string) => string` | 源文件路径 → 页面地址，如 `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
 | `rewrite` | `(page: string) => string` | 源文件路径 → VitePress 的服务路径，如 `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | 语言文件夹，根语言在前。`key` 是 VitePress 的语言键（根语言为 `root`），`prefix` 是地址前缀 |
+| `config` | `AkariSiteConfig \| undefined` | 共用配置按 `config.ts` 写下的样子，供构建在任何页面存在之前读取，例如 `images` |
 
 ## akariHead
 

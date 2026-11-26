@@ -20,6 +20,9 @@ function frameImage(
 ): void {
   if (image.closest(`.${FRAME_CLASS}`)) return;
   if (image.closest("button, .akari-image-preview")) return;
+  // Chat examples size their own pictures: the avatar sits in a 34px circle,
+  // where a frame would take its place and shift the image out of centre.
+  if (image.closest(".chat-example")) return;
   // The home page lays its own pictures out: a frame would take the place
   // of a flex item and pull the brand logo out of centre.
   if (image.closest(".akari-home")) return;

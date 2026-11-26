@@ -28,6 +28,7 @@ Les deux niveaux de fichiers de configuration exportent leur configuration avec 
 | `head` | `HeadConfig[]` | `[]` | Balises `<head>` supplémentaires, fusionnées avec le niveau supérieur |
 | `logo` | `string` | Aucun | Image de marque dans la barre d'application et le pied de page |
 | `markdown` | `MarkdownLocaleOptions` | Celui du pack de langue | Les textes de la langue dans le Markdown, comme l'info-bulle du bouton de copie des blocs de code, appliqués par-dessus ceux du pack de langue |
+| `images` | `AkariImagesConfig` | Aucune | Ce qu'un build fait des images du site : `webp` convertit chaque image matricielle pointée par les pages construites et fait pointer les pages vers le fichier WebP |
 
 `lang`, `label`, `dir` et `markdown` décrivent une langue et vont dans la configuration de langue. Tous les autres champs peuvent aller dans la configuration partagée comme valeur par défaut, et une configuration de langue peut les remplacer.
 
@@ -107,6 +108,7 @@ Lit les fichiers de configuration et les dossiers de `srcDir`. `logger` vaut `co
 | `route` | `(page: string) => string` | Chemin du fichier source → chemin de la page, par exemple `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
 | `rewrite` | `(page: string) => string` | Chemin du fichier source → chemin servi par VitePress, par exemple `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | Dossiers de langue, langue racine en premier. `key` est la clé de locale VitePress (`root` pour la langue racine) ; `prefix` est le préfixe des chemins |
+| `config` | `AkariSiteConfig \| undefined` | La configuration partagée telle que l'écrit `config.ts`, pour ce que le build lit avant qu'une page n'existe, comme `images` |
 
 ## akariHead
 

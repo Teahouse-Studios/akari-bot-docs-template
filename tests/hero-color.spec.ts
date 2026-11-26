@@ -162,6 +162,28 @@ describe("imageMetaKey", () => {
       "https://example.com/a.png?v=2",
     );
   });
+
+  // The WebP pass swaps a file's encoding after the map was written: the key
+  // names the picture, so both encodings have to resolve to the same entry.
+  it("files a picture under one key whatever its encoding", () => {
+    expect(imageMetaKey("/hero/shot.webp", "zh-CN/a.md")).toBe(
+      imageMetaKey("/hero/shot.png", "zh-CN/a.md"),
+    );
+    expect(imageMetaKey("/hero/shot.webp?v=2", "zh-CN/a.md")).toBe(
+      "/hero/shot",
+    );
+    expect(imageMetaKey("./shot.jpg", "zh-CN/a.md")).toBe(
+      "zh-CN/a.md::./shot",
+    );
+    // An SVG is a picture of its own, not another encoding of a bitmap.
+    expect(imageMetaKey("/hero/light.svg", "zh-CN/a.md")).toBe(
+      "/hero/light.svg",
+    );
+    // Remote addresses are served as they are, so they keep their encoding.
+    expect(imageMetaKey("https://example.com/a.webp", "zh-CN/a.md")).toBe(
+      "https://example.com/a.webp",
+    );
+  });
 });
 
 describe("lookupImageMeta", () => {

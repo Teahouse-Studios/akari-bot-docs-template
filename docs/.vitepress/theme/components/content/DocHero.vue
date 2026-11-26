@@ -486,10 +486,16 @@ onContentUpdated(drawTexture);
   object-fit: contain;
 }
 
-/* Narrow: the cards stack, title first, the image at a wide aspect. */
+/* Narrow: the cards stack, title first, and share one height. */
 @media (max-width: 839.98px) {
+  /*
+   * Stacked, the pair stays one size: both rows take the taller card's
+   * height. The image card must not fix its own aspect here, or it would
+   * keep a height of its own and the two cards would drift apart.
+   */
   .akari-doc-hero {
     grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: 1fr;
     margin-block-end: 32px;
   }
 
@@ -498,7 +504,7 @@ onContentUpdated(drawTexture);
   }
 
   .akari-doc-hero__media {
-    aspect-ratio: 16 / 10;
+    aspect-ratio: auto;
   }
 }
 .akari-doc-hero__fluid {

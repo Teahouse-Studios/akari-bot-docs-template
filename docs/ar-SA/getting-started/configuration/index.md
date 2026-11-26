@@ -56,6 +56,7 @@ export default defineAkariConfig({
   },
   settings: { storageKey: "akari-docs-settings" },
   search: { maxResults: 8 },
+  images: { webp: true },
   footer: { copyright: "Vitepress Theme Akari Docs" },
 });
 ```
@@ -94,6 +95,7 @@ export default defineAkariConfig({
 | توقف البحث أو تربط خدمة بحث | التهيئة المشتركة | `search` |
 | تغيّر رسالة التذييل وحقوق النشر | تهيئة اللغة / التهيئة المشتركة | `footer.message`، `footer.copyright` |
 | تعيد كتابة نصوص الواجهة | تهيئة اللغة | `messages` |
+| تحويل صور الموقع إلى WebP | التهيئة المشتركة | `images.webp` |
 | تضيف لغة | مجلد لغة جديد | راجع [التدويل](/ar-SA/theme/i18n) |
 
 لمعرفة نوع كل حقل وقيمته الافتراضية، راجع [API](/ar-SA/getting-started/configuration/api). ولمعرفة كيف تتراكب التهيئة وكيف تُولَّد اللغات والتنقل، راجع [التفاصيل](/ar-SA/getting-started/configuration/details).

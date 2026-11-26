@@ -56,6 +56,7 @@ export default defineAkariConfig({
   },
   settings: { storageKey: "akari-docs-settings" },
   search: { maxResults: 8 },
+  images: { webp: true },
   footer: { copyright: "Vitepress Theme Akari Docs" },
 });
 ```
@@ -94,6 +95,7 @@ export default defineAkariConfig({
 | Désactiver la recherche ou brancher un backend de recherche | Configuration partagée | `search` |
 | Changer le message et le copyright du pied de page | Configuration de langue / configuration partagée | `footer.message`, `footer.copyright` |
 | Réécrire les textes de l'interface | Configuration de langue | `messages` |
+| Convertir les images du site en WebP | Configuration partagée | `images.webp` |
 | Ajouter une langue | Un nouveau dossier de langue | Voir [Internationalisation](/fr-FR/theme/i18n) |
 
 Pour le type et la valeur par défaut de chaque champ, voir [API](/fr-FR/getting-started/configuration/api). Pour la façon dont les configurations se superposent et dont les langues et la navigation sont générées, voir [Détails](/fr-FR/getting-started/configuration/details).

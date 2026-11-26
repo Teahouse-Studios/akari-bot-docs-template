@@ -41,6 +41,10 @@ export default defineAkariConfig({
     enabled: true,
     maxDepth: 3,
   },
+  images: {
+    // Every raster image the built pages use becomes a WebP copy of itself.
+    webp: true,
+  },
   footer: {
     copyright: "Vitepress Theme Akari Docs",
   },

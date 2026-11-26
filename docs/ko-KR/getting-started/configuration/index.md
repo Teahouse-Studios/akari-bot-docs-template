@@ -56,6 +56,7 @@ export default defineAkariConfig({
   },
   settings: { storageKey: "akari-docs-settings" },
   search: { maxResults: 8 },
+  images: { webp: true },
   footer: { copyright: "Vitepress Theme Akari Docs" },
 });
 ```
@@ -94,6 +95,7 @@ export default defineAkariConfig({
 | 검색 끄기 또는 검색 백엔드 연결 | 공통 구성 | `search` |
 | 푸터 메시지와 저작권 표시 변경 | 언어 구성 / 공통 구성 | `footer.message`, `footer.copyright` |
 | 인터페이스 텍스트 수정 | 언어 구성 | `messages` |
+| 사이트가 쓰는 이미지를 WebP로 변환 | 공통 구성 | `images.webp` |
 | 언어 추가 | 새 언어 폴더 | [국제화](/ko-KR/theme/i18n) 참고 |
 
 모든 필드의 타입과 기본값은 [API](/ko-KR/getting-started/configuration/api)를 참고하세요. 구성이 겹쳐지는 방식과 언어, 내비게이션이 생성되는 방식은 [세부 사항](/ko-KR/getting-started/configuration/details)을 참고하세요.

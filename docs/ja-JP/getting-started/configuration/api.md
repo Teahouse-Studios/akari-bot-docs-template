@@ -28,6 +28,7 @@ function defineAkariConfig(config: AkariSiteConfig): AkariDirectoryConfig;
 | `head` | `HeadConfig[]` | `[]` | 追加の `<head>` タグ。上のレベルとマージされます |
 | `logo` | `string` | なし | アプリバーとフッターに表示するブランド画像 |
 | `markdown` | `MarkdownLocaleOptions` | 言語パックの値 | Markdown 内のその言語のテキスト。コードブロックのコピーボタンのツールチップなど。言語パックの値の上に重ねられます |
+| `images` | `AkariImagesConfig` | なし | ビルドがサイトの使う画像をどう扱うか。`webp` はビルド後のページが参照するすべてのラスター画像を WebP に変換し、ページの参照先もそちらにします |
 
 `lang`、`label`、`dir`、`markdown` は言語を表すもので、言語設定に書きます。それ以外のフィールドはすべて、デフォルトとして共通設定に書くことができ、言語設定で上書きできます。
 
@@ -107,6 +108,7 @@ function akariContent(
 | `route` | `(page: string) => string` | ソースファイルのパス → ページのパス。たとえば `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
 | `rewrite` | `(page: string) => string` | ソースファイルのパス → VitePress の配信パス。たとえば `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | 言語フォルダー。ルート言語が先頭です。`key` は VitePress のロケールキー（ルート言語は `root`）、`prefix` はパスの接頭辞です |
+| `config` | `AkariSiteConfig \| undefined` | 共有設定を `config.ts` に書いたままの形。ページが存在する前にビルドが読むもの（`images` など）に使います |
 
 ## akariHead
 

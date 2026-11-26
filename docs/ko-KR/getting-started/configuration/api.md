@@ -28,6 +28,7 @@ function defineAkariConfig(config: AkariSiteConfig): AkariDirectoryConfig;
 | `head` | `HeadConfig[]` | `[]` | 추가 `<head>` 태그. 상위 단계와 병합됩니다 |
 | `logo` | `string` | 없음 | 앱 바와 푸터의 브랜드 이미지 |
 | `markdown` | `MarkdownLocaleOptions` | 언어 팩의 값 | Markdown에서 쓰이는 해당 언어의 텍스트. 코드 블록 복사 버튼의 툴팁 등이며, 언어 팩의 값 위에 겹쳐집니다 |
+| `images` | `AkariImagesConfig` | 없음 | 빌드가 사이트에서 쓰는 이미지를 어떻게 다룰지. `webp` 는 빌드된 페이지가 참조하는 모든 래스터 이미지를 WebP 로 바꾸고, 페이지도 그쪽을 가리키게 합니다 |
 
 `lang`, `label`, `dir`, `markdown`은 언어를 설명하는 필드이므로 언어 구성에 둡니다. 나머지 필드는 모두 공통 구성에 기본값으로 둘 수 있으며, 언어 구성에서 재정의할 수 있습니다.
 
@@ -107,6 +108,7 @@ function akariContent(
 | `route` | `(page: string) => string` | 소스 파일 경로 → 페이지 경로. 예: `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
 | `rewrite` | `(page: string) => string` | 소스 파일 경로 → VitePress 제공 경로. 예: `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | 언어 폴더 목록. 루트 언어가 먼저 옵니다. `key`는 VitePress 로캘 키(루트 언어는 `root`)이고, `prefix`는 경로 접두사입니다 |
+| `config` | `AkariSiteConfig \| undefined` | 공유 구성을 `config.ts` 에 쓴 그대로. 페이지가 생기기 전에 빌드가 읽는 값(`images` 등)에 씁니다 |
 
 ## akariHead
 

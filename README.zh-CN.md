@@ -35,6 +35,10 @@ npm run preview
 
 生产输出位于 `docs/.vitepress/dist`。
 
+在 `docs/config.ts` 里写 `images.webp: true`，构建时就会把页面实际引用到的
+位图转换成 WebP 并改写这些引用（通常小 60–80%）。该功能默认关闭，且只影响构建：
+开发服务器照旧直接使用原始图片。
+
 ## 配置文档
 
 有关本主题的更多配置文档，请见[这里](https://vitepress-theme-akari-docs.vercel.app/zh-CN/)。

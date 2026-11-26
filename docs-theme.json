@@ -30,6 +30,10 @@
     "markdown_module": "markdown.ts",
     "vite_module": "vite.ts",
     "vite_export": "akariVitePlugins",
+    "hooks_module": "vite.ts",
+    "boot_export": "akariTransformHtml",
+    "build_export": "akariBuildEnd",
+    "postcss_export": "akariBootStylePlugins",
     "markdown_export": "akariMarkdown",
     "theme_config_key": "akari",
     "search": {

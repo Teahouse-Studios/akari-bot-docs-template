@@ -8,6 +8,12 @@ export const HERO_COLOR_SAMPLE_SIZE = 128;
 
 const APP_ABSOLUTE = /^\/(?!\/)/;
 const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+/**
+ * The encodings the build may swap for one another, see media-webp.ts. A key
+ * names the picture, not the file: when a PNG is served as a WebP, the image
+ * in the page and the map the build wrote must still agree on its key.
+ */
+const ENCODING = /\.(?:bmp|jpe?g|png|tiff?|webp)([?#].*)?$/i;
 
 /** What the build knows about one image: its color and its intrinsic size. */
 export interface ImageMeta {
@@ -19,13 +25,19 @@ export interface ImageMeta {
 /**
  * The cache key of a hero image. Absolute paths and external addresses are
  * the same on every page; a relative path means the file beside the page,
- * so two pages can each have their own `./hero.png`.
+ * so two pages can each have their own `./hero.png`. The encoding is left
+ * out of the key, so a picture found as `/hero/shot.png` is still found
+ * when the build serves it as `/hero/shot.webp`.
  */
 export function heroColorKey(src: string, filePath?: string): string {
-  if (APP_ABSOLUTE.test(src) || SCHEME.test(src) || src.startsWith("//")) {
+  if (SCHEME.test(src) || src.startsWith("//")) {
     return src;
   }
-  return `${filePath ?? ""}::${src}`;
+  const clean = src.replace(ENCODING, "$1");
+  if (APP_ABSOLUTE.test(clean)) {
+    return clean;
+  }
+  return `${filePath ?? ""}::${clean}`;
 }
 
 /**

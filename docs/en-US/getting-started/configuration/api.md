@@ -28,6 +28,7 @@ Both levels of config file export their config with it. VitePress fields stay as
 | `head` | `HeadConfig[]` | `[]` | Extra `<head>` tags, merged with the level above |
 | `logo` | `string` | None | Brand image in the app bar and the footer |
 | `markdown` | `MarkdownLocaleOptions` | The language pack's | The language's text in Markdown, such as the tooltip of the code block copy button, laid over the language pack's |
+| `images` | `AkariImagesConfig` | None | What a build does with the images the site uses: `webp` converts every raster image the built pages point at, and points the pages at the WebP file |
 
 `lang`, `label`, `dir` and `markdown` describe a language and go in the language config. Every other field can go in the shared config as a default, and a language config can override it.
 
@@ -107,6 +108,7 @@ Reads the config files and folders in `srcDir`. `logger` defaults to `console` a
 | `route` | `(page: string) => string` | Source file path → page path, such as `zh-CN/theme/layout/index.md` → `/zh-CN/theme/layout` |
 | `rewrite` | `(page: string) => string` | Source file path → VitePress serving path, such as `zh-CN/theme/layout/index.md` → `theme/layout.md` |
 | `languages` | `{ folder, key, prefix }[]` | Language folders, root language first. `key` is the VitePress locale key (`root` for the root language); `prefix` is the path prefix |
+| `config` | `AkariSiteConfig \| undefined` | The shared config as `config.ts` writes it, for what a build reads before any page exists, such as `images` |
 
 ## akariHead
 
