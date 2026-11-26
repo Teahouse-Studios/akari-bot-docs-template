@@ -1798,8 +1798,10 @@ const TOKEN_NAMES = [
   "on-surface",
 ] as const;
 
-/** Frames are capped here: the flow reads the same at 30 as at 60. */
-const FRAME_INTERVAL = 1000 / 30;
+/** The shader draws once per display frame: it reads the clock, it does not step. */
+const FRAME_INTERVAL = 1000 / 60;
+/** The vine is a whole scene of its own and keeps the cadence it was tuned at. */
+const VINE_FRAME_INTERVAL = 1000 / 30;
 /** Let the page settle for a moment before the garden fades in on first load. */
 const VINE_READY_DELAY = 600;
 const LIGHT_POSITIONS = { start: 0.2, center: 0.5, end: 0.82 } as const;
@@ -1814,6 +1816,8 @@ let locations = new Map<UniformName, WebGLUniformLocation | null>();
 let palette: FluidPalette = fluidPalette(FLUID_FALLBACK_TOKENS.light, "light");
 let frame = 0;
 let drawnAt = 0;
+/** When the next draw is due; sharing the leftover keeps the cadence honest. */
+let dueAt = 0;
 let elapsed = 0; /* seconds */
 let vineReadyTimer = 0;
 let rippleReadyTimer = 0;
@@ -2187,7 +2191,7 @@ function uploadPresses(): void {
   if (total) context.uniform1i(total, count);
 }
 
-function draw(): void {
+function draw(now = performance.now()): void {
   if (!context || !program || !sized) return;
   pointer.x += (pointer.targetX - pointer.x) * 0.14;
   pointer.y += (pointer.targetY - pointer.y) * 0.14;
@@ -2246,8 +2250,9 @@ function draw(): void {
   updateTexturePressGlow();
   updateVinePresses();
   context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
-  vineScene?.render(elapsed);
-  vinePopOutsideScene?.render(elapsed);
+  // A repaint outside the loop still has to show the vine; the loop advances it
+  // separately so the wall can run twice as often without doubling the scene.
+  if (!frame) renderVine(now);
   if (!vineReady.value && vineScene && pageReady && vineReadyTimer === 0) {
     vineReadyTimer = window.setTimeout(() => {
       vineReady.value = true;
@@ -2264,23 +2269,44 @@ function draw(): void {
   }
 }
 
+/** The next moment the vine may advance; the budget carries over between frames. */
+let vineDueAt = 0;
+
+function renderVine(now: number): void {
+  if (!vineScene && !vinePopOutsideScene) return;
+  if (vineDueAt && now + 1 < vineDueAt) return;
+  vineDueAt += VINE_FRAME_INTERVAL;
+  // A stalled tab must not earn a burst of catch-up frames.
+  if (vineDueAt < now) vineDueAt = now + VINE_FRAME_INTERVAL;
+  vineScene?.render(elapsed);
+  vinePopOutsideScene?.render(elapsed);
+}
+
 function tick(now: number): void {
   frame = requestAnimationFrame(tick);
-  if (drawnAt && now - drawnAt < FRAME_INTERVAL - 1) return;
+  // The budget carries over, so a 90 Hz display gets 60 Hz here instead of the
+  // 45 Hz a fixed threshold would settle on (it would only ever draw every
+  // other frame).
+  if (dueAt && now + 1 < dueAt) return;
   const delta = drawnAt ? Math.min(now - drawnAt, 100) : FRAME_INTERVAL;
   drawnAt = now;
+  dueAt += FRAME_INTERVAL;
+  if (dueAt < now) dueAt = now + FRAME_INTERVAL;
   elapsed += (delta / 1000) * spec.value.speed;
   if (rippleReady.value) {
     if (rippleRampStart < 0) rippleRampStart = elapsed;
     rippleGain.value = Math.min(1, (elapsed - rippleRampStart) / 1.2);
   }
   syncVinePopPortal();
-  draw();
+  draw(now);
+  renderVine(now);
 }
 
 function start(): void {
   if (frame || reduced || !context || !onScreen || document.hidden || !sized) return;
   drawnAt = 0;
+  dueAt = 0;
+  vineDueAt = 0;
   frame = requestAnimationFrame(tick);
 }
 
@@ -2288,6 +2314,8 @@ function stop(): void {
   if (frame) cancelAnimationFrame(frame);
   frame = 0;
   drawnAt = 0;
+  dueAt = 0;
+  vineDueAt = 0;
 }
 
 function onPointerMove(event: PointerEvent): void {
