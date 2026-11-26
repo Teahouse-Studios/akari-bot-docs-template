@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitepress";
 import { akariContent } from "./content";
+import { akariMediaColors } from "./theme/media-colors";
 import { akariHead } from "./theme/head";
 import { akariMarkdown } from "./theme/markdown";
 
@@ -31,6 +32,15 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [content.plugin],
+    plugins: [
+      content.plugin,
+      // Image colors and sizes are sampled while the site is built, for
+      // the light and the dark hero image alike, and cached between builds.
+      akariMediaColors({
+        srcDir: docsDir,
+        publicDir: fileURLToPath(new URL("../public", import.meta.url)),
+        cacheFile: fileURLToPath(new URL("./cache/media-colors.json", import.meta.url)),
+      }),
+    ],
   },
 });

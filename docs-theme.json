@@ -15,7 +15,9 @@
     "minisearch": "^7.2.0",
     "markdown-it-image-size": "^16.0.2",
     "markdown-it": "^14.1.0",
-    "three": "^0.187.0"
+    "three": "^0.187.0",
+    "sharp": "^0.35.5",
+    "gray-matter": "^4.0.3"
   },
   "config": {
     "appearance": false,
@@ -26,6 +28,8 @@
     "head_module": "head.ts",
     "head_export": "akariHead",
     "markdown_module": "markdown.ts",
+    "vite_module": "vite.ts",
+    "vite_export": "akariVitePlugins",
     "markdown_export": "akariMarkdown",
     "theme_config_key": "akari",
     "search": {

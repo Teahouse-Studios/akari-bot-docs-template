@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import type { ResolvedHero } from "../docs/.vitepress/theme/hero";
 import { sourceColorFromPixels } from "../docs/.vitepress/theme/heroColor";
+import {
+  heroColorKey,
+  imageMetaKey,
+  lookupImageMeta,
+  resolveHeroColor,
+} from "../docs/.vitepress/theme/heroColorCache";
 
 function image(...colors: Array<[number, number, number, number?]>) {
   return colors.flatMap(([r, g, b, a = 255]) => [r, g, b, a]);
@@ -49,5 +56,126 @@ describe("sourceColorFromPixels", () => {
       ),
     ).toBeNull();
     expect(sourceColorFromPixels([])).toBeNull();
+  });
+});
+
+function hero(overrides: Partial<ResolvedHero> = {}): ResolvedHero {
+  return {
+    src: "/hero/light.svg",
+    darkSrc: undefined,
+    alt: "",
+    date: undefined,
+    tagline: undefined,
+    background: undefined,
+    fit: "cover",
+    color: "auto",
+    pattern: "auto",
+    ...overrides,
+  };
+}
+
+describe("heroColorKey", () => {
+  it("keys site-absolute and remote images by themselves", () => {
+    expect(heroColorKey("/hero/light.svg", "zh-CN/index.md")).toBe(
+      "/hero/light.svg",
+    );
+    expect(heroColorKey("https://example.com/a.png", "zh-CN/index.md")).toBe(
+      "https://example.com/a.png",
+    );
+    expect(heroColorKey("//cdn.example.com/a.png")).toBe(
+      "//cdn.example.com/a.png",
+    );
+  });
+
+  it("keys a relative image by the page it sits beside", () => {
+    expect(heroColorKey("./light.svg", "zh-CN/theme/hero/index.md")).toBe(
+      "zh-CN/theme/hero/index.md::./light.svg",
+    );
+  });
+});
+
+describe("resolveHeroColor", () => {
+  const colors = {
+    "/hero/light.svg": "#006a6a",
+    "/hero/dark.svg": "#4cdada",
+  };
+
+  it("keeps a fixed color and honors color: false", () => {
+    expect(
+      resolveHeroColor(hero({ color: "#3367d6" }), "light", colors),
+    ).toBe("#3367d6");
+    expect(resolveHeroColor(hero({ color: false }), "light", colors)).toBeNull();
+  });
+
+  it("uses the color of the image the scheme shows", () => {
+    expect(resolveHeroColor(hero(), "light", colors)).toBe("#006a6a");
+    expect(
+      resolveHeroColor(hero({ darkSrc: "/hero/dark.svg" }), "dark", colors),
+    ).toBe("#4cdada");
+    expect(resolveHeroColor(hero(), "dark", colors)).toBe("#006a6a");
+  });
+
+  it("looks up a relative image beside its page", () => {
+    expect(
+      resolveHeroColor(
+        hero({ src: "./light.svg" }),
+        "light",
+        { "zh-CN/a.md::./light.svg": "#3367d6" },
+        "zh-CN/a.md",
+      ),
+    ).toBe("#3367d6");
+  });
+
+  it("keeps the reader's color when nothing was sampled", () => {
+    expect(resolveHeroColor(null, "light", colors)).toBeNull();
+    expect(resolveHeroColor(hero({ src: "/hero/none.svg" }), "light", colors)).toBeNull();
+  });
+});
+
+describe("imageMetaKey", () => {
+  it("strips the site base before resolving a public image", () => {
+    expect(imageMetaKey("/docs/hero/light.svg", "zh-CN/index.md", "/docs/")).toBe(
+      "/hero/light.svg",
+    );
+    expect(imageMetaKey("/hero/light.svg", "zh-CN/index.md", "/")).toBe(
+      "/hero/light.svg",
+    );
+  });
+
+  it("keeps remote and page-relative images distinct", () => {
+    expect(imageMetaKey("https://example.com/a.png", "zh-CN/index.md")).toBe(
+      "https://example.com/a.png",
+    );
+    expect(imageMetaKey("./light.svg", "zh-CN/theme/hero/index.md")).toBe(
+      "zh-CN/theme/hero/index.md::./light.svg",
+    );
+  });
+
+  it("ignores cache-busting queries on local images but not remote ones", () => {
+    expect(imageMetaKey("/docs/hero/light.svg?v=2", "zh-CN/index.md", "/docs/")).toBe(
+      "/hero/light.svg",
+    );
+    expect(imageMetaKey("./light.svg?v=2", "zh-CN/a.md")).toBe(
+      "zh-CN/a.md::./light.svg",
+    );
+    expect(imageMetaKey("https://example.com/a.png?v=2", "zh-CN/a.md")).toBe(
+      "https://example.com/a.png?v=2",
+    );
+  });
+});
+
+describe("lookupImageMeta", () => {
+  const images = {
+    "/hero/light.svg": { color: "#006a6a", width: 1200, height: 860 },
+  };
+
+  it("finds the build-time color and size of an image", () => {
+    expect(lookupImageMeta(images, "/docs/hero/light.svg", undefined, "/docs/")).toEqual(
+      images["/hero/light.svg"],
+    );
+    expect(lookupImageMeta(images, "/docs/hero/light.svg?v=2", undefined, "/docs/")).toEqual(
+      images["/hero/light.svg"],
+    );
+    expect(lookupImageMeta(images, "/hero/missing.svg")).toBeNull();
   });
 });

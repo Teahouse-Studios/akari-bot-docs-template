@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from "vue";
+import { useData } from "vitepress";
+import imageColors from "virtual:akari-image-colors";
 
 import { useAkariI18n } from "../../composables/useI18n";
+import { lookupImageMeta } from "../../heroColorCache";
 import { prefersReducedMotion } from "../../search/animation";
 import {
   IMAGE_PREVIEW_ZOOM_STEP,
@@ -34,6 +37,7 @@ const props = withDefaults(defineProps<Props>(), { alt: "", label: "", open: nul
 const emit = defineEmits<{ "update:open": [value: boolean] }>();
 
 const { t } = useAkariI18n();
+const { page, site } = useData();
 
 const mounted = ref(false);
 const visible = ref(false);
@@ -48,11 +52,36 @@ const imageSize = ref({ width: 0, height: 0 });
 const fluidWidth = ref<string | null>(null);
 const ready = ref(false);
 const leaving = ref(false);
+// The thumbnail and the enlarged picture load independently: each gets its
+// own indicator rather than leaving an empty frame on screen.
+const thumbLoaded = ref(false);
+const pictureLoaded = ref(false);
+
+// The build sampled each image's size and dominant color (see media-colors),
+// so the places that wait for a picture can take its shape and its color
+// instead of showing a generic hole.
+const imageMeta = computed(() =>
+  lookupImageMeta(imageColors, props.src, page.value.filePath, site.value.base),
+);
+const overlayStyle = computed(() =>
+  imageMeta.value?.color
+    ? { "--akari-media-color": imageMeta.value.color }
+    : undefined,
+);
+const frameStyle = computed(() => {
+  if (pictureLoaded.value) return undefined;
+  const meta = imageMeta.value;
+  return meta?.width && meta.height
+    ? { aspectRatio: `${meta.width} / ${meta.height}` }
+    : undefined;
+});
 
 const SCRIM_IN: KeyframeAnimationOptions = { duration: 350, easing: "cubic-bezier(0.05, 0.7, 0.1, 1)", fill: "forwards" };
 const SCRIM_OUT: KeyframeAnimationOptions = { duration: 300, easing: "linear", fill: "forwards" };
 const SCRIM_QUICK: KeyframeAnimationOptions = { duration: 160, easing: "linear", fill: "forwards" };
+const slots = useSlots();
 const dialog = ref<HTMLElement | null>(null);
+const thumb = ref<HTMLImageElement | null>(null);
 const frame = ref<HTMLElement | null>(null);
 const picture = ref<HTMLImageElement | null>(null);
 
@@ -310,8 +339,11 @@ async function openFrom(trigger: HTMLElement | null): Promise<void> {
   lastTrigger = trigger;
   resetView();
   ready.value = false;
+  pictureLoaded.value = false;
   visible.value = true;
   await nextTick();
+  // A cached picture is complete before its load event can fire.
+  if (picture.value?.complete) pictureLoaded.value = true;
   await settleLayout();
   await waitForBox(frame.value);
   await animateOpen(lastTrigger);
@@ -428,6 +460,7 @@ async function close(): Promise<void> {
 
 function onImageLoad(event: Event): void {
   const image = event.currentTarget as HTMLImageElement;
+  pictureLoaded.value = true;
   const { naturalWidth, naturalHeight } = image;
   imageSize.value = { width: naturalWidth, height: naturalHeight };
   if (image.getBoundingClientRect().width > 0) {
@@ -454,8 +487,22 @@ watch(visible, async (value, previous) => {
 
 onMounted(() => {
   mounted.value = true;
+  // A slot draws its own thumbnail, which this component cannot watch; it
+  // also covers the case of a picture already in the cache.
+  if (slots.default || !thumb.value || thumb.value.complete) {
+    thumbLoaded.value = true;
+  }
   document.addEventListener("keydown", onKeydown);
 });
+
+// A new picture starts loading again, thumbnail and enlargement alike.
+watch(
+  () => props.src,
+  () => {
+    thumbLoaded.value = false;
+    pictureLoaded.value = false;
+  },
+);
 
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", onKeydown);
@@ -473,17 +520,29 @@ onBeforeUnmount(() => {
       class="akari-image-preview__trigger"
       :aria-label="triggerLabel"
       :title="triggerLabel"
+      :data-state="thumbLoaded ? 'loaded' : 'loading'"
       @click="onTriggerClick"
     >
       <slot>
         <img
+          ref="thumb"
           class="akari-image-preview__thumb"
           :src="props.src"
           :alt="props.alt"
           loading="lazy"
           decoding="async"
+          @load="thumbLoaded = true"
+          @error="thumbLoaded = true"
         />
       </slot>
+      <span
+        v-if="!thumbLoaded"
+        class="akari-image-preview__thumb-loading"
+        :style="overlayStyle"
+        aria-hidden="true"
+      >
+        <m3e-loading-indicator></m3e-loading-indicator>
+      </span>
       <span class="akari-image-preview__hint" aria-hidden="true">
         <m3e-icon name="zoom_in"></m3e-icon>
       </span>
@@ -499,6 +558,7 @@ onBeforeUnmount(() => {
         class="akari-image-preview__overlay"
         style="opacity: 0"
         :data-leaving="leaving || undefined"
+        :style="overlayStyle"
         role="dialog"
         aria-modal="true"
         :aria-label="dialogLabel"
@@ -507,10 +567,18 @@ onBeforeUnmount(() => {
         @touchmove.prevent
       >
         <div class="akari-image-preview__stage" @click="onStageClick" @wheel.prevent="onWheel">
+          <span
+            v-if="!pictureLoaded && !leaving"
+            class="akari-image-preview__loading"
+            aria-hidden="true"
+          >
+            <m3e-loading-indicator></m3e-loading-indicator>
+          </span>
           <div
             ref="frame"
             class="akari-image-preview__frame"
             :class="{ 'akari-image-preview__frame--waiting': !ready }"
+            :style="frameStyle"
           >
             <img
                 ref="picture"
@@ -520,6 +588,7 @@ onBeforeUnmount(() => {
                 :style="imageStyle"
                 draggable="false"
                 @load="onImageLoad"
+                @error="pictureLoaded = true"
                 @click.stop
                 @dblclick="resetView"
                 @pointerdown="onPointerDown"
@@ -616,6 +685,47 @@ onBeforeUnmount(() => {
   display: block;
   max-inline-size: 100%;
   border-radius: inherit;
+}
+
+/* A thumbnail without an intrinsic size yet is 0×0; give the loading ball a
+   box to sit in until the picture brings its own. */
+.akari-image-preview__trigger[data-state="loading"] {
+  min-inline-size: 56px;
+  min-block-size: 56px;
+}
+
+.akari-image-preview__thumb-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background-color: var(--md-sys-color-surface-container-high);
+  pointer-events: none;
+}
+
+.akari-image-preview__thumb-loading :deep(m3e-loading-indicator) {
+  --m3e-loading-indicator-container-size: 32px;
+}
+
+/* The enlarged picture keeps the stage's centre while it arrives; the ball
+   sits there instead of an empty scrim. */
+.akari-image-preview__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.akari-image-preview__loading :deep(m3e-loading-indicator) {
+  --m3e-loading-indicator-container-size: 48px;
+}
+
+@media (forced-colors: active) {
+  .akari-image-preview__thumb-loading {
+    background-color: Canvas;
+  }
 }
 
 .akari-image-preview__hint {

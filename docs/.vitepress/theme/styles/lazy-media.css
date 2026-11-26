@@ -1,0 +1,140 @@
+/*
+ * The frame an article image loads in: a centered Material loading indicator
+ * covers the image until it arrives. The frame is only as wide as its
+ * picture, so the indicator sits in the middle of the image rather than of
+ * the column. Images that arrive quickly never flash it: the overlay eases
+ * in only if the wait outlasts a few frames.
+ */
+.akari-lazy-media {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-block: 16px 24px;
+  line-height: 0;
+}
+
+.akari-lazy-media > img,
+.akari-lazy-media > picture {
+  display: block;
+  max-width: 100%;
+  margin-block: 0;
+}
+
+.akari-lazy-media > picture > img {
+  margin-block: 0;
+}
+
+/* A figure owns the space around its image, so the frame brings none. */
+.akari-prose figure .akari-lazy-media {
+  margin-block: 0;
+}
+
+/* The thumbnail's margin belongs to the button's box, not between the
+   picture and its loading frame. */
+.akari-prose .akari-image-preview__trigger img {
+  margin-block: 0;
+}
+
+/*
+ * The scrim takes a little of the picture's own color, and the ball takes
+ * more of it, mixed with the surface to stay legible on any shade. Both
+ * variables are set from the build-time metadata when the image is framed;
+ * the primary color is the fallback for images the build could not read.
+ */
+.akari-lazy-media__overlay,
+.akari-doc-hero__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background-color: color-mix(
+    in srgb,
+    var(--akari-media-color, var(--md-sys-color-primary)) 16%,
+    var(--md-sys-color-surface-container-high)
+  );
+  pointer-events: none;
+}
+
+.akari-lazy-media__overlay {
+  border-radius: 16px;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short-3, 150ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) 120ms;
+}
+
+.akari-lazy-media[data-state="loading"] .akari-lazy-media__overlay {
+  opacity: 1;
+}
+
+.akari-lazy-media[data-state="loaded"] .akari-lazy-media__overlay {
+  opacity: 0;
+  transition-duration: var(--md-sys-motion-duration-short-4, 200ms);
+  transition-timing-function: var(
+    --md-sys-motion-easing-emphasized-accelerate,
+    cubic-bezier(0.3, 0, 0.8, 0.15)
+  );
+  transition-delay: 0ms;
+}
+
+.akari-doc-hero__loading {
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* With `contain`, the picture sits inside the card's padding. */
+.akari-doc-hero__media[data-fit="contain"] .akari-doc-hero__loading {
+  inset: clamp(16px, 3cqi, 40px);
+}
+
+.akari-lazy-media m3e-loading-indicator,
+.akari-doc-hero__loading m3e-loading-indicator {
+  --m3e-loading-indicator-container-size: 40px;
+  --m3e-loading-indicator-active-indicator-color: color-mix(
+    in srgb,
+    var(--akari-media-color, var(--md-sys-color-primary)) 72%,
+    var(--md-sys-color-on-surface)
+  );
+  color: color-mix(
+    in srgb,
+    var(--akari-media-color, var(--md-sys-color-primary)) 72%,
+    var(--md-sys-color-on-surface)
+  );
+}
+
+/* Vue leaves use the same MD3 motion as the article's loaded state. */
+.akari-media-fade-leave-active {
+  transition: opacity var(--md-sys-motion-duration-short-4, 200ms)
+    var(
+      --md-sys-motion-easing-emphasized-accelerate,
+      cubic-bezier(0.3, 0, 0.8, 0.15)
+    );
+}
+
+.akari-media-fade-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .akari-lazy-media__overlay {
+    transition: none;
+  }
+
+  .akari-media-fade-leave-active {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .akari-lazy-media__overlay,
+  .akari-doc-hero__loading {
+    background-color: Canvas;
+  }
+
+  .akari-lazy-media m3e-loading-indicator,
+  .akari-doc-hero__loading m3e-loading-indicator {
+    --m3e-loading-indicator-active-indicator-color: CanvasText;
+
+    color: CanvasText;
+  }
+}

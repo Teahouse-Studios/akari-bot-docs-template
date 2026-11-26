@@ -100,6 +100,51 @@ describe("akariMarkdown", () => {
     );
   });
 
+  it("makes Markdown images load lazily", async () => {
+    const html = await render("![](/hero/wide.svg)");
+
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain('decoding="async"');
+    expect(html).toContain('width="1200" height="600"');
+  });
+
+  it("leaves explicit loading and decoding attributes alone", async () => {
+    const html = await render(
+      '<img src="/hero/wide.svg" alt="eager" loading="eager" decoding="sync">',
+    );
+
+    expect(html).toContain('loading="eager"');
+    expect(html).toContain('decoding="sync"');
+    expect(html).not.toContain('loading="lazy"');
+  });
+
+  it("makes an image written as HTML lazy too", async () => {
+    const html = await render('<img src="/hero/wide.svg" alt="raw">');
+
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain('decoding="async"');
+  });
+
+  it("leaves image text in comments alone", async () => {
+    // VitePress extracts <script> blocks before rendering, so a comment is
+    // the raw-HTML content that can carry the text <img> without an image.
+    const html = await render(
+      '<!-- <img src="/hero/wide.svg"> -->\n\nbefore <!-- <img src="/hero/wide.svg"> --> after',
+    );
+
+    expect(html).toContain('<!-- <img src="/hero/wide.svg"> -->');
+    expect(html).not.toContain('loading="lazy"');
+  });
+
+  it("makes an inline image written as HTML lazy too", async () => {
+    const html = await render(
+      'before <img src="/hero/wide.svg" alt="inline"> after',
+    );
+
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain('decoding="async"');
+  });
+
   it("sizes remote images, unless turned off", async () => {
     const src = `${origin}/remote.svg`;
 

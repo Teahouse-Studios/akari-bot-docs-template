@@ -55,6 +55,7 @@ function hrefFor(link: string): string {
               class="akari-site-footer__logo"
               :src="logo"
               alt=""
+              loading="lazy"
               decoding="async"
             />
             <span class="akari-site-footer__title">{{ config.appBar.title }}</span>

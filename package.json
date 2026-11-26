@@ -19,6 +19,7 @@
     "@m3e/web": "2.10.3",
     "@material/material-color-utilities": "^0.4.0",
     "markdown-it": "^14.3.3",
+    "sharp": "^0.35.5",
     "three": "^0.187.0"
   },
   "devDependencies": {
