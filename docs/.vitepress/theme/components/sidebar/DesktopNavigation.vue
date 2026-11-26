@@ -713,8 +713,17 @@ onUnmounted(() => {
 }
 
 @media (max-width: 959.98px) {
+  /*
+   * Folded away, the rail and its modal drawer sit past the window's start
+   * edge. Under a right-to-left layout that is the right edge, where Firefox
+   * with a meta viewport widens the layout viewport to take them in: every
+   * fixed layer then spans the extra width, the mobile navigation drawer
+   * opening off screen with it. The strip clips them; they leave across the
+   * window's edge anyway, so the clip does not show.
+   */
   .akari-desktop-nav__rail {
     width: 0;
+    overflow: clip;
     visibility: hidden;
   }
 
