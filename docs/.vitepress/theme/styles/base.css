@@ -229,21 +229,28 @@ html[data-akari-ready] #akari-boot *::after {
   border-radius: 7px;
 }
 
+/*
+ * The rail sits on top of the page rather than taking a column from it: the
+ * real rail is fixed to the window, so the document column is centred on the
+ * whole width. Keeping the skeleton on the same geometry stops the content
+ * from jumping sideways once the app paints over it.
+ */
 .akari-boot__frame {
-  display: grid;
+  position: relative;
   flex: 1;
-  grid-template-columns: var(--akari-doc-rail-width) minmax(0, 1fr);
   width: 100%;
-  max-width: var(--akari-doc-max-width);
   min-height: 0;
-  margin: 0 auto;
 }
 
 .akari-boot__rail {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
+  width: var(--akari-doc-rail-width);
   padding-top: 8px;
 }
 
@@ -257,7 +264,10 @@ html[data-akari-ready] #akari-boot *::after {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  max-width: var(--akari-doc-max-width);
   min-width: 0;
+  margin-inline: auto;
   padding: var(--akari-doc-top-space) var(--akari-doc-padding);
 }
 
@@ -357,10 +367,6 @@ html[data-akari-ready] #akari-boot *::after {
 }
 
 @media (max-width: 959.98px) {
-  .akari-boot__frame {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .akari-boot__rail {
     display: none;
   }
