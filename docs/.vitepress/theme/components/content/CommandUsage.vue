@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, useSlots } from "vue"
 
 import { useOptionalAkariConfig } from "../../composables/useAkariConfig"
+import ModuleAlias from "./ModuleAlias.vue"
 import { paramDocs, usageSegments, type ParamSpec, type UsageSegment } from "./facts"
 
 interface CommandOption {
@@ -157,7 +158,7 @@ const excludedTextValue = computed(() => platformText(excludedList.value))
 
 const hasMeta = computed(
   () =>
-    Boolean(props.type || props.permission || props.aliases.length) ||
+    Boolean(props.type || props.permission) ||
     platformList.value.length > 0 ||
     excludedList.value.length > 0,
 )
@@ -222,12 +223,9 @@ onBeforeUnmount(() => slotObserver?.disconnect())
         <m3e-icon class="meta-badge__icon" name="block"></m3e-icon>
         {{ excludedTextValue }} 不可用
       </span>
-      <span v-if="props.aliases.length" class="meta-badge meta-badge--alias">
-        <m3e-icon class="meta-badge__icon" name="sell"></m3e-icon>
-        别名
-        <code v-for="alias in props.aliases" :key="alias">{{ alias }}</code>
-      </span>
     </p>
+    <!-- 别名单独成行，与模块说明里的写法一致：名字可能很长，塞进胶囊会把它顶出正文列 -->
+    <ModuleAlias v-if="props.aliases.length" :names="props.aliases" class="command-usage__aliases" />
     <p class="command-usage__usage" :class="{ 'command-usage__usage--stacked': stackUsages }">
       <span class="command-usage__label">
         <m3e-icon class="command-usage__icon" name="terminal"></m3e-icon>用法：

@@ -6,6 +6,7 @@ import CommandUsage from "../docs/.vitepress/theme/components/content/CommandUsa
 import ModuleAlias from "../docs/.vitepress/theme/components/content/ModuleAlias.vue";
 import ModuleConfig from "../docs/.vitepress/theme/components/content/ModuleConfig.vue";
 import ModuleData from "../docs/.vitepress/theme/components/content/ModuleData.vue";
+import ModuleMeta from "../docs/.vitepress/theme/components/content/ModuleMeta.vue";
 
 function render(component: Component, props: Record<string, unknown> = {}): Promise<string> {
   return renderToString(createSSRApp({ render: () => h(component, props) }));
@@ -82,6 +83,17 @@ describe("module fact components", () => {
     expect(excluded).toContain("Web 不可用");
   });
 
+  it("CommandUsage 的别名单独成行，不再塞进胶囊", async () => {
+    const html = await render(CommandUsage, { usage: "chemical-code", aliases: ["cc", "chemicalcode"] });
+    expect(html).toContain('class="module-alias command-usage__aliases"');
+    expect(html).toContain("<code>cc</code>");
+    expect(html).not.toContain("meta-badge--alias");
+
+    const aliasesOnly = await render(CommandUsage, { usage: "chemical-code", aliases: ["cc"] });
+    expect(aliasesOnly).toContain("command-usage__aliases");
+    expect(aliasesOnly).not.toContain("command-usage__meta");
+  });
+
   it("CommandUsage 在含无参数用法时逐行排列", async () => {
     const stacked = await render(CommandUsage, { usage: ["wiki", "wiki <pagename>"], prefix: "~" });
     expect(stacked).toContain("command-usage__usage--stacked");
@@ -108,6 +120,16 @@ describe("module fact components", () => {
     expect(html).toContain("示例消息");
     expect(html).toContain("command-usage__slot");
     expect(html).not.toContain("height:");
+  });
+
+  it("ModuleMeta 的别名与模块说明同一写法", async () => {
+    const html = await render(ModuleMeta, {
+      modules: [{ name: "chemical_code", aliases: ["cc", "chemicalcode"], type: ["command"] }],
+    });
+    expect(html).toContain('class="module-meta__item"');
+    expect(html).toContain("module-alias module-meta__alias");
+    expect(html).toContain("meta-badge--command");
+    expect(html).not.toContain("meta-badge--alias");
   });
 
   it("ModuleAlias 渲染模块级别名", async () => {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ModuleAlias from "./ModuleAlias.vue"
+
 interface ModuleMetaEntry {
   name: string
   aliases?: string[]
@@ -52,10 +54,6 @@ function labelFor(value: string, labels: Record<string, string>): string {
         <code>{{ item.name }}</code>
       </div>
       <div class="module-meta__badges">
-        <span v-if="item.aliases?.length" class="meta-badge meta-badge--alias">
-          别名
-          <code v-for="alias in item.aliases" :key="alias">{{ alias }}</code>
-        </span>
         <span
           v-for="kind in item.type"
           :key="kind"
@@ -77,6 +75,8 @@ function labelFor(value: string, labels: Record<string, string>): string {
         </span>
         <span v-if="item.note" class="module-meta__note">{{ item.note }}</span>
       </div>
+      <!-- 别名与模块说明里同一行写法，不再塞进胶囊 -->
+      <ModuleAlias v-if="item.aliases?.length" :names="item.aliases" class="module-meta__alias" />
     </div>
   </section>
 </template>

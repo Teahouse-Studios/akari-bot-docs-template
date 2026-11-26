@@ -38,6 +38,14 @@
   align-items: center;
 }
 
+/* 模块属性卡里的别名独占一行，用与模块说明相同的一行式写法 */
+.module-meta__item > .module-meta__alias {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+
 .module-meta__note {
   color: var(--md-sys-color-on-surface-variant);
   font-size: 12px;
@@ -66,10 +74,6 @@
   padding: 0;
   background: transparent;
   font-size: 11px;
-}
-
-.meta-badge--alias {
-  white-space: normal;
 }
 
 .meta-badge--command {
@@ -241,6 +245,11 @@
   gap: 8px;
   align-items: center;
   margin: 0 0 8px;
+}
+
+/* 别名单独成行，与模块说明里的 .module-alias 同一套写法，不再借用胶囊 */
+.command-usage > .command-usage__aliases {
+  margin-block: 0 8px;
 }
 
 .command-usage__usage {
@@ -469,6 +478,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
   margin: 4px 0 16px;
   color: var(--md-sys-color-on-surface-variant);
   font-size: 14px;
@@ -488,11 +498,13 @@
 }
 
 .akari-prose .module-alias code {
+  max-width: 100%;
   padding: 1px 6px;
   border-radius: 6px;
   background-color: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 /* 高度外壳：追加回复与预览图会改变示例高度，过渡避免整块瞬间撑开 */
