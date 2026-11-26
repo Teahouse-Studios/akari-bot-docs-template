@@ -247,9 +247,19 @@
   margin: 0 0 8px;
 }
 
-/* 别名单独成行，与模块说明里的 .module-alias 同一套写法，不再借用胶囊 */
+/* 别名单独成行：与下面的「用法：」行同字号，名称芯片也沿用用法行的样式 */
 .command-usage > .command-usage__aliases {
   margin-block: 0 8px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.akari-prose .command-usage > .command-usage__aliases code {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+  font-size: 14px;
 }
 
 .command-usage__usage {
