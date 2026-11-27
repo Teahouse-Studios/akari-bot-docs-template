@@ -5,11 +5,14 @@ import DefaultTheme from "vitepress/theme-without-fonts";
 import { provideAkariSiteData } from "./composables/useLocales";
 import { getAkariGpuTier } from "./gpu-tier";
 import AkariFluidWall from "./components/content/AkariFluidWall.vue";
+import AdapterCapabilities from "./components/content/AdapterCapabilities.vue";
 import ChatExample from "./components/content/ChatExample.vue";
+import CliCommandOptions from "./components/content/CliCommandOptions.vue";
 import CommandUsage from "./components/content/CommandUsage.vue";
 import ImagePreview from "./components/content/ImagePreview.vue";
 import ModuleAlias from "./components/content/ModuleAlias.vue";
 import ModuleConfig from "./components/content/ModuleConfig.vue";
+import ModuleConfigFields from "./components/content/ModuleConfigFields.vue";
 import ModuleData from "./components/content/ModuleData.vue";
 import ModuleMeta from "./components/content/ModuleMeta.vue";
 import NoticeBox from "./components/content/NoticeBox.vue";
@@ -47,8 +50,11 @@ export default {
     app.component("CommandUsage", CommandUsage);
     app.component("ChatExample", ChatExample);
     app.component("ModuleConfig", ModuleConfig);
+    app.component("ModuleConfigFields", ModuleConfigFields);
     app.component("ModuleData", ModuleData);
     app.component("ModuleAlias", ModuleAlias);
+    app.component("AdapterCapabilities", AdapterCapabilities);
+    app.component("CliCommandOptions", CliCommandOptions);
     if (DocsHome) app.component("DocsHome", DocsHome);
     app.component("AkariFluidWall", AkariFluidWall);
     app.component("VineSeedControl", VineSeedControl);
@@ -65,12 +71,15 @@ export default {
 } satisfies Theme;
 
 export {
+  AdapterCapabilities,
   AkariFluidWall,
   ChatExample,
+  CliCommandOptions,
   ImagePreview,
   CommandUsage,
   ModuleAlias,
   ModuleConfig,
+  ModuleConfigFields,
   ModuleData,
   ModuleMeta,
   NoticeBox,

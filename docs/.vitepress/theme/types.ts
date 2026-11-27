@@ -674,6 +674,73 @@ export interface AkariApiCatalog {
   groups: AkariApiGroup[];
 }
 
+/** A field of a configuration table, read from the package's config module. */
+export interface GeneratedConfigField {
+  /** Field name as declared in the configuration model. */
+  name: string;
+  /** Python type of the field, e.g. `int`. */
+  type: string;
+  /** Default as a Python literal; null or undefined when the field has none. */
+  default: unknown;
+  /** Whether the field holds a secret, which the docs pages mask. */
+  secret: boolean;
+  /** Field comment from the package's locale file; empty when it has none. */
+  comment: string;
+  required?: boolean;
+}
+
+/** A configuration table a package declares. */
+export interface GeneratedConfigTable {
+  table: string;
+  /** File the table's values are written to, e.g. `config/module_ai.toml`. */
+  file: string;
+  secret: boolean;
+  fields: GeneratedConfigField[];
+}
+
+/** Facts the docs engine computes for one package. */
+export interface GeneratedFacts {
+  config?: GeneratedConfigTable[];
+  /** Adapter capabilities, keyed by the field name of `Features`. */
+  features?: Record<string, boolean>;
+}
+
+/** One command-line argument. */
+export interface CliArgument {
+  name: string;
+  required: boolean;
+}
+
+/** One option of a command, as Typer declares it. */
+export interface CliOption {
+  names: string[];
+  /** Placeholder shown for the option's value, e.g. `TEXT`. */
+  metavar: string;
+  help: string;
+  /** A flag takes no value; its presence is the value. */
+  isFlag: boolean;
+  required: boolean;
+  default: string | null;
+}
+
+/** One command of the CLI, as Typer declares it. */
+export interface CliCommand {
+  usage: string;
+  summary: string;
+  arguments: CliArgument[];
+  options: CliOption[];
+}
+
+/**
+ * Data the docs engine writes into `themeConfig.akari.generated` at build
+ * time. Content components read it; a build that collects nothing leaves the
+ * two maps empty, so consumers do not guard for their presence.
+ */
+export interface GeneratedData {
+  packages?: Record<string, { facts?: GeneratedFacts }>;
+  cli?: Record<string, CliCommand>;
+}
+
 export interface AkariThemeConfig {
   /**
    * Prefix of the documented commands, e.g. `~`. The docs engine fills it from
@@ -693,6 +760,8 @@ export interface AkariThemeConfig {
   supportedLanguages?: Record<string, string>;
   /** API 参考数据；由文档引擎从 core 的公开接口与 docstring 生成。 */
   apiCatalog?: AkariApiCatalog;
+  /** 构建期算出的配置表、适配器能力与命令数据，由文档引擎写入。 */
+  generated?: GeneratedData;
   brand?: AkariBrandConfig;
   appBar?: AkariAppBarConfig;
   sidebar?: AkariSidebarConfig;
@@ -832,6 +901,8 @@ export interface ResolvedAkariThemeConfig {
   dependencies: Record<string, string[]>;
   supportedLanguages: Record<string, string>;
   apiCatalog: AkariApiCatalog;
+  /** 构建期数据；两个映射始终存在，内容为空时组件显示提示。 */
+  generated: GeneratedData;
   messages: AkariMessages;
   brand: AkariBrandConfig;
   appBar: {

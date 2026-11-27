@@ -21,6 +21,9 @@ import type {
   AkariSearchBackendConfig,
   AkariSocialLink,
   AkariThemeConfig,
+  CliCommand,
+  GeneratedData,
+  GeneratedFacts,
   ResolvedAkariThemeConfig,
   SettingsSectionKey,
 } from "./types";
@@ -147,6 +150,37 @@ function normalizeSearchBackend(
   return { type: "local" };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Narrows the facts the docs engine writes at build time. Both maps are
+ * always objects here, so the content components read them without guarding;
+ * entries whose shape the build did not follow are dropped rather than
+ * reaching the tables.
+ */
+function normalizeGenerated(value: unknown): GeneratedData {
+  const source: { packages?: unknown; cli?: unknown } = isRecord(value)
+    ? value
+    : {};
+  const packages: NonNullable<GeneratedData["packages"]> = {};
+  if (isRecord(source.packages)) {
+    for (const [key, entry] of Object.entries(source.packages)) {
+      if (!isRecord(entry)) continue;
+      packages[key] = entry as { facts?: GeneratedFacts };
+    }
+  }
+  const cli: NonNullable<GeneratedData["cli"]> = {};
+  if (isRecord(source.cli)) {
+    for (const [key, entry] of Object.entries(source.cli)) {
+      if (!isRecord(entry)) continue;
+      cli[key] = entry as unknown as CliCommand;
+    }
+  }
+  return { packages, cli };
+}
+
 /**
  * Merges the theme options with their defaults. `site.lang` selects the
  * language the strings and fonts come from; VitePress passes the current
@@ -195,6 +229,7 @@ export function resolveAkariConfig(
     dependencies: normalizeDependencies(akari.dependencies),
     supportedLanguages: normalizeSupportedLanguages(akari.supportedLanguages),
     apiCatalog: akari.apiCatalog ?? { groups: [] },
+    generated: normalizeGenerated(akari.generated),
     messages,
     brand: {
       logo: brand.logo ?? appBar.logo ?? themeConfig.logo,
