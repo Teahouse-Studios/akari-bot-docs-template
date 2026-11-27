@@ -2,29 +2,17 @@
 import { computed } from "vue";
 
 import { useAkariConfig } from "../../composables/useAkariConfig";
+import {
+  GENERATED_LABEL_PREFIX,
+  featureLabelKey,
+  featureName,
+  useGeneratedLabels,
+} from "./generated";
 
 const props = defineProps<{ adapter?: string }>();
 
 const config = useAkariConfig();
-
-/** Labels for the capabilities the theme knows; other keys print their name. */
-const labels: Record<string, string> = {
-  support_image: "图片",
-  support_audio: "音频",
-  support_video: "视频",
-  support_mention: "提及",
-  support_reaction: "表情回应",
-  support_quote: "引用回复",
-  support_typing: "输入状态",
-  support_delete: "消息撤回",
-  support_manage: "群组管理",
-  support_permission_group: "权限组",
-  support_private_msg: "私信",
-  support_rss: "RSS 推送",
-};
-
-/** Labeled capabilities keep this order; unlabeled ones follow alphabetically. */
-const labelOrder = Object.keys(labels);
+const { labels, label } = useGeneratedLabels();
 
 interface AdapterRow {
   key: string;
@@ -52,47 +40,64 @@ const rows = computed<AdapterRow[]>(() => {
   return row ? [row] : [];
 });
 
+const single = computed<AdapterRow | undefined>(() =>
+  selectedKey.value ? rows.value[0] : undefined,
+);
+
+/** Position the labels give a capability, so columns keep the site's order. */
+const labelRank = computed<Record<string, number>>(() => {
+  const rank: Record<string, number> = {};
+  let index = 0;
+  for (const key of Object.keys(labels.value)) {
+    if (!key.startsWith(`${GENERATED_LABEL_PREFIX}feature_`)) continue;
+    rank[key] = index;
+    index += 1;
+  }
+  return rank;
+});
+
 const capabilities = computed<string[]>(() => {
   const seen = new Set<string>();
   for (const row of rows.value) {
     for (const key of Object.keys(row.features)) seen.add(key);
   }
-  const known = labelOrder.filter((key) => seen.has(key));
-  const rest = [...seen]
-    .filter((key) => !labels[key])
-    .sort((a, b) => a.localeCompare(b));
-  return [...known, ...rest];
+  return [...seen].sort((a, b) => {
+    const left = labelRank.value[featureLabelKey(a)] ?? Number.MAX_SAFE_INTEGER;
+    const right = labelRank.value[featureLabelKey(b)] ?? Number.MAX_SAFE_INTEGER;
+    return left === right ? a.localeCompare(b) : left - right;
+  });
 });
 
 function capabilityName(key: string): string {
-  const label = labels[key];
-  if (label) return label;
-  const prefix = "support_";
-  return key.startsWith(prefix) ? key.slice(prefix.length) : key;
+  return label(featureLabelKey(key)) || featureName(key);
 }
 
 function statusOf(row: AdapterRow, key: string): string {
-  return row.features[key] === true ? "支持" : "—";
+  return row.features[key] === true
+    ? label("gen_supported")
+    : label("gen_placeholder");
 }
 
-const statuses = computed(() => {
-  const row = rows.value[0];
-  return capabilities.value.map((key) => ({
+/** Columns of the single-adapter table, with the label already resolved. */
+const statuses = computed(() =>
+  capabilities.value.map((key) => ({
     key,
     name: capabilityName(key),
-    status: row ? statusOf(row, key) : "—",
-  }));
-});
+    status: single.value ? statusOf(single.value, key) : "",
+  })),
+);
 </script>
 
 <template>
   <div class="adapter-capabilities">
-    <p v-if="!rows.length" class="adapter-capabilities__empty">未找到适配器能力数据。</p>
-    <table v-else-if="selectedKey">
+    <p v-if="!rows.length" class="adapter-capabilities__empty">
+      {{ label("gen_missing_features") }}
+    </p>
+    <table v-else-if="single">
       <thead>
         <tr>
-          <th scope="col">能力</th>
-          <th scope="col">状态</th>
+          <th scope="col">{{ label("gen_capability") }}</th>
+          <th scope="col">{{ label("gen_status") }}</th>
         </tr>
       </thead>
       <tbody>
@@ -105,7 +110,7 @@ const statuses = computed(() => {
     <table v-else>
       <thead>
         <tr>
-          <th scope="col">包</th>
+          <th scope="col">{{ label("gen_package") }}</th>
           <th v-for="key in capabilities" :key="key" scope="col">
             {{ capabilityName(key) }}
           </th>

@@ -739,6 +739,8 @@ export interface CliCommand {
 export interface GeneratedData {
   packages?: Record<string, { facts?: GeneratedFacts }>;
   cli?: Record<string, CliCommand>;
+  /** Labels for the generated-content components, keyed by `gen_*`. */
+  labels?: Record<string, string>;
 }
 
 export interface AkariThemeConfig {

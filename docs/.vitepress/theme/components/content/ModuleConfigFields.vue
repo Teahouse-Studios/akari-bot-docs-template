@@ -3,10 +3,12 @@ import { computed } from "vue";
 
 import { useAkariConfig } from "../../composables/useAkariConfig";
 import type { GeneratedConfigField, GeneratedConfigTable } from "../../types";
+import { useGeneratedLabels } from "./generated";
 
 const props = defineProps<{ table: string }>();
 
 const config = useAkariConfig();
+const { label } = useGeneratedLabels();
 
 /**
  * The engine writes one entry per table under each package, so the first
@@ -32,7 +34,9 @@ const fields = computed<GeneratedConfigField[]>(() => {
 /** Defaults arrive as Python literals already serialized to JSON values. */
 function defaultValue(value: unknown): string {
   if (value === null || value === undefined) return "";
-  if (typeof value === "boolean") return value ? "True" : "False";
+  if (typeof value === "boolean") {
+    return label(value ? "gen_true" : "gen_false");
+  }
   if (typeof value === "string") return value;
   if (typeof value === "number") return String(value);
   const text = JSON.stringify(value);
@@ -53,15 +57,19 @@ const rows = computed(() =>
 
 <template>
   <div class="module-config-fields">
-    <p v-if="!found" class="module-config-fields__empty">未找到配置表 <code>{{ props.table }}</code> 的生成数据。</p>
-    <p v-else-if="!rows.length" class="module-config-fields__empty">该表没有配置字段。</p>
+    <p v-if="!found" class="module-config-fields__empty">
+      {{ label("gen_missing_config", { table: props.table }) }}
+    </p>
+    <p v-else-if="!rows.length" class="module-config-fields__empty">
+      {{ label("gen_empty_config") }}
+    </p>
     <table v-else>
       <thead>
         <tr>
-          <th scope="col">字段</th>
-          <th scope="col">类型</th>
-          <th scope="col">默认值</th>
-          <th scope="col">说明</th>
+          <th scope="col">{{ label("gen_field") }}</th>
+          <th scope="col">{{ label("gen_type") }}</th>
+          <th scope="col">{{ label("gen_default") }}</th>
+          <th scope="col">{{ label("gen_comment") }}</th>
         </tr>
       </thead>
       <tbody>
@@ -69,14 +77,18 @@ const rows = computed(() =>
           <td>
             <span class="module-config-fields__name">
               <code>{{ row.name }}</code>
-              <span v-if="row.required" class="module-config-fields__tag">必填</span>
-              <span v-if="row.secret" class="module-config-fields__tag">（敏感）</span>
+              <span v-if="row.required" class="module-config-fields__tag">{{
+                label("gen_required")
+              }}</span>
+              <span v-if="row.secret" class="module-config-fields__tag">{{
+                label("gen_secret")
+              }}</span>
             </span>
           </td>
-          <td>{{ row.type || "—" }}</td>
+          <td>{{ row.type || label("gen_placeholder") }}</td>
           <td>
             <code v-if="row.defaultText">{{ row.defaultText }}</code>
-            <span v-else>—</span>
+            <span v-else>{{ label("gen_placeholder") }}</span>
           </td>
           <td>{{ row.comment }}</td>
         </tr>

@@ -161,9 +161,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * reaching the tables.
  */
 function normalizeGenerated(value: unknown): GeneratedData {
-  const source: { packages?: unknown; cli?: unknown } = isRecord(value)
-    ? value
-    : {};
+  const source: { packages?: unknown; cli?: unknown; labels?: unknown } =
+    isRecord(value) ? value : {};
   const packages: NonNullable<GeneratedData["packages"]> = {};
   if (isRecord(source.packages)) {
     for (const [key, entry] of Object.entries(source.packages)) {
@@ -178,7 +177,13 @@ function normalizeGenerated(value: unknown): GeneratedData {
       cli[key] = entry as unknown as CliCommand;
     }
   }
-  return { packages, cli };
+  const labels: NonNullable<GeneratedData["labels"]> = {};
+  if (isRecord(source.labels)) {
+    for (const [key, entry] of Object.entries(source.labels)) {
+      if (typeof entry === "string") labels[key] = entry;
+    }
+  }
+  return { packages, cli, labels };
 }
 
 /**
