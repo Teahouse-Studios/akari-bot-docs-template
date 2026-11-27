@@ -16,7 +16,7 @@ tab: API
 | `tagline` | `string` | La `description` de la page | Résumé d'une ligne sous le titre |
 | `background` | `string` | `--md-sys-color-primary-container` | Couleur de fond de la carte d'image ; toute couleur CSS ou tout jeton |
 | `fit` | `"cover" \| "contain"` | `"cover"` | `cover` remplit la carte et rogne ce qui dépasse ; `contain` montre toute l'image avec une marge, ce qui convient aux illustrations sur fond transparent |
-| `color` | `string \| false` | Tirée de l'image | Couleur source du thème pour cette page : `#rrggbb` la fixe à cette couleur, `false` garde la couleur choisie par le lecteur dans les paramètres |
+| `color` | `string \| false` | Tirée de l'image (au build) | Couleur source du thème pour cette page : `#rrggbb` la fixe à cette couleur, `false` garde la couleur choisie par le lecteur dans les paramètres |
 | `pattern` | `"dots" \| "grid" \| "plus" \| "diagonal" \| "waves" \| "none" \| "auto"` | `"auto"` | Motif discret de la page : points, grille, signes plus, lignes diagonales, vagues ; `none` n'affiche aucun motif, `auto` en choisit un au hasard à chaque chargement du contenu |
 
 `pattern` s'applique à toute la page : les cartes hero et les éléments du contenu qui ont un fond utilisent le même motif. Les pages sans hero en choisissent aussi un au hasard.

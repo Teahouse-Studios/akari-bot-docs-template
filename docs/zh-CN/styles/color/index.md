@@ -35,7 +35,7 @@ parallel:
   </div>
 </m3e-theme>
 
-站点的默认种子色写在共用配置的 `settings.defaults.color` 中。你可以在设置里换成自己喜欢的颜色。带头图的页面从图片中取色，见[头图](/zh-CN/theme/hero)。
+站点的默认种子色写在共用配置的 `settings.defaults.color` 中。你可以在设置里换成自己喜欢的颜色。带头图的页面在构建时从图片中取色，见[头图](/zh-CN/theme/hero)。
 
 ## 色调变体
 

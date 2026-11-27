@@ -2,6 +2,7 @@
 import { watch } from "vue";
 import { useRoute } from "vitepress";
 
+import { provideActiveNav } from "../../composables/useActiveNav";
 import { useAkariI18n } from "../../composables/useI18n";
 import { resetNavGroupState } from "../../composables/useNavGroupState";
 import { useSidebar } from "../../composables/useSidebar";
@@ -10,6 +11,8 @@ import SchemeToggle from "../shell/SchemeToggle.vue";
 import SidebarNavItem from "./SidebarNavItem.vue";
 
 const { items } = useSidebar();
+// One walk of the tree per page, shared by every item below.
+provideActiveNav(items);
 const { t } = useAkariI18n();
 const route = useRoute();
 

@@ -139,6 +139,18 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/*
+ * The landing box lends its name to the floating copy while the trigger is
+ * parked on it. The attribute is set by `useSearchDock`, never by the tag
+ * itself, and only one tag holds it at a time — `anchor()` needs a single
+ * target. Without anchor positioning the rule simply never resolves.
+ */
+@supports (anchor-name: --akari-dock) {
+  .akari-search-dock-anchor[data-dock-anchor] {
+    anchor-name: --akari-dock;
+  }
+}
+
 .akari-search-dock-anchor {
   position: relative;
   display: grid;

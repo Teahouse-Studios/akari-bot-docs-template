@@ -20,7 +20,13 @@ import type {
 } from "../types";
 import { parseEasing } from "../tween";
 import { prefersReducedMotion } from "./animation";
-import { normalizeSearchDockAnchor, searchDockHasRoom } from "./dock";
+import {
+  normalizeSearchDockAnchor,
+  searchDockHasRoom,
+  SEARCH_DOCK_ANCHOR_ATTR,
+  SEARCH_DOCK_ANCHORED_ATTR,
+  supportsSearchDockAnchor,
+} from "./dock";
 import type { AkariSearchApi } from "./useSearch";
 
 export interface AkariSearchDockApi {
@@ -171,6 +177,10 @@ export function provideAkariSearchDock(
       : new ResizeObserver(() => schedule(false));
 
   let dockElement: HTMLElement | null = null;
+  // Where the engine can hold the copy on its own. False means the whole
+  // hand-off below is skipped and the per-frame path keeps running, which is
+  // the pre-anchor behaviour rather than a degraded one.
+  const canAnchor = supportsSearchDockAnchor();
   let mounted = false;
   let navigated = false;
   let navigationPending = false;
@@ -363,6 +373,73 @@ export function provideAkariSearchDock(
     currentRect = { left: rect.left, top: rect.top, width, height };
   }
 
+  /** True while the engine, not this controller, owns the copy's box. */
+  function isAnchored(): boolean {
+    return dockElement?.hasAttribute(SEARCH_DOCK_ANCHORED_ATTR) === true;
+  }
+
+  /** Clears the `anchor-name` hook from every tag; only one may hold it. */
+  function dropAnchorNames(): void {
+    for (const element of anchors.keys()) {
+      element.removeAttribute(SEARCH_DOCK_ANCHOR_ATTR);
+    }
+  }
+
+  /**
+   * `anchor()` pins the copy to the tag's box in the document. A tag that is
+   * itself sticky or fixed moves across the screen without its document box
+   * moving, and a pinned copy would be left behind — so a tag under one keeps
+   * the frame-by-frame path instead.
+   */
+  function canPinTo(element: HTMLElement): boolean {
+    for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+      const position = getComputedStyle(node).position;
+      if (position === "sticky" || position === "fixed") return false;
+      if (node === document.body) break;
+    }
+    return true;
+  }
+
+  /**
+   * Hands the box over to the engine. The tag lends its `anchor-name` and the
+   * stylesheet pins the copy to it; the inline box the flight left behind has
+   * to go, because an inline declaration beats `anchor()` outright.
+   */
+  function attachAnchor(element: HTMLElement | null): boolean {
+    const dock = dockElement;
+    if (!canAnchor || !dock || !element || !element.isConnected) return false;
+
+    const rect = rectOf(element);
+    if (!rect || !canPinTo(element)) return false;
+
+    dropAnchorNames();
+    element.setAttribute(SEARCH_DOCK_ANCHOR_ATTR, "");
+    for (const property of ["left", "top", "width", "height"]) {
+      dock.style.removeProperty(property);
+    }
+    dock.setAttribute(SEARCH_DOCK_ANCHORED_ATTR, "");
+    currentRect = rect;
+    return true;
+  }
+
+  /**
+   * Takes the box back before a flight. The engine's resolved box is read
+   * first and written inline, so a spring starts from exactly where the copy
+   * sits instead of jumping to its static position.
+   */
+  function detachAnchor(): void {
+    const dock = dockElement;
+    if (!canAnchor) return;
+
+    if (dock?.hasAttribute(SEARCH_DOCK_ANCHORED_ATTR)) {
+      const rect = rectOf(dock);
+      dock.removeAttribute(SEARCH_DOCK_ANCHORED_ATTR);
+      if (rect) writeRect(dock, rect);
+    }
+
+    currentElement?.removeAttribute(SEARCH_DOCK_ANCHOR_ATTR);
+  }
+
   function flightTarget(): SearchDockRect | null {
     if (leaving.value) return homeTargetRect() ?? flightTargetRect;
 
@@ -414,6 +491,9 @@ export function provideAkariSearchDock(
     flightFrom = null;
     flightTargetRect = null;
     flightEase = null;
+    // Landed on a tag: the engine takes the box from here, so the follow
+    // loop the caller is about to start has nothing left to do.
+    if (active.value && !leaving.value) attachAnchor(currentElement);
     done?.();
   }
 
@@ -424,11 +504,20 @@ export function provideAkariSearchDock(
 
     const target = flightTarget();
     if (!target) {
-      // The tag lost its room while the field was still on its way there.
-      // Keep the current visual box and fly home from here.
+      // A leave never gets to abandon its flight: the copy has to reach the
+      // bar for the cross-fade to take over, or it would freeze halfway with
+      // the real button still hidden behind it.
       const wasLeaving = leaving.value;
+      if (wasLeaving) {
+        const home = homeTargetRect() ?? flightTargetRect;
+        if (home) writeRect(element, home);
+        finishFlight();
+        return;
+      }
+      // Otherwise the tag lost its room while the field was still on its way
+      // there. Keep the current visual box and fly home from here.
       cancelFlight();
-      if (!wasLeaving) deactivate(true);
+      deactivate(true);
       return;
     }
 
@@ -464,6 +553,10 @@ export function provideAkariSearchDock(
     // an interrupted flight continues from exactly where it is.
     cancelFlight();
 
+    // A parked copy is positioned by the stylesheet; take that box back into
+    // inline geometry before the spring starts writing its own.
+    detachAnchor();
+
     const from = rectOf(element) ?? { ...rect };
     if (sameRect(from, rect)) {
       writeRect(element, rect);
@@ -498,6 +591,9 @@ export function provideAkariSearchDock(
     }
 
     cancelFlight();
+    // A snap writes the box inline; drop the engine's claim first, so the
+    // stylesheet and the inline box never argue about who owns it.
+    element.removeAttribute(SEARCH_DOCK_ANCHORED_ATTR);
     writeRect(element, rect);
     element.removeAttribute("data-morphing");
     // Commit a snap before the next style read, so no transition starts.
@@ -511,6 +607,9 @@ export function provideAkariSearchDock(
    * at the first measurement.
    */
   function settleAnchor(element: HTMLElement): void {
+    // The engine holds the box on the tag, so there is nothing to follow and
+    // no 1200ms of layout reads after every landing.
+    if (isAnchored()) return;
     if (settleFrame) cancelAnimationFrame(settleFrame);
     const started = performance.now();
 
@@ -563,6 +662,7 @@ export function provideAkariSearchDock(
         if (!active.value || currentElement !== anchor.element) return;
         hideHome(true);
         setHomeSlot(false, true);
+        attachAnchor(anchor.element);
         settleAnchor(anchor.element);
         return;
       }
@@ -608,7 +708,25 @@ export function provideAkariSearchDock(
   }
 
   function moveTo(rect: SearchDockRect, animate: boolean): void {
-    applyRect(rect, animate && !prefersReducedMotion());
+    if (animate && !prefersReducedMotion()) {
+      applyRect(rect, true);
+      return;
+    }
+
+    // A snap does not need a flight at all: hand the box straight to the
+    // engine, which lands it on the tag in the same frame.
+    if (
+      canAnchor &&
+      active.value &&
+      !leaving.value &&
+      currentElement &&
+      attachAnchor(currentElement)
+    ) {
+      currentRect = rect;
+      return;
+    }
+
+    applyRect(rect, false);
   }
 
   function cancelLeave(): void {
@@ -657,6 +775,8 @@ export function provideAkariSearchDock(
     cancelFlight();
     active.value = false;
     leaving.value = false;
+    currentElement?.removeAttribute(SEARCH_DOCK_ANCHOR_ATTR);
+    dockElement?.removeAttribute(SEARCH_DOCK_ANCHORED_ATTR);
     currentElement = null;
     currentRect = null;
     dockElement?.removeAttribute("data-leaving");
@@ -669,6 +789,18 @@ export function provideAkariSearchDock(
 
   function deactivate(animate: boolean): void {
     const element = dockElement;
+    // A leave already on its way home owns the copy. Only a stale one needs
+    // ringing out: if the spring and the cross-fade are both gone but
+    // `leaving` is still set, the hand-off was dropped and the copy is
+    // stranded over the bar, hiding the real button for good.
+    if (leaving.value) {
+      if (flightFrame || flightTimer || fadeTimer) return;
+      finishLeave();
+      return;
+    }
+    // Stop following the tag on the very first frame of the return trip; the
+    // box the engine resolved becomes the spring's starting point.
+    detachAnchor();
     // Open the slot first: its width animates back while the copy flies, and
     // the target is computed from the remembered expanded width.
     setHomeSlot(true);
@@ -705,6 +837,24 @@ export function provideAkariSearchDock(
     // The spring lands exactly on the live home button; only then reveal
     // the real button and cross-fade. No fixed duration to guess.
     applyRect(target, true, beginLeaveFade);
+
+    // The spring is the only thing that hands the copy over to the fade, and
+    // nothing else can recover if it never lands: a paused animation clock
+    // (page swap, background tab) or a target that vanished mid-flight would
+    // strand the copy over the bar with `leaving` stuck on and the real
+    // button still hidden behind it. A late landing beats no landing.
+    if (leaveTimer) window.clearTimeout(leaveTimer);
+    leaveTimer = window.setTimeout(
+      () => {
+        leaveTimer = 0;
+        if (!leaving.value) return;
+        if (dockElement?.hasAttribute("data-fading")) return;
+        const home = homeTargetRect();
+        if (home && dockElement) writeRect(dockElement, home);
+        beginLeaveFade();
+      },
+      Math.max(flightDuration, 480) + 420,
+    );
   }
 
   function sync(animate: boolean): void {
@@ -742,8 +892,9 @@ export function provideAkariSearchDock(
       return;
     }
 
+    const sameElement = currentElement === anchor.element;
     const changed =
-      currentElement !== anchor.element ||
+      !sameElement ||
       variant.value !== anchor.options.variant ||
       align.value !== anchor.options.align ||
       placeholder.value !== (anchor.options.placeholder ?? null) ||
@@ -762,6 +913,14 @@ export function provideAkariSearchDock(
       dockElement?.removeAttribute("data-morphing");
     }
     applyOptions(anchor.options);
+
+    // Parked on the same tag: the engine already holds the box, and only the
+    // tag's own box can move it. Re-issuing a rect here would knock the copy
+    // off `anchor()` and back onto a frame-by-frame write.
+    if (isAnchored() && sameElement) {
+      currentRect = anchor.rect;
+      return;
+    }
 
     if (changed) {
       moveTo(anchor.rect, animate);
@@ -825,6 +984,15 @@ export function provideAkariSearchDock(
     // follows a fast scroll. Let it finish instead of snapping the target.
     if (flightFrame) return;
 
+    // Parked: the engine moves the box with the page, so there is nothing to
+    // write on scroll. What is left is the leave decision — does the tag
+    // still sit somewhere the copy may be? — and that runs on the frame
+    // clock rather than inside the scroll event.
+    if (isAnchored()) {
+      schedule(false);
+      return;
+    }
+
     // A settled copy follows the landing box synchronously, so it does not
     // trail the page by a frame or snap at the end of a scroll.
     if (active.value) {
@@ -856,6 +1024,11 @@ export function provideAkariSearchDock(
     else schedule(navigated || !initialPlacement);
 
     return () => {
+      // If the copy is parked on this tag, take the box back before the name
+      // goes away: an `anchor()` with no target drops the copy to its static
+      // position for a frame, which reads as a jump to the corner.
+      if (currentElement === element) detachAnchor();
+      element.removeAttribute(SEARCH_DOCK_ANCHOR_ATTR);
       anchors.delete(element);
       anchorObserver?.unobserve(element);
       if (currentElement === element) currentElement = null;
@@ -888,8 +1061,14 @@ export function provideAkariSearchDock(
     leaving: readonly(leaving),
     setDockElement(element: HTMLElement | null): void {
       dockElement = element;
-      if (element && active.value && currentRect) {
-        applyRect(currentRect, false);
+      if (element && active.value) {
+        // A fresh copy starts from scratch: hand it back to the engine when
+        // the trigger is parked, or restore the box it had while travelling.
+        const pinned =
+          canAnchor && currentElement && !leaving.value
+            ? attachAnchor(currentElement)
+            : false;
+        if (!pinned && currentRect) applyRect(currentRect, false);
       }
       if (element) schedule(false);
     },

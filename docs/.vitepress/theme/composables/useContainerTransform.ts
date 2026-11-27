@@ -207,6 +207,66 @@ export function useContainerTransform(options: ContainerTransformOptions) {
     }
   }
 
+  /**
+   * The dock aligns its row with `::before` / `::after` spacers that grow by
+   * one, because `justify-content` cannot be animated between variants. Pseudo
+   * elements are not part of a clone, so the ghost would lay its content out at
+   * the start edge while the trigger it replaces sits centered — the whole label
+   * jumps sideways on the frame the trigger hands over, and jumps back on close.
+   * Rebuild those spacers on the clone, and copy the offsets of the absolutely
+   * positioned parts (the immersive placeholder mirror rides on `left`).
+   */
+  function copyGhostLayout(source: HTMLElement, clone: HTMLElement): void {
+    const sources = [source, ...source.querySelectorAll("*")];
+    const clones = [clone, ...clone.querySelectorAll("*")];
+
+    for (let index = 1; index < sources.length; index += 1) {
+      const from = sources[index];
+      const to = clones[index] as HTMLElement | undefined;
+      if (!to) continue;
+
+      const computed = getComputedStyle(from);
+      if (computed.position !== "absolute") continue;
+
+      to.style.position = "absolute";
+      to.style.left = computed.left;
+      to.style.top = computed.top;
+      to.style.transform = computed.transform;
+    }
+
+    // `<m3e-icon>` takes its glyph through a property and paints it inside a
+    // shadow root, which `cloneNode` leaves behind — the copy would be an empty
+    // box where the trigger showed a magnifier. Hand the name to the clone so
+    // it upgrades with the same icon.
+    for (let index = 1; index < sources.length; index += 1) {
+      const from = sources[index] as HTMLElement & { name?: string };
+      if (from.tagName !== "M3E-ICON" || !from.name) continue;
+      const to = clones[index] as (HTMLElement & { name?: string }) | undefined;
+      if (to) to.name = from.name;
+    }
+
+    // Read the source's own spacers instead of re-deriving the alignment: the
+    // grow factors are animatable, so mid-transition values are fractional and
+    // only the computed pseudo styles know the row's current shape.
+    const before = getComputedStyle(source, "::before");
+    if (before.content === "none") return;
+    const after = getComputedStyle(source, "::after");
+
+    const spacer = (computed: CSSStyleDeclaration): HTMLElement => {
+      const node = document.createElement("span");
+      node.setAttribute("aria-hidden", "true");
+      node.style.cssText = [
+        "min-inline-size: 0",
+        `flex: ${computed.flexGrow} ${computed.flexShrink} ${computed.flexBasis}`,
+        `margin-inline: ${computed.marginLeft} ${computed.marginRight}`,
+      ].join("; ");
+      return node;
+    };
+
+    clone.prepend(spacer(before));
+    clone.append(spacer(after));
+  }
+
   function createGhost(source: HTMLElement, rect: DOMRect): HTMLElement | null {
     removeGhost();
 
@@ -219,6 +279,7 @@ export function useContainerTransform(options: ContainerTransformOptions) {
     clone.setAttribute("aria-hidden", "true");
     clone.tabIndex = -1;
     copyGhostStyles(source, clone);
+    copyGhostLayout(source, clone);
     Object.assign(clone.style, {
       position: "fixed",
       left: `${rect.left}px`,
@@ -227,6 +288,11 @@ export function useContainerTransform(options: ContainerTransformOptions) {
       height: `${rect.height}px`,
       margin: "0",
       pointerEvents: "none",
+      // The copy stands in for the trigger, so it must never inherit a
+      // half-faded trigger: the dock hands over while its own opacity is still
+      // transitioning, and an inherited `opacity: 0` would make the copy
+      // invisible for the whole morph. The morph animates opacity itself.
+      opacity: "",
       visibility: "visible",
       boxSizing: "border-box",
       overflow: "hidden",

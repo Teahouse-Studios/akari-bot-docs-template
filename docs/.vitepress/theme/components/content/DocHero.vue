@@ -342,7 +342,7 @@ onContentUpdated(drawTexture);
   }
 }
 
-:root[dir="rtl"] .akari-doc-hero__pattern {
+.akari-doc[dir="rtl"] .akari-doc-hero__pattern {
   --_reach: radial-gradient(circle at 0% 0%, #000, transparent 75%);
 }
 
@@ -350,7 +350,7 @@ onContentUpdated(drawTexture);
   --_reach: radial-gradient(circle at 0% 100%, #000, transparent 75%);
 }
 
-:root[dir="rtl"] .akari-doc-hero__media .akari-doc-hero__pattern {
+.akari-doc[dir="rtl"] .akari-doc-hero__media .akari-doc-hero__pattern {
   --_reach: radial-gradient(circle at 100% 100%, #000, transparent 75%);
 }
 

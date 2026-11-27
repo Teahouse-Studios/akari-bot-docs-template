@@ -9,10 +9,19 @@ tab: Détails
 Une page avec un hero prend une couleur de l'image comme couleur source du thème.
 
 - Elle utilise la bibliothèque officielle de Material, [material-color-utilities](https://github.com/material-foundation/material-color-utilities) : l'image est réduite à 128px au plus, quantifiée en ses couleurs principales, puis les couleurs sont notées selon leur aptitude à servir de thème d'interface. C'est le même algorithme qu'Android utilise pour tirer les couleurs du fond d'écran. Les pixels transparents et les couleurs trop ternes sont écartés.
-- L'extraction s'exécute dans le navigateur, et le résultat est mis en cache dans `localStorage` par URL d'image : il s'applique donc immédiatement lors des visites suivantes. À la première visite, la page change de couleur une fois, après le chargement de l'image. La bibliothèque de couleurs se charge à la demande, uniquement sur les pages avec un hero ; elle ne fait partie ni des autres pages ni du rendu côté serveur.
-- En mode sombre, quand l'image `dark` est affichée, la couleur vient de cette image.
-- Pour une image hébergée sur un autre domaine, le serveur doit envoyer des en-têtes CORS pour que ses pixels puissent être lus ; sinon, la couleur du lecteur reste en place. Vous pouvez aussi définir la couleur directement avec `color`.
+- L'extraction a lieu au build, dans le plugin Vite `.vitepress/media-colors.ts` : le HTML produit contient déjà la couleur, donc la page n'attend jamais une image et ne lit plus ses pixels ; le rendu serveur et l'hydratation utilisent la même valeur.
+- Le résultat est mis en cache dans `.vitepress/cache/media-colors.json`, indexé par la date de modification et la taille du fichier : seules les images modifiées sont rééchantillonnées. Rebâtissez après avoir changé une image ; il n'y a pas de cache à vider.
+- Les images claire et sombre sont échantillonnées séparément : le jour utilise la couleur de l'image `light`, la nuit celle de l'image `dark` lorsqu'elle est affichée.
+- Une image distante est téléchargée une fois au build pour l'échantillonnage ; un résultat réussi est mis en cache 7 jours. Si le build ne parvient pas à la récupérer, la couleur du lecteur reste en place. Vous pouvez aussi définir la couleur directement avec `color`.
 - Quand l'image n'a aucune couleur assez vive, la couleur du lecteur reste également en place.
+
+## Chargement
+
+- Les images du contenu reçoivent `loading="lazy"` et `decoding="async"` au rendu du Markdown ; les balises `<img>` écrites directement dans le HTML aussi. Un attribut `loading` ou `decoding` explicite n'est jamais remplacé.
+- Dans le navigateur, chaque image du contenu est enveloppée dans `.akari-lazy-media` : jusqu'à son arrivée, un voile la couvre, avec une bille `m3e-loading-indicator` au centre. Le voile reprend la taille enregistrée au build et la couleur extraite de l'image, puis s'efface avec `emphasized-accelerate` de MD3 quand elle est chargée. Un `<picture>` est enveloppé avec ses `<source>`, donc le choix de la source reste intact.
+- Le hero utilise le même indicateur, posé sur sa carte d'image, et n'attend que l'image affichée par le mode clair ou sombre. L'image sombre n'est pas téléchargée en mode clair, et inversement.
+- Une image rapide ne fait pas clignoter le voile : il n'apparaît qu'après environ 120 ms. Si le système demande moins d'animations, il n'y a pas d'animation : le voile apparaît ou disparaît d'un coup.
+- Les vignettes du composant `ImagePreview` ont leur propre cadre : avant l'arrivée de l'image elles prennent son ratio calculé au build, affichent la même bille teintée et ignorent les clics. L'aperçu ouvert montre lui aussi la bille au ratio et à la couleur de l'image. Elles ne sont pas enveloppées, pour ne pas modifier leurs coins ni leur zone de clic.
 
 ## Titre
 
@@ -26,7 +35,7 @@ Les dates sont mises en forme selon la langue de la page : `2026-05-19` s'affic
 - La taille du titre et la marge intérieure des cartes suivent la largeur du hero lui-même (requêtes de conteneur), et non celle de la fenêtre : quand le tiroir de navigation s'ouvre et que l'espace disponible se réduit, le titre rétrécit avec lui.
 - Quand la fenêtre fait moins de 840px de large, les deux cartes s'empilent, le texte en haut et l'image affichée en 16:10.
 - Quand la page appartient à un groupe de pages parallèles, la barre d'onglets se place au-dessus du hero, et le hero se place à la même distance sous la barre d'onglets. Ainsi, la barre d'onglets reste au même endroit sur chaque page du groupe et ne saute pas quand vous passez d'une page avec hero à une page sans hero.
-- L'image porte `fetchpriority="high"` : elle se charge en priorité, en tant que plus grand élément du premier écran. Le hero se trouve dans la surface du document : il disparaît et réapparaît donc en fondu avec la surface quand la page change.
+- L'image porte `loading="lazy"` et `fetchpriority="high"` : sur le premier écran, le navigateur la charge tout de suite et la traite comme le plus grand élément ; quand la fenêtre est étroite et que le hero passe sous le premier écran, elle attend d'approcher la fenêtre. Le hero se trouve dans la surface du document : il disparaît et réapparaît donc en fondu avec la surface quand la page change.
 
 ## Motifs et lueur
 

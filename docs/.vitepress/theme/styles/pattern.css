@@ -207,7 +207,7 @@
   }
 }
 
-:root[dir="rtl"] .akari-doc[data-pattern] .akari-prose :is(
+.akari-doc[dir="rtl"][data-pattern] .akari-prose :is(
     div[class*="language-"],
     .vp-code-group .tabs,
     .akari-table,

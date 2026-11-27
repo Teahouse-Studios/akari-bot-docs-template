@@ -65,39 +65,40 @@ describe("parseEasing", () => {
       "ease-out",
       "cubic-bezier(0.2, 0)",
       "cubic-bezier(0.2, 0, x, 1)",
+      "linear(0.4)",
     ]) {
       expect(parseEasing(easing)(0.3)).toBe(0.3);
     }
   });
 
-  it("reads the multi-stop linear() form used by the MD3 motion tokens", () => {
-    const ease = parseEasing("linear(0, 0.5 25%, 1)");
-    expect(ease(-1)).toBe(0);
+  it("reads linear() stops, percentages and omitted positions", () => {
+    const ease = parseEasing("linear(0, 0.25, 1)");
     expect(ease(0)).toBe(0);
-    expect(ease(0.125)).toBeCloseTo(0.25, 6);
-    expect(ease(0.25)).toBeCloseTo(0.5, 6);
-    expect(ease(0.625)).toBeCloseTo(0.75, 6);
+    expect(ease(0.25)).toBeCloseTo(0.125, 6);
+    expect(ease(0.5)).toBeCloseTo(0.25, 6);
+    expect(ease(0.75)).toBeCloseTo(0.625, 6);
     expect(ease(1)).toBe(1);
-    expect(ease(2)).toBe(1);
+
+    const positioned = parseEasing("linear(0, 1 80%, 1)");
+    expect(positioned(0.4)).toBeCloseTo(0.5, 6);
+    expect(positioned(0.8)).toBe(1);
+    expect(positioned(1)).toBe(1);
   });
 
-  it("spreads stops without a position evenly, like the browser does", () => {
-    const ease = parseEasing("linear(0, 0.2, 1)");
-    expect(ease(0.25)).toBeCloseTo(0.1, 6);
-    expect(ease(0.5)).toBeCloseTo(0.2, 6);
-    expect(ease(0.75)).toBeCloseTo(0.6, 6);
-  });
-
-  it("keeps the overshoot of the MD3 spatial spring", () => {
+  it("keeps a spring's overshoot instead of flattening it", () => {
     const ease = parseEasing(
-      "500ms linear(0, 0.0205 2.2%, 0.2394 9%, 0.551 16.8%, 0.8502 27.6%, 0.9953 41.5%, 1.0152 53.7%, 1.0029 79.4%, 1)",
+      "linear(0, 0.4754 14.8%, 0.9953 41.5%, 1.0152 53.7%, 0.9999 99.9%, 1)",
     );
-    let peak = 0;
-    for (let step = 0; step <= 100; step++) peak = Math.max(peak, ease(step / 100));
-    expect(peak).toBeGreaterThan(1.01);
-    expect(peak).toBeLessThan(1.02);
-    expect(ease(0.02)).toBeLessThan(0.03);
-    expect(ease(1)).toBeCloseTo(1, 6);
+    expect(ease(0.537)).toBeCloseTo(1.0152, 4);
+    expect(ease(0.2)).toBeGreaterThan(0.5);
+    expect(ease(1.4)).toBe(1);
+    expect(ease(-1)).toBe(0);
+  });
+
+  it("pins a curve that runs past the ends", () => {
+    expect(parseEasing("linear(0 10%, 1 90%)")(0.05)).toBe(0);
+    expect(parseEasing("linear(0 10%, 1 90%)")(0.5)).toBeCloseTo(0.5, 6);
+    expect(parseEasing("linear(0 10%, 1 90%)")(0.95)).toBe(1);
   });
 });
 

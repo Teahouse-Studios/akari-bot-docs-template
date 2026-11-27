@@ -27,93 +27,85 @@ export function cubicBezier(
   };
 }
 
-/** One point of a CSS `linear()` easing curve, with both axes normalised. */
-interface LinearStop {
-  x: number;
-  y: number;
-}
+/**
+ * A CSS `linear()` easing as a function: piecewise straight lines through
+ * `(position, value)` stops, which is how the theme host ships its springs.
+ * Positions may be omitted, in which case the gaps between the given ones
+ * are split evenly, exactly as the browser does it.
+ */
+export function linearEasing(stops: string): ((t: number) => number) | null {
+  const points: { x: number | null; y: number }[] = [];
 
-/** Parses the stops of a CSS `linear()` curve, filling in omitted positions. */
-function parseLinearStops(body: string): LinearStop[] {
-  const tokens = body.split(",").map((token) => token.trim()).filter(Boolean);
-  const stops: { y: number; x?: number }[] = [];
+  for (const stop of stops.split(",")) {
+    const tokens = stop.trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return null;
+    const y = Number(tokens[0]);
+    if (!Number.isFinite(y)) return null;
 
-  for (const token of tokens) {
-    const [yText, xText] = token.split(/\s+/);
-    const y = Number.parseFloat(yText ?? "");
-    if (!Number.isFinite(y)) return [];
-    if (!xText) {
-      stops.push({ y });
-      continue;
+    let x: number | null = null;
+    if (tokens[1] !== undefined) {
+      const raw = tokens[1]!;
+      const position = Number.parseFloat(raw);
+      if (!Number.isFinite(position)) return null;
+      x = raw.endsWith("%") ? position / 100 : position;
     }
-    const x = xText.endsWith("%")
-      ? Number.parseFloat(xText) / 100
-      : Number.parseFloat(xText);
-    if (!Number.isFinite(x)) return [];
-    stops.push({ y, x });
+    points.push({ x, y });
   }
 
-  if (stops.length < 2) return [];
-  if (stops[0]!.x === undefined) stops[0]!.x = 0;
-  if (stops.at(-1)!.x === undefined) stops.at(-1)!.x = 1;
+  if (points.length < 2) return null;
 
-  // A point without a position sits evenly between its defined neighbours;
-  // CSS normalises all of them before the curve is sampled.
-  for (let index = 1; index < stops.length - 1; index++) {
-    if (stops[index]!.x !== undefined) continue;
-    const previous = stops[index - 1]!.x!;
-    let next = index;
-    while (stops[next]!.x === undefined) next += 1;
-    const span = stops[next]!.x! - previous;
-    const step = span / (next - index + 1);
-    for (let fill = index; fill < next; fill++) {
-      stops[fill]!.x = previous + step * (fill - index + 1);
+  // The ends are pinned to 0 and 1; every unpositioned stop between two
+  // anchored ones sits at an equal share of the gap.
+  if (points[0]!.x === null) points[0]!.x = 0;
+  const last = points[points.length - 1]!;
+  if (last.x === null) last.x = 1;
+
+  let anchor = 0;
+  for (let i = 1; i < points.length; i++) {
+    const position = points[i]!.x;
+    if (position === null) continue;
+    const from = points[anchor]!.x!;
+    for (let j = anchor + 1; j < i; j++) {
+      points[j]!.x = from + ((position - from) * (j - anchor)) / (i - anchor);
     }
-    index = next - 1;
+    anchor = i;
   }
 
-  return stops.map(({ x, y }) => ({ x: x!, y }));
-}
-
-/** Samples a piecewise-linear easing curve. */
-function sampleLinear(stops: LinearStop[], t: number): number {
-  const first = stops[0]!;
-  const last = stops[stops.length - 1]!;
-  if (t <= first.x) return first.y;
-  if (t >= last.x) return last.y;
-
-  let low = 0;
-  let high = stops.length - 1;
-  while (high - low > 1) {
-    const middle = (low + high) >> 1;
-    if (stops[middle]!.x <= t) low = middle;
-    else high = middle;
+  const curve = points.map((point) => ({ x: point.x!, y: point.y }));
+  // The offsets have to be monotonic for the lookup below to be a plain walk.
+  for (let i = 1; i < curve.length; i++) {
+    if (curve[i]!.x < curve[i - 1]!.x) curve[i]!.x = curve[i - 1]!.x;
   }
 
-  const from = stops[low]!;
-  const to = stops[high]!;
-  const span = to.x - from.x;
-  return span <= 0 ? to.y : from.y + ((to.y - from.y) * (t - from.x)) / span;
+  return (t) => {
+    if (t <= curve[0]!.x) return curve[0]!.y;
+    const tail = curve[curve.length - 1]!;
+    if (t >= tail.x) return tail.y;
+
+    let i = 1;
+    while (i < curve.length - 1 && curve[i]!.x < t) i++;
+    const a = curve[i - 1]!;
+    const b = curve[i]!;
+    const span = b.x - a.x;
+    return span <= 0 ? b.y : a.y + ((b.y - a.y) * (t - a.x)) / span;
+  };
 }
 
 /**
- * A CSS easing as a function of time. `cubic-bezier()` and the multi-stop
- * `linear()` form are read exactly; any other keyword is linear.
+ * A CSS easing as a function of time. `cubic-bezier()` and `linear()` are
+ * read; keywords and `steps()` stay linear, which is what they fall back to
+ * here rather than a wrong curve.
  */
 export function parseEasing(easing: string): (t: number) => number {
-  const bezier = /cubic-bezier\(([^)]+)\)/.exec(easing);
+  const bezier = /cubic-bezier\(([^)]*)\)/.exec(easing);
   const values = bezier?.[1]?.split(",").map(Number);
   if (values?.length === 4 && values.every(Number.isFinite)) {
     return cubicBezier(values[0]!, values[1]!, values[2]!, values[3]!);
   }
 
-  const linear = /linear\(([^)]+)\)/.exec(easing);
-  if (linear) {
-    const stops = parseLinearStops(linear[1]!);
-    if (stops.length >= 2) return (t) => sampleLinear(stops, t);
-  }
-
-  return (t) => t;
+  const linear = /linear\(([^)]*)\)/.exec(easing);
+  const curve = linear ? linearEasing(linear[1]!) : null;
+  return curve ?? ((t) => t);
 }
 
 /** `rgb()`, `rgba()` or `color(srgb …)` as 0–255 channels and alpha. */

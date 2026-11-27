@@ -204,27 +204,42 @@ onUnmounted(() => {
   >
     <m3e-icon name="search" class="akari-search-field__icon"></m3e-icon>
 
-    <input
-      ref="input"
-      class="akari-search-field__input"
-      type="search"
-      name="q"
-      role="searchbox"
-      autocomplete="off"
-      spellcheck="false"
-      :value="query"
-      :placeholder="placeholder"
-      :aria-label="t('searchLabel')"
-      :aria-expanded="showPanel"
-      aria-controls="akari-search-inline-results"
-      :aria-activedescendant="
-        showPanel && activeIndex >= 0
-          ? `akari-search-inline-result-${activeIndex}`
-          : undefined
-      "
-      @input="onInput"
-      @keydown="onKeydown"
-    />
+    <span class="akari-search-field__control">
+      <input
+        ref="input"
+        class="akari-search-field__input"
+        type="search"
+        name="q"
+        role="searchbox"
+        autocomplete="off"
+        spellcheck="false"
+        :value="query"
+        :placeholder="placeholder"
+        :aria-label="t('searchLabel')"
+        :aria-expanded="showPanel"
+        aria-controls="akari-search-inline-results"
+        :aria-activedescendant="
+          showPanel && activeIndex >= 0
+            ? `akari-search-inline-result-${activeIndex}`
+            : undefined
+        "
+        @input="onInput"
+        @keydown="onKeydown"
+      />
+
+      <!--
+        The dock centres or ends its copy by aligning a placeholder, and
+        `text-align` cannot be animated. This mirror stands in for the
+        native placeholder so `align` can move it with a transition; the
+        real placeholder is transparent while the mirror is up.
+      -->
+      <span
+        v-if="!query"
+        class="akari-search-field__mirror"
+        aria-hidden="true"
+        >{{ placeholder }}</span
+      >
+    </span>
 
     <span
       v-if="loading"
@@ -375,6 +390,47 @@ onUnmounted(() => {
   opacity: 0.8;
 }
 
+/*
+ * The input's own box, kept as a positioned parent so the mirror can sit
+ * over the text area and travel between the dock's alignments.
+ */
+.akari-search-field__control {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.akari-search-field__mirror {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--md-sys-color-on-surface-variant);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transition:
+    left var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
+    transform var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1)),
+    opacity var(--md-sys-motion-spring-default-effects, 200ms cubic-bezier(0.34, 0.8, 0.34, 1));
+}
+
+/*
+ * The hint is a drawing, not a value: once the field owns the caret, a
+ * centred input puts that caret in the middle of the words, which reads as
+ * if the hint itself were being edited. It steps aside instead, and comes
+ * back on blur while the field is still empty.
+ */
+.akari-search-field__control:focus-within .akari-search-field__mirror {
+  opacity: 0;
+}
+
 .akari-search-field__input {
   flex: 1 1 auto;
   min-width: 0;
@@ -391,8 +447,12 @@ onUnmounted(() => {
   appearance: none;
 }
 
+/*
+ * The mirror draws the placeholder, so the real one must not paint; it
+ * stays in the accessibility tree as the input's description.
+ */
 .akari-search-field__input::placeholder {
-  color: var(--md-sys-color-on-surface-variant);
+  color: transparent;
   opacity: 1;
 }
 

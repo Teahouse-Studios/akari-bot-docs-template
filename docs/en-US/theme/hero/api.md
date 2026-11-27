@@ -16,7 +16,7 @@ tab: API
 | `tagline` | `string` | The page's `description` | One-line summary below the title |
 | `background` | `string` | `--md-sys-color-primary-container` | Background color of the image card; any CSS color or token |
 | `fit` | `"cover" \| "contain"` | `"cover"` | `cover` fills the card and crops what does not fit; `contain` shows the whole image with a margin, suited to illustrations with a transparent background |
-| `color` | `string \| false` | Taken from the image | Theme seed color of this page: `#rrggbb` fixes it to that color, `false` keeps the color the reader chose in settings |
+| `color` | `string \| false` | Taken from the image at build time | Theme seed color of this page: `#rrggbb` fixes it to that color, `false` keeps the color the reader chose in settings |
 | `pattern` | `"dots" \| "grid" \| "plus" \| "diagonal" \| "waves" \| "none" \| "auto"` | `"auto"` | Hidden pattern on the page: dots, grid, plus signs, diagonal lines, waves; `none` shows no pattern, `auto` picks one at random each time content loads |
 
 `pattern` applies to the whole page: the hero cards and the elements with a background in the content use the same pattern. Pages without a hero also pick one at random.

@@ -98,6 +98,50 @@ export function searchDockSize(
   };
 }
 
+/** The `anchor-name` a landing box lends to the floating copy. */
+export const SEARCH_DOCK_ANCHOR_NAME = "--akari-dock";
+
+/**
+ * Set on the landing box while the copy is parked on it. Only one tag holds
+ * it at a time, so `anchor()` always has a single target to resolve.
+ */
+export const SEARCH_DOCK_ANCHOR_ATTR = "data-dock-anchor";
+
+/**
+ * Set on the floating copy while the layout engine owns its box. The flight
+ * writes plain geometry inline, which would win over `anchor()`; the
+ * attribute is only set once those are gone.
+ */
+export const SEARCH_DOCK_ANCHORED_ATTR = "data-dock-anchored";
+
+let anchorSupport: boolean | null = null;
+
+/**
+ * Whether the engine can hold the copy on its landing box by itself. Anchor
+ * positioning shipped in Chrome 125, Safari 26 and Firefox 147; where any of
+ * the three pieces is missing the controller keeps writing the box every
+ * frame, which is the old behaviour rather than a broken one.
+ */
+export function supportsSearchDockAnchor(): boolean {
+  if (anchorSupport !== null) return anchorSupport;
+  if (typeof CSS === "undefined" || typeof CSS.supports !== "function") {
+    anchorSupport = false;
+    return anchorSupport;
+  }
+  // All three shipped together, but a capability gate has to ask about the
+  // exact functions the stylesheet uses — `anchor-name` alone proves nothing.
+  anchorSupport =
+    CSS.supports("anchor-name", SEARCH_DOCK_ANCHOR_NAME) &&
+    CSS.supports("left", `anchor(${SEARCH_DOCK_ANCHOR_NAME} left)`) &&
+    CSS.supports("width", `anchor-size(${SEARCH_DOCK_ANCHOR_NAME} width)`);
+  return anchorSupport;
+}
+
+/** Forgets the cached answer; tests use it to exercise both branches. */
+export function resetSearchDockAnchorSupport(): void {
+  anchorSupport = null;
+}
+
 export interface SearchDockBounds {
   left: number;
   top: number;

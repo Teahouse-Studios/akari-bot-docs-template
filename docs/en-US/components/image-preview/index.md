@@ -43,4 +43,6 @@ Zoom runs from 50% to 400%, by wheel, double-click or the buttons in the bar. Dr
 
 Opening grows the picture out of its thumbnail and closing shrinks it back. Once the view has been zoomed, rotated or panned that animation is skipped and the overlay only fades, because there is no longer a single thumbnail-sized box for it to return to. With reduced motion enabled the overlay only fades throughout.
 
+Until the thumbnail has loaded the trigger is disabled and shows a centered loading ball. The opened preview shows the same ball until the full picture is in place; clicking the backdrop is ignored during that time, while the close button and `Esc` still work. Both masks take the picture's build-time ratio and color, then fade out with MD3 duration and easing tokens.
+
 The overlay is teleported to `.akari-frame`, so the prose column and its `overflow` cannot clip it. Page scrolling is locked while it is open, and focus returns to the trigger on close.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  collectActiveItems,
   findFirstLink,
   findPrevNext,
   findTabGroup,
@@ -296,6 +297,66 @@ describe("tab groups", () => {
       "/styles/icons/choosing",
       "/styles/icons/using",
     ]);
+  });
+});
+
+describe("collectActiveItems", () => {
+  const tree: AkariSidebarItem[] = [
+    {
+      text: "B",
+      items: [
+        { text: "B1", link: "/b1" },
+        { text: "B2", items: [{ text: "B2a", link: "/b2a" }] },
+      ],
+    },
+    { text: "C", items: [{ text: "C1", link: "/c1" }] },
+  ];
+
+  it("marks the item and the groups above it, and nothing else", () => {
+    const active = collectActiveItems(tree, "/b2a");
+
+    expect(active.has(tree[0]!)).toBe(true);
+    expect(active.has(tree[0]!.items![1]!)).toBe(true);
+    expect(active.has(tree[0]!.items![1]!.items![0]!)).toBe(true);
+    expect(active.has(tree[1]!)).toBe(false);
+    expect(active.size).toBe(3);
+  });
+
+  it("agrees with hasActiveItem at every node", () => {
+    for (const path of ["/b1", "/b2a", "/c1", "/none"]) {
+      const active = collectActiveItems(tree, path);
+      const walk = (items: AkariSidebarItem[]): void => {
+        for (const item of items) {
+          expect(active.has(item)).toBe(hasActiveItem(item, path));
+          walk(item.items ?? []);
+        }
+      };
+      walk(tree);
+    }
+  });
+
+  it("reads a tab group's pages as its own", () => {
+    const items: AkariSidebarItem[] = [
+      {
+        text: "图标",
+        tabs: [
+          { text: "选择", link: "/icons/choosing" },
+          { text: "使用", link: "/icons/using" },
+        ],
+      },
+    ];
+
+    expect(collectActiveItems(items, "/icons/using.html").has(items[0]!)).toBe(
+      true,
+    );
+    expect(collectActiveItems(items, "/icons/other").size).toBe(0);
+  });
+
+  it("respects the base", () => {
+    const items: AkariSidebarItem[] = [{ text: "A", link: "/guide/a" }];
+
+    expect(collectActiveItems(items, "/docs/guide/a.html", "/docs/").size).toBe(1);
+    expect(collectActiveItems(items, "/docs/guide/a.html").size).toBe(0);
   });
 });
 

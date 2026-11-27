@@ -16,7 +16,7 @@ tab: API
 | `tagline` | `string` | ページの `description` | タイトルの下の 1 行の概要 |
 | `background` | `string` | `--md-sys-color-primary-container` | 画像カードの背景色。任意の CSS カラーまたはトークン |
 | `fit` | `"cover" \| "contain"` | `"cover"` | `cover` はカードを埋め、はみ出す部分を切り取ります。`contain` は余白を付けて画像全体を表示し、背景が透明なイラストに向いています |
-| `color` | `string \| false` | 画像から取得 | このページのテーマのシードカラー。`#rrggbb` はその色に固定し、`false` は読者が設定で選んだ色を維持します |
+| `color` | `string \| false` | 画像から取得（ビルド時） | このページのテーマのシードカラー。`#rrggbb` はその色に固定し、`false` は読者が設定で選んだ色を維持します |
 | `pattern` | `"dots" \| "grid" \| "plus" \| "diagonal" \| "waves" \| "none" \| "auto"` | `"auto"` | ページに隠れたパターン：ドット、グリッド、プラス記号、斜線、波線。`none` はパターンを表示せず、`auto` はコンテンツを読み込むたびにランダムに 1 つ選びます |
 
 `pattern` はページ全体に適用されます。ヒーローのカードと、コンテンツ内の背景を持つ要素は同じパターンを使います。ヒーローのないページでもランダムに 1 つ選ばれます。

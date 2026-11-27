@@ -43,4 +43,6 @@ Le zoom va de 50 % à 400 %, à la molette, au double clic ou par les boutons de
 
 À l'ouverture, l'image s'étend depuis sa vignette, et se rétracte à la fermeture. Une fois la vue agrandie, tournée ou déplacée, il n'y a plus une seule boîte de retour : l'animation est sautée et seule une transition d'opacité reste. Quand l'option « réduire les animations » est active, l'aperçu ne fait que s'estomper.
 
+Tant que la vignette n'est pas chargée, le bouton est désactivé et affiche une bille de chargement centrée. L'aperçu ouvert montre la même bille jusqu'à ce que l'image complète soit en place ; cliquer sur le fond est alors ignoré, tandis que le bouton de fermeture et `Esc` restent actifs. Les deux voiles reprennent le ratio et la couleur calculés au build, puis s'effacent avec les jetons de durée et d'accélération de MD3.
+
 La couche d'aperçu est téléportée dans `.akari-frame`, elle n'est donc pas rognée par la colonne de texte ni par son `overflow`. Le défilement de la page est verrouillé pendant l'ouverture, et le focus revient au bouton déclencheur à la fermeture.

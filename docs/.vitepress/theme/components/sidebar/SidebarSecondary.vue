@@ -1,11 +1,17 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
+import { provideActiveNav } from "../../composables/useActiveNav";
 import { useAkariI18n } from "../../composables/useI18n";
 import type { AkariSidebarItem } from "../../types";
 import SidebarNavItem from "./SidebarNavItem.vue";
 
-defineProps<{
+const props = defineProps<{
   category: AkariSidebarItem;
 }>();
+
+// One walk of the tree per page, shared by every item below.
+provideActiveNav(computed(() => props.category.items ?? []));
 
 const emit = defineEmits<{
   (event: "navigate"): void;

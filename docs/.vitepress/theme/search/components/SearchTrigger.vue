@@ -70,9 +70,16 @@ onUnmounted(() => setTrigger(null, props.role));
     <span class="akari-search-trigger__label">
       {{ label }}
     </span>
+    <!--
+      Kept mounted and folded instead of removed: the dock drops the shortcut
+      when it lands, and a freshly mounted badge would pop in at full width and
+      shove the row sideways on the way home.
+    -->
     <kbd
-      v-if="props.showShortcut && config.search.shortcut"
+      v-if="config.search.shortcut"
       class="akari-search-trigger__kbd"
+      :data-off="props.showShortcut ? undefined : ''"
+      :aria-hidden="props.showShortcut ? undefined : 'true'"
     >
       {{ shortcutLabel }}
     </kbd>
@@ -211,6 +218,19 @@ onUnmounted(() => setTrigger(null, props.role));
 
 .akari-search-trigger:hover .akari-search-trigger__kbd {
   color: var(--md-sys-color-on-surface);
+}
+
+/*
+ * Folded, not removed: `showShortcut` can flip while the trigger is alive (the
+ * dock hands the tag back to the bar, which always shows the badge), and the
+ * width/opacity springs above need both states present to run.
+ */
+.akari-search-trigger__kbd[data-off] {
+  min-inline-size: 0;
+  max-inline-size: 0;
+  padding-inline: 0;
+  border-width: 0;
+  opacity: 0;
 }
 
 @media (max-width: 1199px) {

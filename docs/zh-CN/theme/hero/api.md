@@ -16,7 +16,7 @@ tab: 接口
 | `tagline` | `string` | 页面的 `description` | 标题下方的一行简介 |
 | `background` | `string` | `--md-sys-color-primary-container` | 图片卡片的底色，任意 CSS 颜色或令牌 |
 | `fit` | `"cover" \| "contain"` | `"cover"` | `cover` 铺满卡片并裁去多余部分。`contain` 完整显示并留出边距，适合透明背景的插画 |
-| `color` | `string \| false` | 从图片取色 | 这一页的主题种子色：`#rrggbb` 固定为该颜色，`false` 保留读者在设置中选择的颜色 |
+| `color` | `string \| false` | 从图片取色（构建时） | 这一页的主题种子色：`#rrggbb` 固定为该颜色，`false` 保留读者在设置中选择的颜色 |
 | `pattern` | `"dots" \| "grid" \| "plus" \| "diagonal" \| "waves" \| "none" \| "auto"` | `"auto"` | 页面上的隐藏图案：点阵、网格、十字、斜线、波纹。`none` 不显示，`auto` 每次加载内容时随机挑一种 |
 
 `pattern` 对整页生效：头图卡片与正文中带背景的元素用同一种图案。没有头图的页面也会随机挑一种。

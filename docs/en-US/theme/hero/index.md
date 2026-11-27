@@ -59,7 +59,7 @@ The image changes as soon as you switch between light and dark mode, and the ima
 
 ## Color
 
-A page with a hero takes a color from the image as its theme color, and the app bar, navigation, buttons and links switch to a palette that goes with the image. When you leave the page, the reader's own color comes back. Write `color: "#3367d6"` to fix the color, or `color: false` to keep the reader's color.
+A page with a hero takes a color from the image as its theme color, and the app bar, navigation, buttons and links switch to a palette that goes with the image. The color is taken at build time, once for the light image and once for the dark one, so the page never reads an image when it opens. When you leave the page, the reader's own color comes back. Write `color: "#3367d6"` to fix the color, or `color: false` to keep the reader's color.
 
 ## Transparent images and patterns
 

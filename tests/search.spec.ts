@@ -1,5 +1,5 @@
 import MiniSearch from "minisearch";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resolveAkariConfig } from "../docs/.vitepress/theme/config";
 import { resolveMessages } from "../docs/.vitepress/theme/i18n";
@@ -28,8 +28,10 @@ import { MissingLocalIndexError } from "../docs/.vitepress/theme/search/localInd
 import { registerSearchBackend } from "../docs/.vitepress/theme/search/registry";
 import {
   normalizeSearchDockAnchor,
+  resetSearchDockAnchorSupport,
   searchDockHasRoom,
   searchDockSize,
+  supportsSearchDockAnchor,
 } from "../docs/.vitepress/theme/search/dock";
 
 // An index as VitePress builds it: one document per section, the page's
@@ -259,6 +261,49 @@ describe("search dock room", () => {
         { left: 100, top: 190, right: 500, bottom: 230 },
       ]),
     ).toBe(false);
+  });
+});
+
+describe("search dock anchor support", () => {
+  afterEach(() => {
+    resetSearchDockAnchorSupport();
+    vi.unstubAllGlobals();
+  });
+
+  it("needs the whole set, not just anchor-name", () => {
+    // `anchor-name` and `anchor()` are there, `anchor-size()` is not: the
+    // gate has to reach the third question and fail on it.
+    const supports = vi.fn(
+      (property: string) => property === "anchor-name" || property === "left",
+    );
+    vi.stubGlobal("CSS", { supports });
+    resetSearchDockAnchorSupport();
+
+    expect(supportsSearchDockAnchor()).toBe(false);
+    expect(supports).toHaveBeenCalledWith("anchor-name", "--akari-dock");
+    expect(supports).toHaveBeenCalledWith("left", "anchor(--akari-dock left)");
+    expect(supports).toHaveBeenCalledWith(
+      "width",
+      "anchor-size(--akari-dock width)",
+    );
+  });
+
+  it("is true when the engine has anchoring and sizes", () => {
+    vi.stubGlobal("CSS", { supports: () => true });
+    resetSearchDockAnchorSupport();
+
+    expect(supportsSearchDockAnchor()).toBe(true);
+  });
+
+  it("caches the answer until it is reset", () => {
+    const supports = vi.fn(() => false);
+    vi.stubGlobal("CSS", { supports });
+    resetSearchDockAnchorSupport();
+
+    expect(supportsSearchDockAnchor()).toBe(false);
+    expect(supportsSearchDockAnchor()).toBe(false);
+    // One gate, six lookups at most: the browser is asked once.
+    expect(supports.mock.calls.length).toBeLessThanOrEqual(3);
   });
 });
 

@@ -2,9 +2,9 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute } from "vitepress";
 
+import { useActiveNav } from "../../composables/useActiveNav";
 import { useNavGroupState } from "../../composables/useNavGroupState";
 import { usePageHref } from "../../composables/usePageHref";
-import { useSidebar } from "../../composables/useSidebar";
 import { nextLayoutFrame, whenAkariReady } from "../../ready";
 import { findFirstLink, isExternalLink } from "../../sidebar";
 import type { AkariSidebarItem } from "../../types";
@@ -26,7 +26,7 @@ const props = defineProps<{
   parentKey?: string;
 }>();
 
-const { hasActive } = useSidebar();
+const activeNav = useActiveNav();
 const pageHref = usePageHref();
 const route = useRoute();
 const groupElement = ref<NavMenuItemElement | null>(null);
@@ -52,7 +52,7 @@ const groupState = useNavGroupState();
 // group fall back to its default instead of staying expanded for the rest
 // of the session.
 const open = computed(() => {
-  if (hasActive(props.item)) return true;
+  if (activeNav.has(props.item)) return true;
   const left = groupState.get(groupKey.value);
   if (left !== undefined) return left ? true : undefined;
   return props.item.collapsed === false ? true : undefined;
@@ -64,20 +64,9 @@ let applying = false;
 // its list on a category switch — at once; later changes, such as going to
 // a page in it, animate.
 let shown = false;
-// A group taller than this changes state in a single step. Its height
-// transition would drag thousands of pixels past the viewport in a quarter
-// of a second — a smear of text — and it lays out every row on each frame,
-// which is what reads as jank on a long list. The reader only ever sees the
-// first screenful of such a group anyway.
-const ANIMATE_MAX_HEIGHT = 600;
-
-/** The laid-out height of a group's content, open or closed. */
-function contentHeight(element: NavMenuItemElement): number {
-  const collapsible = element.shadowRoot?.querySelector("m3e-collapsible");
-  // A closed collapsible keeps `height: 0` but still reports its content's
-  // scroll extent, so this is measurable before the change.
-  return collapsible?.scrollHeight ?? 0;
-}
+// The last state written to the element, so a route change that leaves this
+// group alone costs nothing but the comparison.
+let applied: boolean | undefined;
 
 /** The reader opened or closed the group. */
 function remember(isOpen: boolean): void {
@@ -104,15 +93,15 @@ function onGroupClosing(event: Event): void {
 async function setGroupOpen(
   element: NavMenuItemElement,
   value: boolean,
-  instant = false,
+  beforePaint = false,
 ): Promise<void> {
   applying = true;
   // Zero durations for the collapsible and the toggle arrow (base.css).
-  if (instant) element.setAttribute("data-akari-instant", "");
+  if (beforePaint) element.setAttribute("data-akari-instant", "");
   try {
     element.open = value;
     await element.updateComplete;
-    if (instant) {
+    if (beforePaint) {
       const collapsible = element.shadowRoot?.querySelector<
         HTMLElement & { updateComplete?: Promise<unknown> }
       >("m3e-collapsible");
@@ -128,9 +117,10 @@ async function setGroupOpen(
     applying = false;
   }
 }
+
 // A tab group is a single entry, selected on any of its pages.
 const selected = computed(() =>
-  !hasChildren.value && hasActive(props.item) ? true : undefined,
+  !hasChildren.value && activeNav.has(props.item) ? true : undefined,
 );
 // An item that is already selected when it mounts (first render, a drawer
 // list remounting on a category switch, a drawer leaving display: none)
@@ -154,46 +144,58 @@ const externalLink = computed(() => {
   return link && isExternalLink(link) ? link : undefined;
 });
 
+/** Whether an open group has been given a height by the collapsible. */
+function isMeasuredOpen(element: NavMenuItemElement): boolean {
+  // Only asked on the first state, where the list is laid out anyway.
+  const collapsible = element.shadowRoot?.querySelector("m3e-collapsible");
+  return (collapsible?.getBoundingClientRect().height ?? 0) > 0;
+}
+
 async function applyGroupState(): Promise<void> {
   if (typeof window === "undefined" || !hasChildren.value) return;
 
   const element = groupElement.value;
   if (!element) return;
 
-  await customElements.whenDefined("m3e-nav-menu-item");
-  await customElements.whenDefined("m3e-collapsible");
-  await whenAkariReady();
-  await nextTick();
-  await element.updateComplete;
+  const first = !shown;
 
-  const animate = shown;
-  shown = true;
-  // A change waits for the list's layout, so it animates from the real size;
-  // the first state is in place before the list is painted.
-  if (animate) await nextLayoutFrame();
+  if (first) {
+    await customElements.whenDefined("m3e-nav-menu-item");
+    await customElements.whenDefined("m3e-collapsible");
+    await whenAkariReady();
+    await nextTick();
+    await element.updateComplete;
+    shown = true;
+  }
 
   const shouldOpen = !!open.value;
-  // A long group changes state at once, animated or not.
-  const instant = !animate || contentHeight(element) > ANIMATE_MAX_HEIGHT;
+
+  // Nothing moved: a watch fired for a group that already holds this state
+  // costs a comparison, not a frame.
+  if (applied === shouldOpen && element.open === shouldOpen) return;
+  applied = shouldOpen;
+
+  // A change waits for the list's layout, so it animates from the real size;
+  // the first state is in place before the list is painted.
+  if (!first) await nextLayoutFrame();
 
   if (shouldOpen) {
     if (!element.open) {
-      await setGroupOpen(element, true, instant);
-    } else {
-      const collapsible =
-        element.shadowRoot?.querySelector("m3e-collapsible");
-
+      await setGroupOpen(element, true, first);
+    } else if (first && !isMeasuredOpen(element)) {
       // The collapsible can stay at height 0 when `open` was set before its
       // slot children upgraded. Replaying the public property re-measures it.
-      if (collapsible && collapsible.getBoundingClientRect().height === 0) {
-        await setGroupOpen(element, false, instant);
-        await setGroupOpen(element, true, instant);
-      }
+      await setGroupOpen(element, false, true);
+      await setGroupOpen(element, true, true);
     }
   } else if (element.open) {
-    await setGroupOpen(element, false, instant);
+    await setGroupOpen(element, false, first);
   }
 }
+
+// The first state of a leaf — its selection, and the menu's re-selection of
+// it — is settled once. Later pages only re-assert the selection.
+let selectionSettled = false;
 
 async function applySelectedState(): Promise<void> {
   if (typeof window === "undefined" || hasChildren.value) return;
@@ -201,10 +203,13 @@ async function applySelectedState(): Promise<void> {
   const element = leafElement.value;
   if (!element) return;
 
-  await customElements.whenDefined("m3e-nav-menu-item");
-  await whenAkariReady();
-  await nextTick();
-  await nextLayoutFrame();
+  if (!selectionSettled) {
+    await customElements.whenDefined("m3e-nav-menu-item");
+    await whenAkariReady();
+    await nextTick();
+    await nextLayoutFrame();
+    selectionSettled = true;
+  }
 
   // A nested item that upgrades already selected notifies its ancestor
   // groups before they know they have children; the menu then treats a
@@ -220,12 +225,20 @@ onMounted(() => {
   void applySelectedState();
 });
 
-watch(open, () => void applyGroupState(), { flush: "post" });
+watch(
+  open,
+  () => {
+    void applyGroupState();
+  },
+  { flush: "post" },
+);
+// A group follows `open`, which the route already moves. A leaf is
+// re-asserted here because the menu clears the selection of an item that
+// connects already selected.
 watch(
   () => route.path,
   () => {
-    void applyGroupState();
-    void applySelectedState();
+    if (!hasChildren.value) void applySelectedState();
   },
   { flush: "post" },
 );
@@ -254,6 +267,7 @@ watch(
     ref="leafElement"
     :selected="selected"
     :data-akari-settled="settled ? '' : undefined"
+    :data-akari-nav-leaf="parentKey ? '' : undefined"
   >
     <m3e-icon v-if="icon" slot="icon" :name.attr="icon"></m3e-icon>
     <a

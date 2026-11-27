@@ -187,6 +187,39 @@ export function hasActiveItem(
 }
 
 /**
+ * Every item whose subtree holds the current page, in one walk of the tree.
+ *
+ * A list asks this once per page and then answers each item in constant
+ * time. Asking `hasActiveItem` per item instead walks each subtree, which is
+ * what a list of a thousand rows pays on every route change.
+ */
+export function collectActiveItems(
+  items: AkariSidebarItem[],
+  currentPath: string,
+  base = "/",
+  into: Set<AkariSidebarItem> = new Set(),
+): Set<AkariSidebarItem> {
+  // Marks the item and returns whether it holds the page, directly or
+  // through one of its children.
+  const mark = (item: AkariSidebarItem): boolean => {
+    const self =
+      (!!item.link && isActiveLink(currentPath, item.link, base)) ||
+      (item.tabs?.some(
+        (tab) => !!tab.link && isActiveLink(currentPath, tab.link, base),
+      ) ??
+        false);
+    const child = item.items ? item.items.map(mark).some(Boolean) : false;
+
+    if (self || child) into.add(item);
+    return self || child;
+  };
+
+  for (const item of items) mark(item);
+
+  return into;
+}
+
+/**
  * The pages of a navigation tree in reading order. A tab group contributes
  * its tabs, so stepping through pages visits each of them; with
  * `tabs: "group"` it contributes a single entry for the group instead.

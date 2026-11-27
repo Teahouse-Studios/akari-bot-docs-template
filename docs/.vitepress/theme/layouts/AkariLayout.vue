@@ -55,7 +55,11 @@ provideAkariSearchDock(search);
 provideAkariLocaleDialog();
 provideAkariSettingsDialog();
 const tabs = provideAkariTabs(config);
-const { page } = useData();
+const { dir: languageDir, page } = useData();
+// The reader's chosen direction wins over the page language's.
+const contentDir = computed(() =>
+  settings.direction === "auto" ? languageDir.value : settings.direction,
+);
 // The fonts of the page's language, which the page's head already set up
 // for the first paint; switching language changes them.
 watchEffect(() => applyFonts(config.value.fonts));
@@ -247,6 +251,7 @@ onUnmounted(() => {
         <main
           ref="pageElement"
           class="akari-doc"
+          :dir="contentDir"
           :data-pattern="pattern ?? undefined"
         >
           <div class="akari-surface-cap" aria-hidden="true"></div>

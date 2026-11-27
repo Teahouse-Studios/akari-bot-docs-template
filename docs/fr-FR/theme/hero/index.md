@@ -59,7 +59,7 @@ L'image change dès que vous passez du mode clair au mode sombre ou inversement,
 
 ## Couleur
 
-Une page avec un hero prend une couleur de l'image comme couleur du thème : la barre d'application, la navigation, les boutons et les liens adoptent une palette assortie à l'image. Quand vous quittez la page, la couleur du lecteur revient. Écrivez `color: "#3367d6"` pour fixer la couleur, ou `color: false` pour garder celle du lecteur.
+Une page avec un hero prend une couleur de l'image comme couleur source du thème : la barre d'application, la navigation, les boutons et les liens adoptent une palette assortie à l'image. L'extraction a lieu au build, une fois pour l'image claire et une fois pour l'image sombre ; la page n'a plus besoin de lire l'image à l'ouverture. Quand vous quittez la page, la couleur du lecteur revient. Écrivez `color: "#3367d6"` pour fixer la couleur, ou `color: false` pour garder celle du lecteur.
 
 ## Images transparentes et motifs
 

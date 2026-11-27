@@ -16,7 +16,7 @@ tab: API
 | `tagline` | `string` | 페이지의 `description` | 제목 아래의 한 줄 요약 |
 | `background` | `string` | `--md-sys-color-primary-container` | 이미지 카드의 배경색. CSS 색상이나 토큰이면 무엇이든 됩니다 |
 | `fit` | `"cover" \| "contain"` | `"cover"` | `cover`는 카드를 채우고 넘치는 부분을 잘라 냅니다. `contain`은 여백을 두고 이미지 전체를 보여 주며, 배경이 투명한 일러스트에 어울립니다 |
-| `color` | `string \| false` | 이미지에서 추출 | 이 페이지의 테마 시드 색상. `#rrggbb`는 그 색상으로 고정하고, `false`는 독자가 설정에서 고른 색상을 유지합니다 |
+| `color` | `string \| false` | 이미지에서 추출(빌드 시) | 이 페이지의 테마 시드 색상. `#rrggbb`는 그 색상으로 고정하고, `false`는 독자가 설정에서 고른 색상을 유지합니다 |
 | `pattern` | `"dots" \| "grid" \| "plus" \| "diagonal" \| "waves" \| "none" \| "auto"` | `"auto"` | 페이지에 숨어 있는 패턴: 점, 격자, 더하기 기호, 대각선, 물결. `none`은 패턴을 표시하지 않고, `auto`는 콘텐츠를 불러올 때마다 무작위로 하나를 고릅니다 |
 
 `pattern`은 페이지 전체에 적용됩니다. 히어로 카드와 콘텐츠 안에서 배경이 있는 요소가 같은 패턴을 씁니다. 히어로가 없는 페이지도 무작위로 하나를 고릅니다.

@@ -608,11 +608,11 @@ html:lang(ar-SA) .akari-boot__noscript::after {
   --akari-doc-axis-shift: -30px;
 }
 
-:root[dir="rtl"] .akari-doc[data-axis] > .akari-doc__page {
+.akari-doc[dir="rtl"][data-axis] > .akari-doc__page {
   --akari-doc-axis-shift: -30px;
 }
 
-:root[dir="rtl"] .akari-doc[data-axis="backward"] > .akari-doc__page {
+.akari-doc[dir="rtl"][data-axis="backward"] > .akari-doc__page {
   --akari-doc-axis-shift: 30px;
 }
 
@@ -964,6 +964,18 @@ html:has(.akari-drawers[start]) {
 .akari-drawer-menu {
   --m3e-nav-menu-item-height: 48px;
   --m3e-nav-menu-item-padding: 16px;
+}
+
+/*
+ * A nested row is laid out only while it is on screen. Under a group that
+ * holds a thousand pages, opening or closing it would otherwise lay out
+ * every row on every frame of the animation. The remembered size keeps the
+ * list's scroll height right for rows that were never painted; rows are one
+ * line of 13px text in a 48px cell, so it matches the real height.
+ */
+.akari-drawer-menu [data-akari-nav-leaf] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
 }
 
 /*
