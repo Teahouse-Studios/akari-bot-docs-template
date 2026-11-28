@@ -176,6 +176,10 @@ export function provideAkariSearchDock(
       ? null
       : new ResizeObserver(() => schedule(false));
 
+  // Watches the parked tag only, so a scroll that keeps it usable costs no
+  // measuring at all.
+  let roomObserver: IntersectionObserver | null = null;
+
   let dockElement: HTMLElement | null = null;
   // Where the engine can hold the copy on its own. False means the whole
   // hand-off below is skipped and the per-frame path keeps running, which is
@@ -419,7 +423,55 @@ export function provideAkariSearchDock(
     }
     dock.setAttribute(SEARCH_DOCK_ANCHORED_ATTR, "");
     currentRect = rect;
+    watchAnchorRoom(element);
     return true;
+  }
+
+  /**
+   * The copy is parked, so the engine moves it and scrolling costs nothing —
+   * as long as nobody measures anything. The one thing scroll still has to
+   * decide is whether the tag left the area the copy may occupy, and an
+   * observer answers that without a per-frame layout.
+   */
+  function watchAnchorRoom(element: HTMLElement): void {
+    if (roomObserver) roomObserver.disconnect();
+    if (typeof IntersectionObserver !== "function") return;
+
+    roomObserver = new IntersectionObserver(onAnchorRoomChange, {
+      rootMargin: anchorRoomInset(),
+      threshold: 0,
+    });
+    roomObserver.observe(element);
+  }
+
+  function unwatchAnchorRoom(): void {
+    roomObserver?.disconnect();
+    roomObserver = null;
+  }
+
+  /** How much of the viewport is covered by the bar and the tab strip. */
+  function anchorRoomInset(): string {
+    let covered = 0;
+    for (const selector of [".akari-frame__bar", ".akari-page-tabs"]) {
+      for (const node of document.querySelectorAll<HTMLElement>(selector)) {
+        const style = getComputedStyle(node);
+        if (style.position !== "sticky" && style.position !== "fixed") continue;
+        if (style.visibility === "hidden" || style.display === "none") continue;
+        const rect = node.getBoundingClientRect();
+        if (rect.height <= 0) continue;
+        covered = Math.max(covered, rect.bottom);
+      }
+    }
+    return `-${Math.round(covered)}px 0px 0px 0px`;
+  }
+
+  function onAnchorRoomChange(entries: IntersectionObserverEntry[]): void {
+    if (!isAnchored()) return;
+    const entry = entries[entries.length - 1];
+    if (!entry || entry.target !== currentElement) return;
+    // The tag left (or came back into) the band the copy may park in. The
+    // full check lives in `sync`; this only says "look again".
+    schedule(!entry.isIntersecting);
   }
 
   /**
@@ -430,6 +482,7 @@ export function provideAkariSearchDock(
   function detachAnchor(): void {
     const dock = dockElement;
     if (!canAnchor) return;
+    unwatchAnchorRoom();
 
     if (dock?.hasAttribute(SEARCH_DOCK_ANCHORED_ATTR)) {
       const rect = rectOf(dock);
@@ -703,7 +756,13 @@ export function provideAkariSearchDock(
       applyRect(target, true, undefined, true);
       settleAnchor(anchor.element);
     } finally {
-      if (token === activationToken) activationPending = false;
+      if (token === activationToken) {
+        activationPending = false;
+        // A scroll that landed mid-activation was dropped by the guard above.
+        // Replay it once, otherwise a tag that left the band in that window is
+        // never asked again and the copy stays parked off screen.
+        schedule(false);
+      }
     }
   }
 
@@ -773,6 +832,7 @@ export function provideAkariSearchDock(
       fadeTimer = 0;
     }
     cancelFlight();
+    unwatchAnchorRoom();
     active.value = false;
     leaving.value = false;
     currentElement?.removeAttribute(SEARCH_DOCK_ANCHOR_ATTR);
@@ -984,14 +1044,10 @@ export function provideAkariSearchDock(
     // follows a fast scroll. Let it finish instead of snapping the target.
     if (flightFrame) return;
 
-    // Parked: the engine moves the box with the page, so there is nothing to
-    // write on scroll. What is left is the leave decision — does the tag
-    // still sit somewhere the copy may be? — and that runs on the frame
-    // clock rather than inside the scroll event.
-    if (isAnchored()) {
-      schedule(false);
-      return;
-    }
+    // The copy is parked on its tag: the engine moves the box with the page,
+    // so a scroll frame owes no measuring. Whether the tag left the band is
+    // the room observer's business.
+    if (isAnchored()) return;
 
     // A settled copy follows the landing box synchronously, so it does not
     // trail the page by a frame or snap at the end of a scroll.
@@ -1173,6 +1229,7 @@ export function provideAkariSearchDock(
     mounted = false;
     anchors.clear();
     anchorObserver?.disconnect();
+    unwatchAnchorRoom();
     if (frame) cancelAnimationFrame(frame);
     if (scheduleTimer) window.clearTimeout(scheduleTimer);
     if (settleFrame) cancelAnimationFrame(settleFrame);
