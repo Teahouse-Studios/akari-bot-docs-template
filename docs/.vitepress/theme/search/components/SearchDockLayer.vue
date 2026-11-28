@@ -429,6 +429,15 @@ onUnmounted(() => dock.setDockElement(null));
     width: 100%;
     height: 100%;
     gap: 8px;
+    /* The round bar button's own inset: the copy has to match it at both ends
+       of the flight, or the icon is 3px off when the button takes over. */
+    padding-inline: 9px;
+  }
+
+  /* Parked in the page the copy is a field, so it gets the roomier inset. The
+     change is transitioned, which turns the hand-off into a 3px glide instead
+     of a pop on the first frame. */
+  .akari-search-dock[data-dock-anchored] :deep(.akari-search-trigger) {
     padding-inline: var(--md-sys-measurement-space150, 12px);
   }
 
@@ -459,6 +468,9 @@ onUnmounted(() => dock.setDockElement(null));
   .akari-search-dock[data-leaving] :deep(.akari-search-trigger) {
     gap: 0;
     padding-inline: 9px;
+    /* The row has no gaps left to pay for, so the spacers' negative
+       margins would pull the group 8px off the round button's icon. */
+    --_dock-gap: 0px;
   }
 
   .akari-search-dock[data-leaving] :deep(.akari-search-trigger__label) {
