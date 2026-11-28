@@ -23,6 +23,8 @@ function checkWebGL2() {
 
 function getGPUVendor() {
     const gl = document.createElement('canvas').getContext('webgl');
+    if (!gl)
+        return '';
 
     if (/Firefox/.test(navigator.userAgent)) {
         return gl.getParameter(gl.VENDOR);
@@ -37,6 +39,8 @@ function getGPUVendor() {
 
 function getGPUModel() {
     const gl = document.createElement('canvas').getContext('webgl');
+    if (!gl)
+        return '';
 
     if (/Firefox/.test(navigator.userAgent)) {
         return gl.getParameter(gl.RENDERER);
@@ -110,10 +114,24 @@ async function getGPUTier(undecided='BAD', printDebugInfo=false) {
         return { tier: 'GOOD', reason: 'NVIDIA/AMD graphics' };
 
     if (/Intel/i.test(model)) {
+        // Xe3 "Panther Lake" (Core Ultra 300 series / Arc B390, B370, 2026).
+        // Windows ANGLE: "Intel(R) Arc(TM) B390 GPU (0x0000B080) ..."
+        // Mesa/Linux:    "Mesa Intel(R) Graphics (PTL)"
+        // Panther Lake also loses the Arc name on Windows when the memory is
+        // slower than 7467 MT/s and is then just "Intel(R) Graphics", so the
+        // PTL PCI IDs (0xB080-0xB0A1) are the only reliable hint left.
+        if (/(PTL|Panther Lake|Xe3)/i.test(model) || /0x0000B0[89A][0-9A-F]/i.test(model))
+            return { tier: 'GOOD', reason: 'Good Intel Xe3 GPU (Panther Lake)' };
+
+        // Lunar Lake (Xe2, Arc 130V/140V) and Meteor Lake (Xe-LPG) — some
+        // Linux/Mesa builds only report "Intel(R) Graphics (LNL/MTL)".
+        if (/(LNL|Lunar Lake|MTL|Meteor Lake|Xe2)/i.test(model))
+            return { tier: 'GOOD', reason: 'Good Intel Xe2 GPU (Lunar/Meteor Lake)' };
+
         // Tiger Lake, Alder Lake, Raptor Lake, Raptor Lake Refresh (11-13 gen)
         if  (/Xe Graphics/i.test(model))
             return { tier: 'GOOD', reason: 'Decent Intel Iris Xe GPU' };
-        // Meteor Lake, Lunar Lake, Arrow Lake, Panther Lake (Core Ultra)
+        // Arc A/B-series dGPU, Arc Pro (Alchemist/Battlemage), Arc G3 handhelds
         else if (/Arc/i.test(model))
             return { tier: 'GOOD', reason: 'Good Intel Arc GPU' };
 
@@ -155,10 +173,18 @@ async function getGPUTier(undecided='BAD', printDebugInfo=false) {
         if (/(Mali-G57|Mali-G68)/i.test(model))
             return { tier: 'GOOD', reason: 'Decent Mali GPU' };
 
+        // e.g. Google Pixel 6, Huawei P50 (Kirin version), Huawei Mate 40
+        else if (/Mali-G78/i.test(model))
+            return { tier: 'GOOD', reason: 'Decent Mali GPU' };
+
         // e.g. Google Pixel 7/Pixel Tablet (Mali-G710), Pixel 8/9 (Mali-G715)
         // various high-end Oppo/Xiaomi/Realme/Redmi/Vivo devices
         else if (/Mali-G7\d\d/i.test(model))
             return { tier: 'GOOD', reason: 'Good Mali GPU' };
+
+        // e.g. Dimensity 9400/9500 reported as "Mali-G925-Immortalis MC12"
+        else if (/(Mali-G9\d\d|Immortalis)/i.test(model))
+            return { tier: 'GOOD', reason: 'Good Mali/Immortalis GPU' };
     }
 
     if (/PowerVR/i.test(model)) {
