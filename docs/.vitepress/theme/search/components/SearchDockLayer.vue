@@ -228,25 +228,13 @@ onUnmounted(() => dock.setDockElement(null));
 }
 
 /*
- * The immersive body is born already wearing the target `align`, so the
- * transition above never runs on the way in: the placeholder would find
- * itself parked mid-pill on the first frame while the label it replaced
- * was still on the leading edge. The animation supplies the missing
- * "before" — it belongs to the element, so it plays once per flight, and
- * it does not fill forwards, which leaves later `align` changes easing.
+ * No entrance animation: the field is born at the width of the button it
+ * replaced and grows with the flight, so `left: 50%` starts at zero and
+ * walks to the middle on its own — the entrance is the layout, not a
+ * timeline. An extra animation would outlive the flight (500ms spring
+ * against a 300ms flight) and keep sliding the text inside a box that had
+ * already parked, which reads as the placeholder stuttering to a stop.
  */
-@keyframes akari-search-dock-mirror-in {
-  from {
-    left: 0;
-    transform: none;
-  }
-}
-
-.akari-search-dock[data-align="center"] :deep(.akari-search-field__mirror),
-.akari-search-dock[data-align="end"] :deep(.akari-search-field__mirror) {
-  animation: akari-search-dock-mirror-in
-    var(--md-sys-motion-spring-default-spatial, 500ms cubic-bezier(0.27, 1.06, 0.18, 1));
-}
 
 /*
  * The label fills the row when it starts, and keeps its own width when the
@@ -272,6 +260,22 @@ onUnmounted(() => dock.setDockElement(null));
 .akari-search-dock[data-align="center"] :deep(.akari-search-trigger__label),
 .akari-search-dock[data-align="end"] :deep(.akari-search-trigger__label) {
   flex-grow: 0;
+}
+
+/*
+ * While the box itself is being written frame by frame, the row must not also
+ * animate its own distribution: `flex-grow` resolves against a width that is
+ * changing on the very same frame, so a growing label and a growing box
+ * multiply, and the label balloons and then shrinks back. Freeze the
+ * distribution at its target and let the growing box reveal it.
+ */
+.akari-search-dock[data-flying] :deep(.akari-search-trigger__label),
+.akari-search-dock[data-flying] :deep(.akari-search-trigger__kbd),
+.akari-search-dock[data-flying] :deep(.akari-search-trigger__label)::before,
+.akari-search-dock[data-flying] :deep(.akari-search-trigger)::before,
+.akari-search-dock[data-flying] :deep(.akari-search-trigger)::after,
+.akari-search-dock[data-flying] :deep(.akari-search-field__mirror) {
+  transition: none;
 }
 
 /* A raised bar: the same field as the app bar, now floating. */
@@ -434,12 +438,13 @@ onUnmounted(() => dock.setDockElement(null));
     padding-inline: 9px;
   }
 
-  /* Parked in the page the copy is a field, so it gets the roomier inset. The
-     change is transitioned, which turns the hand-off into a 3px glide instead
-     of a pop on the first frame. */
-  .akari-search-dock[data-dock-anchored] :deep(.akari-search-trigger) {
-    padding-inline: var(--md-sys-measurement-space150, 12px);
-  }
+  /*
+   * No parked inset of its own: the variant already names one (12 for the
+   * field shapes, 16 for the hero, 0 for the icon), and the base 9px is only
+   * the round button's. Re-declaring it here would start a second padding
+   * transition on the landing frame, so the contents kept sliding after the
+   * box had already parked.
+   */
 
   .akari-search-dock :deep(.akari-search-trigger__label) {
     opacity: 1;

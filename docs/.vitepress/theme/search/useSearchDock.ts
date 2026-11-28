@@ -179,6 +179,7 @@ export function provideAkariSearchDock(
   // Watches the parked tag only, so a scroll that keeps it usable costs no
   // measuring at all.
   let roomObserver: IntersectionObserver | null = null;
+  let roomSizeObserver: ResizeObserver | null = null;
 
   let dockElement: HTMLElement | null = null;
   // Where the engine can hold the copy on its own. False means the whole
@@ -442,11 +443,34 @@ export function provideAkariSearchDock(
       threshold: 0,
     });
     roomObserver.observe(element);
+
+    // The bar and the tab strip decide how much of the viewport is already
+    // spoken for. When either changes height — a tab wraps, the bar condenses,
+    // a page adds its strip — the band moves and the observer's margin is
+    // stale, so a tag that is now covered would keep the copy.
+    if (typeof ResizeObserver !== "function") return;
+    if (!roomSizeObserver) {
+      roomSizeObserver = new ResizeObserver(() => {
+        // The band moved: re-observe with the new margin, and look again.
+        // This runs whether or not the copy is parked — a strip that collapses
+        // can hand a tag back just as easily as one that grows takes it away.
+        if (isAnchored() && currentElement) watchAnchorRoom(currentElement);
+        schedule(true);
+      });
+    }
+    roomSizeObserver.disconnect();
+    for (const selector of [".akari-frame__bar", ".akari-page-tabs"]) {
+      for (const node of document.querySelectorAll(selector)) {
+        roomSizeObserver.observe(node);
+      }
+    }
   }
 
   function unwatchAnchorRoom(): void {
     roomObserver?.disconnect();
     roomObserver = null;
+    // The size observer is deliberately left running: a strip that collapses
+    // after the copy has gone home must be able to hand the tag back.
   }
 
   /** How much of the viewport is covered by the bar and the tab strip. */
@@ -471,7 +495,7 @@ export function provideAkariSearchDock(
     if (!entry || entry.target !== currentElement) return;
     // The tag left (or came back into) the band the copy may park in. The
     // full check lives in `sync`; this only says "look again".
-    schedule(!entry.isIntersecting);
+    schedule(entry.isIntersecting);
   }
 
   /**
@@ -669,6 +693,9 @@ export function provideAkariSearchDock(
     const tick = () => {
       settleFrame = 0;
       if (!active.value || leaving.value || currentElement !== element) return;
+      // Parked: the engine owns the box, and measuring here would take it back
+      // and write a box that is stale by the next scroll frame.
+      if (isAnchored()) return;
 
       // Let an in-flight curve finish before following a target that is
       // itself moving with the page's enter transition.
@@ -710,13 +737,20 @@ export function provideAkariSearchDock(
       search.setActiveTrigger("dock");
 
       if (!fly) {
-        applyRect(anchor.rect, false);
+        // Commit the state on this very frame: hand the box to the engine
+        // first. An inline snap is stale as soon as the page scrolls again,
+        // while an anchored box never is — so the parked state is the state,
+        // not a stop on the way to one.
+        const parked = attachAnchor(anchor.element);
+        if (!parked) applyRect(anchor.rect, false);
         await nextTick();
         if (!active.value || currentElement !== anchor.element) return;
         hideHome(true);
         setHomeSlot(false, true);
-        attachAnchor(anchor.element);
-        settleAnchor(anchor.element);
+        if (!parked) {
+          attachAnchor(anchor.element);
+          settleAnchor(anchor.element);
+        }
         return;
       }
 
@@ -920,6 +954,15 @@ export function provideAkariSearchDock(
   function sync(animate: boolean): void {
     if (!mounted || activationPending || search.isOpen.value) return;
 
+    // A tag that was re-created by a re-render leaves `currentElement` behind:
+    // it is no longer connected, so every later park attempt fails and the copy
+    // stays on a stale inline box. Drop the claim and resolve the anchor again.
+    if (currentElement && !currentElement.isConnected) {
+      currentElement = null;
+      currentRect = null;
+      detachAnchor();
+    }
+
     // The tag can appear before the page's content hook fires. Start as
     // soon as it exists: the flight loop re-measures it every frame, so a
     // tag that is still settling drags the target instead of delaying us.
@@ -1034,15 +1077,15 @@ export function provideAkariSearchDock(
     // While home, keep watching for a tag that scrolls into a usable area.
     if (!active.value && !leaving.value && anchors.size === 0) return;
 
+    // The rAF loop measures currentElement every frame, so it already
+    // follows a fast scroll. Let it finish instead of snapping the target.
+    if (flightFrame) return;
+
     if (leaving.value) {
       // A usable landing area during the fly-home interrupts it immediately.
       if (currentAnchor()) schedule(true);
       return;
     }
-
-    // The rAF loop measures currentElement every frame, so it already
-    // follows a fast scroll. Let it finish instead of snapping the target.
-    if (flightFrame) return;
 
     // The copy is parked on its tag: the engine moves the box with the page,
     // so a scroll frame owes no measuring. Whether the tag left the band is
@@ -1230,6 +1273,8 @@ export function provideAkariSearchDock(
     anchors.clear();
     anchorObserver?.disconnect();
     unwatchAnchorRoom();
+    roomSizeObserver?.disconnect();
+    roomSizeObserver = null;
     if (frame) cancelAnimationFrame(frame);
     if (scheduleTimer) window.clearTimeout(scheduleTimer);
     if (settleFrame) cancelAnimationFrame(settleFrame);
