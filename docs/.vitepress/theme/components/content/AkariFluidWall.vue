@@ -5,6 +5,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } 
 import {
   buildFluidRibbons,
   FLUID_FALLBACK_TOKENS,
+  FLUID_LOOPS,
   FLUID_TEXTURE_SIZES,
   FLUID_TEXTURE_WEIGHTS,
   fluidBlendMode,
@@ -1835,6 +1836,12 @@ const PRESS_SIZE = 1.15;
 const presses: { x: number; y: number; at: number; strength: number; reach: number }[] = [];
 const pressData = new Float32Array(PRESS_MAX * 4);
 const pressReachData = new Float32Array(PRESS_MAX);
+/** Rewritten every frame; sized once so the loop stays allocation free. */
+const loopOffsets = new Float32Array(FLUID_LOOPS.length * 2);
+/** The wall's CSS height, taken when it is measured; reading it per frame forces layout. */
+let pressHeight = 0;
+/** The same, for the presses the vine scenes read. */
+const vinePresses: { x: number; y: number; t: number; reach: number }[] = [];
 /** The pointer light is eased in and out, so the wall never snaps. */
 let glow = 0;
 let glowTarget = 0;
@@ -2075,6 +2082,7 @@ function resize(): boolean {
   // The grain and the motes are measured in CSS pixels, so they keep their
   // size on screen whatever the backing store was scaled to.
   if (grain) context.uniform2f(grain, rect.width, rect.height);
+  pressHeight = wall.value?.clientHeight ?? 0;
   const sizeChanged = ribbonSize.value.width !== rect.width || ribbonSize.value.height !== rect.height;
   if (sizeChanged) {
     ribbonSize.value = { width: rect.width, height: rect.height };
@@ -2112,7 +2120,11 @@ function uploadRipples(): void {
     const warpY = ribbonSize.value.height / vineScene.planHeight || 1;
     for (let index = 0; index < count; index += 1) {
       const portal = portals[index]!;
-      rippleData.set([portal.x * warpX, portal.y * warpY, portal.ripple, portal.phase], index * 4);
+      const base = index * 4;
+      rippleData[base] = portal.x * warpX;
+      rippleData[base + 1] = portal.y * warpY;
+      rippleData[base + 2] = portal.ripple;
+      rippleData[base + 3] = portal.phase;
     }
   }
   const ripples = locations.get("u_ripples");
@@ -2123,7 +2135,7 @@ function uploadRipples(): void {
 
 function updateTexturePressGlow(): void {
   const layers = texturePressLayers.value;
-  const height = wall.value?.clientHeight ?? 0;
+  const height = pressHeight;
   for (let index = 0; index < layers.length; index += 1) {
     const layer = layers[index];
     if (!layer) continue;
@@ -2162,14 +2174,19 @@ function updateTexturePressGlow(): void {
 }
 
 function updateVinePresses(): void {
-  const list = presses.map((press) => ({
-    x: press.x,
-    y: press.y,
-    t: Math.min(Math.max((elapsed - press.at) / PRESS_LIFE, 0), 1),
-    reach: press.reach,
-  }));
-  vineScene?.setPresses(list);
-  vinePopOutsideScene?.setPresses(list);
+  const count = Math.min(presses.length, PRESS_MAX);
+  while (vinePresses.length < count) vinePresses.push({ x: 0, y: 0, t: 0, reach: 0 });
+  for (let index = 0; index < count; index += 1) {
+    const press = presses[index]!;
+    const entry = vinePresses[index]!;
+    entry.x = press.x;
+    entry.y = press.y;
+    entry.t = Math.min(Math.max((elapsed - press.at) / PRESS_LIFE, 0), 1);
+    entry.reach = press.reach;
+  }
+  vinePresses.length = count;
+  vineScene?.setPresses(vinePresses);
+  vinePopOutsideScene?.setPresses(vinePresses);
 }
 
 function uploadPresses(): void {
@@ -2180,7 +2197,11 @@ function uploadPresses(): void {
   const count = Math.min(presses.length, PRESS_MAX);
   for (let index = 0; index < count; index += 1) {
     const press = presses[index]!;
-    pressData.set([press.x, press.y, elapsed - press.at, press.strength], index * 4);
+    const base = index * 4;
+    pressData[base] = press.x;
+    pressData[base + 1] = press.y;
+    pressData[base + 2] = elapsed - press.at;
+    pressData[base + 3] = press.strength;
     pressReachData[index] = press.reach;
   }
   const points = locations.get("u_press");
@@ -2197,7 +2218,7 @@ function draw(now = performance.now()): void {
   pointer.y += (pointer.targetY - pointer.y) * 0.14;
 
   const loops = locations.get("u_loops");
-  if (loops) context.uniform2fv(loops, fluidLoopOffsets(elapsed));
+  if (loops) context.uniform2fv(loops, fluidLoopOffsets(elapsed, loopOffsets));
   setFloat("u_time", elapsed);
 
   const centre = locations.get("u_centre");
@@ -2242,9 +2263,8 @@ function draw(now = performance.now()): void {
   if (cursorUniform) context.uniform2f(cursorUniform, cursor.x, 1 - cursor.y);
   setFloat("u_glow", glow * palette.glow * spec.value.glow);
 
-  for (const scene of [vineScene, vinePopOutsideScene]) {
-    scene?.setRipple(liveRippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
-  }
+  vineScene?.setRipple(liveRippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
+  vinePopOutsideScene?.setRipple(liveRippleStrength.value, rippleSpeed.value, rippleSize.value, rippleRings.value, rippleSway.value);
   uploadRipples();
   uploadPresses();
   updateTexturePressGlow();

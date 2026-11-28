@@ -246,20 +246,31 @@ export const FLUID_LOOPS: readonly FluidLoop[] = [
  * start, which the noise reads as a slow evolution rather than as a pan.
  */
 export function fluidLoopOffset(elapsedSeconds: number, loop: FluidLoop): [number, number] {
-  const phase = ((elapsedSeconds % loop.period) + loop.period) % loop.period;
-  const angle = (phase / loop.period) * Math.PI * 2;
+  const angle = fluidLoopAngle(elapsedSeconds, loop);
   return [loop.radius * Math.sin(angle), loop.radius * (1 - Math.cos(angle))];
 }
 
-/** Every loop's offset, flat, in the order the shader's array wants them. */
-export function fluidLoopOffsets(elapsedSeconds: number): Float32Array {
-  const offsets = new Float32Array(FLUID_LOOPS.length * 2);
-  FLUID_LOOPS.forEach((loop, index) => {
-    const [x, y] = fluidLoopOffset(elapsedSeconds, loop);
-    offsets[index * 2] = x;
-    offsets[index * 2 + 1] = y;
-  });
-  return offsets;
+/** The angle the loop's pair sits at; shared so both forms agree to the bit. */
+function fluidLoopAngle(elapsedSeconds: number, loop: FluidLoop): number {
+  const phase = ((elapsedSeconds % loop.period) + loop.period) % loop.period;
+  return (phase / loop.period) * Math.PI * 2;
+}
+
+/**
+ * Every loop's offset, flat, in the order the shader's array wants them.
+ * `target` may be reused across frames so this costs no allocation in the loop.
+ */
+export function fluidLoopOffsets(
+  elapsedSeconds: number,
+  target = new Float32Array(FLUID_LOOPS.length * 2),
+): Float32Array {
+  for (let index = 0; index < FLUID_LOOPS.length; index += 1) {
+    const loop = FLUID_LOOPS[index]!;
+    const angle = fluidLoopAngle(elapsedSeconds, loop);
+    target[index * 2] = loop.radius * Math.sin(angle);
+    target[index * 2 + 1] = loop.radius * (1 - Math.cos(angle));
+  }
+  return target;
 }
 
 /** Largest device pixels per CSS pixel. */

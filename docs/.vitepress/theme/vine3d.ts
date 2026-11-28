@@ -1454,7 +1454,8 @@ export function createVine3d(
   options.bloomLayer?.replaceChildren();
   options.budLayer?.replaceChildren();
   const bloomProbe = new THREE.Vector3();
-  const bloomDots: Array<{ el: HTMLElement; owner: { centre: THREE.Vector3; base: THREE.Vector3; portal?: VinePortal }; size: number; bud: boolean }> = [];
+  const drawingBuffer = new THREE.Vector2();
+  const bloomDots: Array<{ el: HTMLElement; sprite: THREE.Sprite; size: number; bud: boolean; transform: string; edge: string }> = [];
   const flowerDotMaterials: THREE.SpriteMaterial[] = [];
   const budDotMaterials: THREE.SpriteMaterial[] = [];
   const bloomSprites: Array<{
@@ -1943,7 +1944,7 @@ void main() {
             ? "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,214,240,0.62) 22%, rgba(255,176,222,0.22) 48%, rgba(255,176,222,0) 72%)"
             : "radial-gradient(circle, rgba(255,176,230,0.95) 0%, rgba(250,116,206,0.6) 22%, rgba(238,84,192,0.2) 48%, rgba(238,84,192,0) 72%)";
         bloomLayer.appendChild(el);
-        bloomDots.push({ el, owner: entry, size: reach * (group.bud ? 7 : 4.2), bud: group.bud });
+        bloomDots.push({ el, sprite: dot, size: reach * (group.bud ? 7 : 4.2), bud: group.bud, transform: "", edge: "" });
       }
     }
     if (VINE_ALPHA_DEBUG && plan.layer === 2 && !plan.pop) {
@@ -2109,7 +2110,6 @@ const SHADOW_SPEED = 0.8;
     const canvasWidth = nextWidth + bleed.left + bleed.right;
     const canvasHeight = nextHeight + bleed.top + bleed.bottom;
     renderer.setSize(canvasWidth, canvasHeight, false);
-    const drawingBuffer = new THREE.Vector2();
     renderer.getDrawingBufferSize(drawingBuffer);
     hover.resolution.copy(drawingBuffer);
     if (particleMaterial) particleMaterial.uniforms.u_pixel_ratio.value = renderer.getPixelRatio();
@@ -2123,6 +2123,36 @@ const SHADOW_SPEED = 0.8;
     hover.radius.value = glowRadius * renderer.getPixelRatio();
     pointerLight.distance = glowRadius * 1.45;
   };
+  const renderShadowPass = (
+    objects: THREE.Object3D[],
+    target: THREE.WebGLRenderTarget,
+    blur: number,
+  ) => {
+    if (!blurMaterial || !blurScene || !blurCamera) return false;
+    for (const object of paintedObjects) object.visible = false;
+    for (const object of shadowObjects) object.visible = false;
+    for (const object of wallShadowObjects) object.visible = false;
+    if (particlePoints) particlePoints.visible = false;
+    for (const object of objects) object.visible = true;
+    renderer.setRenderTarget(target);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear();
+    camera.layers.enable(SHADOW_LAYER);
+    renderer.render(scene, camera);
+    camera.layers.disable(SHADOW_LAYER);
+    renderer.setRenderTarget(null);
+    for (const object of objects) object.visible = false;
+    return true;
+  };
+  const compositeShadow = (target: THREE.WebGLRenderTarget, blur: number) => {
+    if (!blurMaterial || !blurScene || !blurCamera) return;
+    blurMaterial.uniforms.u_shadow.value = target.texture;
+    blurMaterial.uniforms.u_blur.value = blur * renderer.getPixelRatio() * 0.55;
+    renderer.autoClear = false;
+    renderer.render(blurScene, blurCamera);
+    renderer.autoClear = true;
+  };
+
   resize(width, height);
   return {
     bleed,
@@ -2217,16 +2247,24 @@ const SHADOW_SPEED = 0.8;
         const spanX = camera.right - camera.left;
         const spanY = camera.top - camera.bottom;
         for (const dot of bloomDots) {
-          const sprite = bloomSprites.find((item) => item.centre === dot.owner.centre)?.sprite;
-          if (!sprite) continue;
-          bloomProbe.copy(sprite.position).project(camera);
+          bloomProbe.copy(dot.sprite.position).project(camera);
           const px = (bloomProbe.x * 0.5 + 0.5) * boxWidth;
           const py = (-bloomProbe.y * 0.5 + 0.5) * boxHeight;
           const scale = dot.bud ? (budBloom?.radius.value ?? 0) : bloomScale.value;
           const size = ((dot.size * scale) / spanX) * boxWidth;
-          dot.el.style.transform = `translate3d(${(px - size / 2).toFixed(1)}px, ${(py - size / 2).toFixed(1)}px, 0)`;
-          dot.el.style.width = `${size.toFixed(1)}px`;
-          dot.el.style.height = `${size.toFixed(1)}px`;
+          // A resting page reports the same box every frame; skipping the write
+          // keeps the style map clean, so the next layout read is cheap.
+          const transform = `translate3d(${(px - size / 2).toFixed(1)}px, ${(py - size / 2).toFixed(1)}px, 0)`;
+          if (dot.transform !== transform) {
+            dot.el.style.transform = transform;
+            dot.transform = transform;
+          }
+          const edge = `${size.toFixed(1)}px`;
+          if (dot.edge !== edge) {
+            dot.el.style.width = edge;
+            dot.el.style.height = edge;
+            dot.edge = edge;
+          }
         }
       }
       pointer.lerp(pointerTarget, 0.16);
@@ -2320,35 +2358,6 @@ const SHADOW_SPEED = 0.8;
       const angleStep = Math.max(-2.5, Math.min(2.5, angleDelta * 0.08));
       hover.shadowAngle.value = ((hover.shadowAngle.value + angleStep) % 360 + 360) % 360;
       hover.shadowWallAngle.value = ((hover.shadowAngle.value + wallShadowAngleOffset) % 360 + 360) % 360;
-      const renderShadowPass = (
-        objects: THREE.Object3D[],
-        target: THREE.WebGLRenderTarget,
-        blur: number,
-      ) => {
-        if (!blurMaterial || !blurScene || !blurCamera) return false;
-        for (const object of paintedObjects) object.visible = false;
-        for (const object of shadowObjects) object.visible = false;
-        for (const object of wallShadowObjects) object.visible = false;
-        if (particlePoints) particlePoints.visible = false;
-        for (const object of objects) object.visible = true;
-        renderer.setRenderTarget(target);
-        renderer.setClearColor(0x000000, 0);
-        renderer.clear();
-        camera.layers.enable(SHADOW_LAYER);
-        renderer.render(scene, camera);
-        camera.layers.disable(SHADOW_LAYER);
-        renderer.setRenderTarget(null);
-        for (const object of objects) object.visible = false;
-        return true;
-      };
-      const compositeShadow = (target: THREE.WebGLRenderTarget, blur: number) => {
-        if (!blurMaterial || !blurScene || !blurCamera) return;
-        blurMaterial.uniforms.u_shadow.value = target.texture;
-        blurMaterial.uniforms.u_blur.value = blur * renderer.getPixelRatio() * 0.55;
-        renderer.autoClear = false;
-        renderer.render(blurScene, blurCamera);
-        renderer.autoClear = true;
-      };
       const wallShadowActive = hover.wallShadowStrength.value > 1e-3;
       const shadowActive = hover.shadowStrength.value > 1e-3;
       let wallShadowDrawn = false;
